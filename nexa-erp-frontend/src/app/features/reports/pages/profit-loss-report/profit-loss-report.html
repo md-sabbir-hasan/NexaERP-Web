@@ -1,0 +1,272 @@
+<div class="profit-loss-page">
+  <section class="report-hero">
+    <div>
+      <span class="eyebrow">Financial Reports</span>
+      <h1>Profit & Loss</h1>
+      <p>
+        Review revenue, expenses and net profit or loss for a selected period.
+      </p>
+    </div>
+
+    <a routerLink="/reports" class="back-btn">
+      <i class="bi bi-arrow-left"></i>
+      Back to Reports
+    </a>
+  </section>
+
+  <section class="filter-card">
+    <div class="filter-header">
+      <div>
+        <h2>Report Parameters</h2>
+        <p>Select a date range to generate the Profit & Loss report.</p>
+      </div>
+    </div>
+
+    <div class="filter-grid">
+      <div class="form-group">
+        <label for="fromDate">From Date</label>
+
+        <input
+          id="fromDate"
+          type="date"
+          [ngModel]="fromDate()"
+          (ngModelChange)="fromDate.set($event)"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="toDate">To Date</label>
+
+        <input
+          id="toDate"
+          type="date"
+          [ngModel]="toDate()"
+          (ngModelChange)="toDate.set($event)"
+        />
+      </div>
+
+      <div class="filter-actions">
+        <button type="button" class="clear-btn" (click)="clearReport()">
+          <i class="bi bi-arrow-counterclockwise"></i>
+          Clear
+        </button>
+
+        <button
+          type="button"
+          class="generate-btn"
+          [disabled]="loading()"
+          (click)="generateReport()"
+        >
+          <i
+            class="bi"
+            [class.bi-search]="!loading()"
+            [class.bi-arrow-repeat]="loading()"
+            [class.spin]="loading()"
+          ></i>
+
+          {{ loading() ? 'Generating...' : 'Generate' }}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  @if (loading()) {
+    <div class="state-box">
+      <i class="bi bi-arrow-repeat spin"></i>
+      <span>Generating Profit & Loss report...</span>
+    </div>
+  } @else if (report()) {
+    <section class="report-header-card">
+      <div>
+        <span class="report-label">Profit & Loss Statement</span>
+        <h2>
+          {{ report()!.fromDate | date:'dd MMM yyyy' }}
+          —
+          {{ report()!.toDate | date:'dd MMM yyyy' }}
+        </h2>
+
+        <p>
+          {{ revenueCount() }} revenue accounts ·
+          {{ expenseCount() }} expense accounts
+        </p>
+      </div>
+
+      <div class="report-actions">
+        <button type="button" class="print-btn" (click)="printReport()">
+          <i class="bi bi-printer"></i>
+          Print
+        </button>
+
+        <button type="button" class="excel-btn" (click)="exportReport()">
+          <i class="bi bi-file-earmark-excel"></i>
+          Export Excel
+        </button>
+      </div>
+    </section>
+
+    <section class="summary-grid">
+      <div class="summary-card revenue">
+        <span>Total Revenue</span>
+        <strong>{{ report()!.totalRevenue | number:'1.2-2' }}</strong>
+      </div>
+
+      <div class="summary-card expense">
+        <span>Total Expense</span>
+        <strong>{{ report()!.totalExpense | number:'1.2-2' }}</strong>
+      </div>
+
+      <div class="summary-card net" [class]="getNetProfitClass()">
+        <span>
+          {{ report()!.netProfit >= 0 ? 'Net Profit' : 'Net Loss' }}
+        </span>
+
+        <strong>
+          {{ report()!.netProfit | number:'1.2-2' }}
+        </strong>
+      </div>
+    </section>
+
+    <section class="statement-grid">
+      <section class="statement-card">
+        <div class="statement-card-header revenue-header">
+          <div>
+            <h2>Revenue</h2>
+            <p>Income earned during the selected period.</p>
+          </div>
+
+          <span>{{ revenueCount() }} Accounts</span>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Account Code</th>
+                <th>Account Name</th>
+                <th class="text-end">Amount</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (row of report()!.revenues; track row.accountId) {
+                <tr>
+                  <td>
+                    <strong>{{ row.accountCode }}</strong>
+                  </td>
+
+                  <td>{{ row.accountName }}</td>
+
+                  <td class="text-end revenue-cell">
+                    {{ row.amount | number:'1.2-2' }}
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="3">
+                    <div class="empty-box">
+                      No revenue transactions found.
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+
+            <tfoot>
+              <tr>
+                <td colspan="2">Total Revenue</td>
+                <td class="text-end">
+                  {{ report()!.totalRevenue | number:'1.2-2' }}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </section>
+
+      <section class="statement-card">
+        <div class="statement-card-header expense-header">
+          <div>
+            <h2>Expenses</h2>
+            <p>Expenses incurred during the selected period.</p>
+          </div>
+
+          <span>{{ expenseCount() }} Accounts</span>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Account Code</th>
+                <th>Account Name</th>
+                <th class="text-end">Amount</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (row of report()!.expenses; track row.accountId) {
+                <tr>
+                  <td>
+                    <strong>{{ row.accountCode }}</strong>
+                  </td>
+
+                  <td>{{ row.accountName }}</td>
+
+                  <td class="text-end expense-cell">
+                    {{ row.amount | number:'1.2-2' }}
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="3">
+                    <div class="empty-box">
+                      No expense transactions found.
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+
+            <tfoot>
+              <tr>
+                <td colspan="2">Total Expense</td>
+                <td class="text-end">
+                  {{ report()!.totalExpense | number:'1.2-2' }}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <section class="net-result-card" [class]="getNetProfitClass()">
+      <div>
+        <span>
+          {{ report()!.netProfit >= 0 ? 'Net Profit' : 'Net Loss' }}
+        </span>
+
+        <p>
+          Total Revenue − Total Expense
+        </p>
+      </div>
+
+      <strong>
+        {{ report()!.netProfit | number:'1.2-2' }}
+      </strong>
+    </section>
+  } @else {
+    <section class="empty-report">
+      <div class="empty-icon">
+        <i class="bi bi-graph-up-arrow"></i>
+      </div>
+
+      <h2>Generate Profit & Loss</h2>
+
+      <p>
+        Select a date range and click Generate to review revenue, expenses and
+        net profit or loss.
+      </p>
+    </section>
+  }
+</div>

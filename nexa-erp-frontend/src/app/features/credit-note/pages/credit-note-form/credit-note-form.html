@@ -1,0 +1,372 @@
+<div class="credit-note-form-page">
+  <section class="page-header">
+    <div>
+      <span class="eyebrow">
+        Sales Adjustments
+      </span>
+
+      <h1>
+        {{
+          editingId() === null
+            ? 'New Credit Note'
+            : 'Edit Credit Note'
+        }}
+      </h1>
+
+      <p>
+        Create a return or adjustment against a
+        posted invoice.
+      </p>
+    </div>
+
+    <a
+      routerLink="/credit-notes"
+      class="btn-secondary"
+    >
+      Back
+    </a>
+  </section>
+
+  @if (loading()) {
+    <div class="state-box">
+      Loading...
+    </div>
+  } @else {
+    <form
+      [formGroup]="form"
+      (ngSubmit)="save()"
+    >
+      <section class="form-card">
+        <div class="form-grid">
+          <div class="form-field full">
+            <label for="invoiceId">
+              Invoice *
+            </label>
+
+            <select
+              id="invoiceId"
+              formControlName="invoiceId"
+              (change)="onInvoiceChange()"
+            >
+              <option [ngValue]="0">
+                Select invoice
+              </option>
+
+              @for (
+                invoice of invoices();
+                track invoice.id
+              ) {
+                <option [ngValue]="invoice.id">
+                  {{ invoice.invoiceNumber }}
+                  · {{ invoice.partyName }}
+                  · Due
+                  {{
+                    invoice.dueAmount
+                      | number: '1.2-2'
+                  }}
+                </option>
+              }
+            </select>
+
+            @if (
+              form.controls.invoiceId.touched &&
+              form.controls.invoiceId.invalid
+            ) {
+              <small class="field-error">
+                Invoice is required.
+              </small>
+            }
+          </div>
+
+          <div class="form-field">
+            <label for="creditNoteDate">
+              Credit Note Date *
+            </label>
+
+            <input
+              id="creditNoteDate"
+              type="date"
+              formControlName="creditNoteDate"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="postingDate">
+              Posting Date *
+            </label>
+
+            <input
+              id="postingDate"
+              type="date"
+              formControlName="postingDate"
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="reason">
+              Reason *
+            </label>
+
+            <select
+              id="reason"
+              formControlName="reason"
+            >
+              @for (
+                reason of reasons;
+                track reason
+              ) {
+                <option [value]="reason">
+                  {{ reasonLabel(reason) }}
+                </option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="reference">
+              Reference
+            </label>
+
+            <input
+              id="reference"
+              formControlName="reference"
+              placeholder="RETURN-001"
+            />
+          </div>
+
+          <div class="form-field full">
+            <label for="notes">
+              Notes
+            </label>
+
+            <textarea
+              id="notes"
+              rows="3"
+              formControlName="notes"
+            ></textarea>
+          </div>
+        </div>
+      </section>
+
+      @if (selectedInvoice(); as invoice) {
+        <section class="invoice-card">
+          <div class="invoice-summary">
+            <div>
+              <span>Invoice</span>
+              <strong>
+                {{ invoice.invoiceNumber }}
+              </strong>
+            </div>
+
+            <div>
+              <span>Customer</span>
+              <strong>
+                {{ invoice.partyName }}
+              </strong>
+            </div>
+
+            <div>
+              <span>Invoice Total</span>
+              <strong>
+                {{
+                  invoice.grandTotal
+                    | number: '1.2-2'
+                }}
+                BDT
+              </strong>
+            </div>
+
+            <div>
+              <span>Current Due</span>
+              <strong>
+                {{
+                  invoice.dueAmount
+                    | number: '1.2-2'
+                }}
+                BDT
+              </strong>
+            </div>
+          </div>
+
+          <div
+            class="table-responsive"
+            formArrayName="items"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th>Invoice Item</th>
+                  <th>Invoice Qty</th>
+                  <th>Unit Price</th>
+                  <th>Discount</th>
+                  <th>VAT</th>
+                  <th>Credit Qty</th>
+                  <th>Credit Total</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (
+                  control of controls();
+                  track $index;
+                  let index = $index
+                ) {
+                  <tr [formGroupName]="index">
+                    <td>
+                      {{
+                        item(index)?.description
+                      }}
+                    </td>
+
+                    <td>
+                      {{
+                        item(index)?.quantity
+                      }}
+                    </td>
+
+                    <td>
+                      {{
+                        item(index)?.unitPrice
+                          | number: '1.2-2'
+                      }}
+                    </td>
+
+                    <td>
+                      {{
+                        item(index)
+                          ?.discountPercent ?? 0
+                      }}%
+                    </td>
+
+                    <td>
+                      {{
+                        item(index)?.vatRate ?? 0
+                      }}%
+                    </td>
+
+                    <td>
+                      <input
+                        class="qty"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        formControlName="quantity"
+                      />
+
+                      @if (
+                        control.controls.quantity.value >
+                        (item(index)?.quantity ?? 0)
+                      ) {
+                        <small class="field-error">
+                          Cannot exceed invoice
+                          quantity.
+                        </small>
+                      }
+                    </td>
+
+                    <td>
+                      {{
+                        lineTotal(index)
+                          | number: '1.2-2'
+                      }}
+                      BDT
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="totals-card">
+          <div class="total-row">
+            <span>Subtotal</span>
+
+            <strong>
+              {{
+                subTotal()
+                  | number: '1.2-2'
+              }}
+              BDT
+            </strong>
+          </div>
+
+          <div class="total-row">
+            <span>Discount</span>
+
+            <strong>
+              {{
+                discountTotal()
+                  | number: '1.2-2'
+              }}
+              BDT
+            </strong>
+          </div>
+
+          <div class="total-row">
+            <span>VAT Adjustment</span>
+
+            <strong>
+              {{
+                vatTotal()
+                  | number: '1.2-2'
+              }}
+              BDT
+            </strong>
+          </div>
+
+          <div class="total-row grand-total">
+            <span>Credit Total</span>
+
+            <strong>
+              {{
+                total()
+                  | number: '1.2-2'
+              }}
+              BDT
+            </strong>
+          </div>
+
+          @if (
+            total() >
+            invoice.dueAmount
+          ) {
+            <small class="field-error">
+              Credit total exceeds invoice due.
+            </small>
+          }
+        </section>
+      }
+
+      <footer class="form-actions">
+        <a
+          routerLink="/credit-notes"
+          class="btn-secondary"
+        >
+          Cancel
+        </a>
+
+        <button
+          class="btn-primary"
+          type="submit"
+          [disabled]="
+            saving() ||
+            total() <= 0 ||
+            total() >
+              (selectedInvoice()?.dueAmount ?? 0)
+          "
+        >
+          @if (saving()) {
+            Saving...
+          } @else {
+            {{
+              editingId() === null
+                ? 'Create Draft'
+                : 'Update Draft'
+            }}
+          }
+        </button>
+      </footer>
+    </form>
+  }
+</div>

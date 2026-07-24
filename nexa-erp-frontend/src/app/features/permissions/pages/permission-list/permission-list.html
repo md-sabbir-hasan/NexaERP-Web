@@ -1,0 +1,62 @@
+<div class="permissions-page">
+    <div class="page-header">
+        <div>
+            <h1>Permissions</h1>
+            <p>View system permissions grouped by module</p>
+        </div>
+
+        <div class="summary-badge">
+            {{ filteredPermissions().length }} permissions
+        </div>
+    </div>
+
+    <div class="filter-card">
+        <input type="text" [ngModel]="search()" (ngModelChange)="search.set($event)"
+            placeholder="Search permission by name, code or module" />
+
+        <select [ngModel]="selectedModule()" (ngModelChange)="selectedModule.set($event)">
+            <option value="">All Modules</option>
+
+            @for (module of modules(); track module) {
+            <option [value]="module">{{ module }}</option>
+            }
+        </select>
+
+        <button class="clear-btn" type="button" (click)="clearFilter()">Clear</button>
+    </div>
+
+    @if (loading()) {
+    <div class="state-box">
+        <i class="bi bi-arrow-repeat spin"></i>
+        Loading permissions...
+    </div>
+    } @else {
+    <div class="permission-groups">
+        @for (group of groupedPermissions(); track group.module) {
+        <div class="permission-group">
+            <div class="group-header">
+                <h2>{{ group.module }}</h2>
+                <span>{{ group.permissions.length }}</span>
+            </div>
+
+            <div class="permission-grid">
+                @for (permission of group.permissions; track permission.id) {
+                <div class="permission-card">
+                    <div class="permission-icon">
+                        <i class="bi bi-key"></i>
+                    </div>
+
+                    <div>
+                        <strong>{{ permission.name }}</strong>
+                        <span>{{ permission.code }}</span>
+                    </div>
+                </div>
+                }
+            </div>
+        </div>
+        } @empty {
+        <div class="state-box">No permissions found</div>
+        }
+    </div>
+    }
+</div>

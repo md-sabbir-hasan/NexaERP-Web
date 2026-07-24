@@ -1,0 +1,114 @@
+<div class="auth-shell">
+  <section class="brand-pane">
+    <div class="brand-pane-glow"></div>
+
+    <div class="brand-mark">
+      <div class="brand-mark-icon">
+        <i class="bi bi-hexagon-fill"></i>
+      </div>
+      <span>NexaERP</span>
+    </div>
+
+    <div class="brand-copy">
+      <h1>Financial clarity,<br />built in.</h1>
+      <p>
+        One ledger for every transaction — invoices, bills, banking and
+        reconciliation, always in balance.
+      </p>
+    </div>
+
+    <ul class="brand-highlights">
+      <li>
+        <i class="bi bi-journal-check"></i>
+        <div>
+          <strong>Double-entry accounting</strong>
+          <span>Every posting is validated against your chart of accounts</span>
+        </div>
+      </li>
+      <li>
+        <i class="bi bi-bank2"></i>
+        <div>
+          <strong>Bank reconciliation</strong>
+          <span>Match statements against your books with confidence</span>
+        </div>
+      </li>
+      <li>
+        <i class="bi bi-shield-check"></i>
+        <div>
+          <strong>Role-based access</strong>
+          <span>Fine-grained permissions across every module</span>
+        </div>
+      </li>
+    </ul>
+
+    <div class="brand-footer">© {{ currentYear }} NexaERP</div>
+  </section>
+
+  <section class="form-pane">
+    <div class="form-pane-inner">
+      <div class="form-heading">
+        <span class="eyebrow">Welcome back</span>
+        <h2>Sign in to your workspace</h2>
+        <p>Enter your credentials to continue.</p>
+      </div>
+
+      <form [formGroup]="loginForm" (ngSubmit)="submit()" class="login-form">
+        <div class="field">
+          <label for="email">Email address</label>
+          <div class="input-shell">
+            <i class="bi bi-envelope"></i>
+            <input
+              id="email"
+              type="email"
+              formControlName="email"
+              placeholder="you@company.com"
+              autocomplete="username"
+            />
+          </div>
+          @if (loginForm.controls.email.touched && loginForm.controls.email.invalid) {
+            <small>A valid email address is required</small>
+          }
+        </div>
+
+        <div class="field">
+          <div class="field-label-row">
+            <label for="password">Password</label>
+            <a routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
+          </div>
+          <div class="input-shell">
+            <i class="bi bi-lock"></i>
+            <input
+              id="password"
+              [type]="showPassword() ? 'text' : 'password'"
+              formControlName="password"
+              placeholder="Enter your password"
+              autocomplete="current-password"
+            />
+            <button type="button" class="ghost-toggle" (click)="togglePassword()" tabindex="-1">
+              <i class="bi" [ngClass]="showPassword() ? 'bi-eye-slash' : 'bi-eye'"></i>
+            </button>
+          </div>
+          @if (loginForm.controls.password.touched && loginForm.controls.password.invalid) {
+            <small>Password is required</small>
+          }
+        </div>
+
+        <button type="submit" class="submit-btn" [disabled]="loading()">
+          @if (!loading()) {
+            <span>Sign in</span>
+            <i class="bi bi-arrow-right"></i>
+          } @else {
+            <span>
+              <i class="bi bi-arrow-repeat spin"></i>
+              Signing in...
+            </span>
+          }
+        </button>
+      </form>
+
+      <div class="form-footnote">
+        Having trouble signing in? Contact your workspace administrator.
+      </div>
+    </div>
+  </section>
+</div>

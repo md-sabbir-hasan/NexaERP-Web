@@ -1,0 +1,139 @@
+<div class="expense-page">
+  <section class="expense-hero">
+    <div>
+      <span class="eyebrow">Finance Operations</span>
+      <h1>Expenses</h1>
+      <p>Record and track small bills — mobile, utility, office supplies etc.</p>
+    </div>
+
+    <a *appHasPermission="'CREATE_EXPENSE'" routerLink="/expense/new" class="new-btn">
+      <i class="bi bi-plus-circle-fill"></i>
+      New Expense
+    </a>
+  </section>
+
+  <section class="summary-grid">
+    <div class="summary-card total">
+      <span>Total Posted</span>
+      <strong>{{ totalAmount() | number:'1.2-2' }}</strong>
+    </div>
+
+    <div class="summary-card due">
+      <span>Total Due (Unpaid)</span>
+      <strong>{{ unpaidTotal() | number:'1.2-2' }}</strong>
+    </div>
+
+    <div class="summary-card draft">
+      <span>Draft (Pending Review)</span>
+      <strong>{{ draftCount() }}</strong>
+    </div>
+
+    <div class="summary-card posted">
+      <span>Posted</span>
+      <strong>{{ postedCount() }}</strong>
+    </div>
+
+    <div class="summary-card cancelled">
+      <span>Cancelled</span>
+      <strong>{{ cancelledCount() }}</strong>
+    </div>
+  </section>
+
+  <section class="filter-panel">
+    <input type="text" placeholder="Search expense no, category, party..." [ngModel]="search()"
+      (ngModelChange)="search.set($event)" />
+
+    <select [ngModel]="paymentStatus()" (ngModelChange)="paymentStatus.set($event)">
+      <option value="">All Payment Status</option>
+      @for (s of paymentStatuses; track s) {
+      <option [value]="s">{{ s }}</option>
+      }
+    </select>
+
+    <select [ngModel]="status()" (ngModelChange)="status.set($event)">
+      <option value="">All Status</option>
+      @for (s of statuses; track s) {
+      <option [value]="s">{{ s }}</option>
+      }
+    </select>
+
+    <button class="clear-btn" type="button" (click)="clearFilter()">Clear</button>
+  </section>
+
+  <section class="table-card">
+    <div class="table-header">
+      <h2>Expense List</h2>
+      <span>{{ filteredExpenses().length }} Expenses</span>
+    </div>
+
+    @if (loading()) {
+    <div class="loading-box">Loading...</div>
+    } @else {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Expense No</th>
+            <th>Category</th>
+            <th>Party</th>
+            <th>Date</th>
+            <th class="text-end">Amount</th>
+            <th class="text-end">Due</th>
+            <th>Payment</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (expense of filteredExpenses(); track expense.id) {
+          <tr>
+            <td>
+              <strong>{{ expense.expenseNumber }}</strong>
+              @if (expense.referenceNumber) {
+              <small>Ref: {{ expense.referenceNumber }}</small>
+              }
+            </td>
+
+            <td>{{ expense.expenseAccountName }}</td>
+            <td>{{ expense.partyName ?? '—' }}</td>
+            <td>{{ expense.expenseDate | date }}</td>
+
+            <td class="text-end amount-text">{{ expense.amount | number:'1.2-2' }}</td>
+            <td class="text-end due-text">{{ expense.dueAmount | number:'1.2-2' }}</td>
+
+            <td>
+              <span class="payment-badge" [class]="getPaymentStatusClass(expense.paymentStatus)">
+                {{ expense.paymentStatus }}
+              </span>
+            </td>
+
+            <td>
+              <span class="status-badge" [class]="getStatusClass(expense.status)">
+                {{ expense.status }}
+              </span>
+            </td>
+
+            <td class="actions-cell">
+              <a [routerLink]="['/expense', expense.id]" class="btn-view">View</a>
+              @if (expense.status === 'DRAFT') {
+              <button *appHasPermission="'CREATE_EXPENSE'" class="btn-post" type="button"
+                (click)="postExpense(expense.id)">
+                Post
+              </button>
+              }
+            </td>
+          </tr>
+          } @empty {
+          <tr>
+            <td colspan="9">
+              <div class="empty-box">No expenses found</div>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  </section>
+</div>

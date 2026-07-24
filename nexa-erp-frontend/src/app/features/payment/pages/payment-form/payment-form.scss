@@ -1,0 +1,377 @@
+.payment-form-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.payment-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 1.5rem 2rem;
+
+    .eyebrow {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #2563eb;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+    }
+
+    h1 {
+        margin: 0.35rem 0;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    p {
+        margin: 0;
+        color: #6b7280;
+    }
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .75rem 1rem;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #374151;
+    text-decoration: none;
+    transition: .2s;
+
+    &:hover {
+        background: #f9fafb;
+    }
+}
+
+.payment-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-section,
+.allocation-section,
+.summary-section {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 1.5rem;
+}
+
+.section-title {
+    margin-bottom: 1.5rem;
+
+    h2 {
+        margin: 0;
+        font-size: 1.2rem;
+        color: #111827;
+    }
+
+    p {
+        margin-top: .35rem;
+        color: #6b7280;
+        font-size: .9rem;
+    }
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+
+    label {
+        font-size: .9rem;
+        font-weight: 600;
+        color: #374151;
+    }
+
+    input,
+    select,
+    textarea {
+        width: 100%;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        padding: .75rem .9rem;
+        font-size: .95rem;
+        background: #fff;
+        transition: .2s;
+
+        &:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+        }
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 90px;
+    }
+
+    &.full {
+        grid-column: 1 / -1;
+    }
+}
+
+.error-text {
+  color: #dc2626;
+  font-size: .78rem;
+  font-weight: 600;
+}
+
+.allocation-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    h3 {
+        margin: 0 0 .4rem;
+        color: #111827;
+    }
+
+    p {
+        margin: 0;
+        color: #6b7280;
+        max-width: 600px;
+    }
+}
+
+.manual-allocation {
+
+  margin-top: 1.5rem;
+
+  table {
+
+    width: 100%;
+    border-collapse: collapse;
+
+    th,
+    td {
+
+      padding: .85rem;
+
+      border-bottom: 1px solid #e5e7eb;
+
+    }
+
+    th {
+
+      background: #f9fafb;
+
+      text-align: left;
+
+      font-weight: 600;
+
+    }
+
+    input {
+
+      width: 100%;
+
+    }
+
+  }
+
+}
+
+.allocation-summary {
+
+  margin-top: 1rem;
+
+  display: flex;
+
+  justify-content: flex-end;
+
+  gap: 2rem;
+
+  span {
+
+    display: block;
+
+    color: #6b7280;
+
+    font-size: .85rem;
+
+  }
+
+  strong {
+
+    font-size: 1.05rem;
+
+    color: #111827;
+
+  }
+
+}
+
+.text-end{
+
+  text-align:right;
+
+}
+
+.manual-allocation{
+
+  input{
+
+    text-align:right;
+
+  }
+
+}
+
+.invalid-input {
+  border-color: #dc2626 !important;
+  background: #fff5f5;
+}
+
+.error-text {
+  display: block;
+  margin-top: .35rem;
+  color: #dc2626;
+  font-size: .78rem;
+  font-weight: 600;
+}
+
+.switch-row {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.summary-section {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 1.25rem;
+}
+
+.summary-card {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 14px;
+    padding: 1.25rem;
+
+    span {
+        display: block;
+        color: #6b7280;
+        font-size: .85rem;
+    }
+
+    strong {
+        display: block;
+        margin: .5rem 0;
+        font-size: 2rem;
+        color: #1d4ed8;
+    }
+
+    small {
+        color: #6b7280;
+    }
+}
+
+.hint-card {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 1.25rem;
+
+    i {
+        font-size: 1.4rem;
+        color: #2563eb;
+    }
+
+    strong {
+        display: block;
+        margin-bottom: .35rem;
+        color: #111827;
+    }
+
+    span {
+        color: #6b7280;
+        line-height: 1.5;
+    }
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+.cancel-btn,
+.save-btn {
+    border: none;
+    border-radius: 10px;
+    padding: .85rem 1.4rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: .2s;
+}
+
+.cancel-btn {
+    background: #f3f4f6;
+    color: #374151;
+
+    &:hover {
+        background: #e5e7eb;
+    }
+}
+
+.save-btn {
+    background: #2563eb;
+    color: white;
+
+    &:hover:not(:disabled) {
+        background: #1d4ed8;
+    }
+
+    &:disabled {
+        opacity: .65;
+        cursor: not-allowed;
+    }
+}
+
+@media (max-width: 992px) {
+
+    .form-grid,
+    .summary-section {
+        grid-template-columns: 1fr;
+    }
+
+    .payment-hero,
+    .allocation-box {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .form-actions {
+        flex-direction: column;
+
+        .cancel-btn,
+        .save-btn {
+            width: 100%;
+            text-align: center;
+        }
+    }
+}

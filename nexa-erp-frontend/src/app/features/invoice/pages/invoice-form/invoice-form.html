@@ -1,0 +1,184 @@
+<div class="invoice-form-page">
+  <section class="invoice-hero">
+    <div>
+      <span class="eyebrow">Sales Invoice</span>
+      <h1>{{ invoiceId ? 'Edit Invoice' : 'New Invoice' }}</h1>
+      <p>Create customer invoices with live VAT, discount and total calculation.</p>
+    </div>
+
+    <a routerLink="/invoice" class="back-btn">
+      <i class="bi bi-arrow-left"></i>
+      Back to Invoices
+    </a>
+  </section>
+
+  @if (loading()) {
+    <div class="state-box">
+      <i class="bi bi-arrow-repeat spin"></i>
+      Loading invoice...
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submitDraft()" class="invoice-card">
+      <section class="header-section">
+        <div class="section-title">
+          <div>
+            <h2>Invoice Information</h2>
+            <p>Customer, date and payment information</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group customer">
+            <label>Customer</label>
+            <select formControlName="partyId" (change)="onCustomerChange()">
+              <option [ngValue]="null">Select customer</option>
+              @for (customer of customers(); track customer.id) {
+                <option [ngValue]="customer.id">
+                  {{ customer.code }} - {{ customer.name }}
+                </option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Invoice Date</label>
+            <input type="date" formControlName="invoiceDate" />
+          </div>
+
+          <div class="form-group">
+            <label>Payment Terms</label>
+            <input type="number" formControlName="paymentTerms" min="0" />
+          </div>
+
+          <div class="form-group">
+            <label>Currency</label>
+            <input type="text" formControlName="currencyCode" />
+          </div>
+
+          <div class="form-group full">
+            <label>Reference</label>
+            <input type="text" formControlName="reference" placeholder="PO / Contract / Reference no" />
+          </div>
+
+          <div class="form-group full">
+            <label>Notes</label>
+            <textarea formControlName="notes" rows="3" placeholder="Internal or customer-facing notes"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <section class="items-section">
+        <div class="section-title">
+          <div>
+            <h2>Invoice Items</h2>
+            <p>Add products/services, quantity, discount and VAT</p>
+          </div>
+
+          <button class="add-line-btn" type="button" (click)="addItem()">
+            <i class="bi bi-plus-lg"></i>
+            Add Item
+          </button>
+        </div>
+
+        <div class="items-table" formArrayName="items">
+          <div class="item-head">
+            <span>Description</span>
+            <span>Qty</span>
+            <span>Unit Price</span>
+            <span>Disc %</span>
+            <span>VAT %</span>
+            <span>Total</span>
+            <span></span>
+          </div>
+
+          @for (item of items.controls; track $index) {
+            <div class="item-row" [formGroupName]="$index">
+              <input
+                type="text"
+                formControlName="description"
+                placeholder="Item description"
+              />
+
+              <input
+                type="number"
+                formControlName="quantity"
+                min="0.01"
+                step="0.01"
+              />
+
+              <input
+                type="number"
+                formControlName="unitPrice"
+                min="0"
+                step="0.01"
+              />
+
+              <input
+                type="number"
+                formControlName="discountPercent"
+                min="0"
+                step="0.01"
+              />
+
+              <input
+                type="number"
+                formControlName="vatRate"
+                min="0"
+                step="0.01"
+              />
+
+              <div class="line-total">
+                {{ getLineTotal($index) | number:'1.2-2' }}
+              </div>
+
+              <button class="remove-btn" type="button" (click)="removeItem($index)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="bottom-section">
+        <div class="invoice-hint">
+          <i class="bi bi-info-circle"></i>
+          <div>
+            <strong>Accounting Note</strong>
+            <span>Posting will create Accounts Receivable, Sales Revenue and VAT journal entries.</span>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <div>
+            <span>Subtotal</span>
+            <strong>{{ getSubTotal() | number:'1.2-2' }}</strong>
+          </div>
+
+          <div>
+            <span>Discount</span>
+            <strong>{{ getDiscountTotal() | number:'1.2-2' }}</strong>
+          </div>
+
+          <div>
+            <span>VAT</span>
+            <strong>{{ getVatTotal() | number:'1.2-2' }}</strong>
+          </div>
+
+          <div class="grand-total">
+            <span>Grand Total</span>
+            <strong>{{ getGrandTotal() | number:'1.2-2' }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <a routerLink="/invoice" class="cancel-btn">Cancel</a>
+
+        <button class="save-btn" type="submit" [disabled]="submitting()">
+          <i class="bi bi-save"></i>
+          {{ submitting() ? 'Saving...' : 'Save Draft' }}
+        </button>
+      </div>
+    </form>
+  }
+</div>

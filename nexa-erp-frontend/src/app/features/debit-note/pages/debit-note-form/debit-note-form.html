@@ -1,0 +1,118 @@
+<div class="debit-note-form-page">
+  <section class="page-header">
+    <div>
+      <span class="eyebrow">Purchase Adjustments</span>
+      <h1>{{ editingId() === null ? 'New Debit Note' : 'Edit Debit Note' }}</h1>
+      <p>Create a purchase return or vendor bill adjustment.</p>
+    </div>
+    <a routerLink="/debit-notes" class="btn-secondary">Back</a>
+  </section>
+
+  @if (loading()) {
+    <div class="state-box">Loading...</div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <section class="form-card">
+        <div class="form-grid">
+          <div class="form-field full">
+            <label>Vendor Bill *</label>
+            <select formControlName="vendorBillId" (change)="onBillChange()">
+              <option [ngValue]="0">Select posted/partial vendor bill</option>
+              @for (bill of bills(); track bill.id) {
+                <option [ngValue]="bill.id">
+                  {{ bill.billNumber }} · {{ bill.partyName }} · Due {{ bill.dueAmount | number: '1.2-2' }}
+                </option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label>Debit Note Date *</label>
+            <input type="date" formControlName="debitNoteDate" />
+          </div>
+
+          <div class="form-field">
+            <label>Posting Date *</label>
+            <input type="date" formControlName="postingDate" />
+          </div>
+
+          <div class="form-field">
+            <label>Reason *</label>
+            <select formControlName="reason">
+              @for (reason of reasons; track reason) {
+                <option [value]="reason">{{ label(reason) }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label>Reference</label>
+            <input formControlName="reference" placeholder="RETURN-001" />
+          </div>
+
+          <div class="form-field full">
+            <label>Notes</label>
+            <textarea rows="3" formControlName="notes"></textarea>
+          </div>
+        </div>
+      </section>
+
+      @if (selectedBill(); as bill) {
+        <section class="bill-card">
+          <div class="bill-summary">
+            <div><span>Bill</span><strong>{{ bill.billNumber }}</strong></div>
+            <div><span>Vendor</span><strong>{{ bill.partyName }}</strong></div>
+            <div><span>Net Payable</span><strong>{{ bill.netPayable | number: '1.2-2' }} BDT</strong></div>
+            <div><span>Current Due</span><strong>{{ bill.dueAmount | number: '1.2-2' }} BDT</strong></div>
+          </div>
+
+          <div class="table-responsive" formArrayName="items">
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Bill Qty</th>
+                  <th>Unit Price</th>
+                  <th>VAT</th>
+                  <th>TDS</th>
+                  <th>Debit Qty</th>
+                  <th class="right">Net Adjustment</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (control of controls(); track $index; let index = $index) {
+                  <tr [formGroupName]="index">
+                    <td>{{ item(index)?.description }}</td>
+                    <td>{{ item(index)?.quantity }}</td>
+                    <td>{{ item(index)?.unitPrice | number: '1.2-2' }}</td>
+                    <td>{{ item(index)?.vatRate ?? 0 }}%</td>
+                    <td>{{ item(index)?.tdsRate ?? 0 }}%</td>
+                    <td>
+                      <input class="qty" type="number" min="0" step="0.01" formControlName="quantity" />
+                    </td>
+                    <td class="right">{{ lineNet(index) | number: '1.2-2' }} BDT</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="totals-card">
+          <div><span>Subtotal</span><strong>{{ subTotal() | number: '1.2-2' }}</strong></div>
+          <div><span>Discount</span><strong>{{ discountTotal() | number: '1.2-2' }}</strong></div>
+          <div><span>VAT</span><strong>{{ vatTotal() | number: '1.2-2' }}</strong></div>
+          <div><span>TDS</span><strong>{{ tdsTotal() | number: '1.2-2' }}</strong></div>
+          <div class="grand"><span>Net Adjustment</span><strong>{{ netAdjustment() | number: '1.2-2' }} BDT</strong></div>
+        </section>
+      }
+
+      <footer class="form-actions">
+        <a routerLink="/debit-notes" class="btn-secondary">Cancel</a>
+        <button class="btn-primary" type="submit" [disabled]="saving() || netAdjustment() <= 0">
+          {{ saving() ? 'Saving...' : editingId() === null ? 'Create Draft' : 'Update Draft' }}
+        </button>
+      </footer>
+    </form>
+  }
+</div>

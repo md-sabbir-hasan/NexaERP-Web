@@ -1,0 +1,158 @@
+<aside
+  class="finance-sidebar"
+  [class.is-collapsed]="collapsed"
+>
+  <!-- Decorative background -->
+  <div
+    class="sidebar-glow sidebar-glow-top"
+    aria-hidden="true"
+  ></div>
+
+  <div
+    class="sidebar-glow sidebar-glow-bottom"
+    aria-hidden="true"
+  ></div>
+
+  <!-- =================================================== -->
+  <!-- Brand                                               -->
+  <!-- =================================================== -->
+
+  <header class="sidebar-brand">
+    <div class="brand-mark">
+      <span class="brand-frame"></span>
+      <span class="brand-letter">N</span>
+    </div>
+
+    @if (!collapsed) {
+      <div class="brand-content">
+        <div class="brand-title-row">
+          <strong>NexaERP</strong>
+          <span class="brand-status" title="System active"></span>
+        </div>
+
+        <span>Enterprise Finance Suite</span>
+      </div>
+    }
+  </header>
+
+  <!-- =================================================== -->
+  <!-- Navigation                                          -->
+  <!-- =================================================== -->
+
+  <nav
+    class="sidebar-navigation"
+    aria-label="Primary navigation"
+  >
+    @for (item of menu; track item.label) {
+      @if (item.children?.length) {
+        <section class="menu-section">
+          @if (!collapsed) {
+            <header class="menu-section-header">
+              <span class="section-indicator"></span>
+              <span class="section-title">
+                {{ item.label }}
+              </span>
+              <span class="section-divider"></span>
+            </header>
+          } @else {
+            <div
+              class="collapsed-section-divider"
+              [attr.aria-label]="item.label"
+            ></div>
+          }
+
+          <div class="menu-items">
+            @for (
+              child of item.children;
+              track child.label
+            ) {
+              <a
+                class="menu-link"
+                [routerLink]="child.route"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{
+                  exact: true
+                }"
+                [title]="collapsed ? child.label : ''"
+              >
+                <span
+                  class="active-marker"
+                  aria-hidden="true"
+                ></span>
+
+                <span class="menu-icon">
+                  <i
+                    class="bi"
+                    [class]="child.icon"
+                  ></i>
+                </span>
+
+                @if (!collapsed) {
+                  <span class="menu-label">
+                    {{ child.label }}
+                  </span>
+                }
+              </a>
+            }
+          </div>
+        </section>
+      } @else {
+        <a
+          class="menu-link root-menu-link"
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{
+            exact: true
+          }"
+          [title]="collapsed ? item.label : ''"
+        >
+          <span
+            class="active-marker"
+            aria-hidden="true"
+          ></span>
+
+          <span class="menu-icon">
+            <i
+              class="bi"
+              [class]="item.icon"
+            ></i>
+          </span>
+
+          @if (!collapsed) {
+            <span class="menu-label">
+              {{ item.label }}
+            </span>
+          }
+        </a>
+      }
+    }
+  </nav>
+
+  <!-- =================================================== -->
+  <!-- Footer                                              -->
+  <!-- =================================================== -->
+
+  @if (!collapsed) {
+    <footer class="sidebar-footer">
+      <div class="footer-icon">
+        <i class="bi bi-shield-check"></i>
+      </div>
+
+      <div class="footer-content">
+        <span>Finance Workspace</span>
+        <strong>Secure & operational</strong>
+      </div>
+
+      <span class="footer-version">
+        v1.0
+      </span>
+    </footer>
+  } @else {
+    <div
+      class="collapsed-footer"
+      title="Finance Workspace — Secure and operational"
+    >
+      <i class="bi bi-shield-check"></i>
+    </div>
+  }
+</aside>

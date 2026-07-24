@@ -1,0 +1,240 @@
+<div class="party-details-page">
+  @if (loading()) {
+    <div class="state-box">Loading party...</div>
+  } @else if (party()) {
+    <section class="details-hero">
+      <div>
+        <span class="eyebrow">Party Profile</span>
+        <h1>{{ party()!.name }}</h1>
+        <p>{{ party()!.code }} · {{ party()!.companyName || 'No company' }}</p>
+      </div>
+
+      <div class="hero-badges">
+        <span class="type-pill" [class]="getTypeClass()">
+          {{ party()!.type }}
+        </span>
+
+        <span class="status-badge" [class]="getStatusClass()">
+          {{ party()!.isActive ? 'ACTIVE' : 'INACTIVE' }}
+        </span>
+      </div>
+    </section>
+
+    <section class="action-bar">
+      <a routerLink="/party" class="btn-secondary">
+        <i class="bi bi-arrow-left"></i>
+        Back
+      </a>
+
+      <a
+      *appHasPermission="'EDIT_PARTY'"
+       [routerLink]="['/party', party()!.id, 'edit']" class="btn-edit">
+        <i class="bi bi-pencil"></i>
+        Edit
+      </a>
+
+      <button type="button" class="btn-light" disabled>
+        <i class="bi bi-file-earmark-text"></i>
+        Statement
+      </button>
+    </section>
+
+    <section class="info-grid">
+      <div class="info-card">
+        <span>Phone</span>
+        <strong>{{ party()!.phone || '-' }}</strong>
+      </div>
+
+      <div class="info-card">
+        <span>Email</span>
+        <strong>{{ party()!.email || '-' }}</strong>
+      </div>
+
+      <div class="info-card">
+        <span>Payment Terms</span>
+        <strong>{{ party()!.paymentTerms }} days</strong>
+      </div>
+
+      <div class="info-card">
+        <span>Opening Balance</span>
+        <strong>{{ party()!.openingBalance | number:'1.2-2' }} {{ party()!.currency }}</strong>
+      </div>
+    </section>
+
+    <section class="content-grid">
+      <div class="main-column">
+        <section class="details-card">
+          <div class="card-header">
+            <h2>Basic Information</h2>
+          </div>
+
+          <div class="details-grid">
+            <div>
+              <span>Company</span>
+              <strong>{{ party()!.companyName || '-' }}</strong>
+            </div>
+
+            <div>
+              <span>Contact Person</span>
+              <strong>{{ party()!.contactPerson || '-' }}</strong>
+            </div>
+
+            <div>
+              <span>Job Position</span>
+              <strong>{{ party()!.jobPosition || '-' }}</strong>
+            </div>
+
+            <div>
+              <span>Mobile</span>
+              <strong>{{ party()!.mobile || '-' }}</strong>
+            </div>
+
+            <div class="full">
+              <span>Notes</span>
+              <p>{{ party()!.notes || 'No notes provided.' }}</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="details-card">
+          <div class="card-header">
+            <h2>Address</h2>
+          </div>
+
+          <div class="details-grid">
+            <div class="full">
+              <span>Street</span>
+              <strong>{{ party()!.street || '-' }}</strong>
+            </div>
+
+            <div>
+              <span>City</span>
+              <strong>{{ party()!.city || '-' }}</strong>
+            </div>
+
+            <div>
+              <span>State</span>
+              <strong>{{ party()!.state || '-' }}</strong>
+            </div>
+
+            <div>
+              <span>Country</span>
+              <strong>{{ party()!.country || '-' }}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="details-card">
+          <div class="card-header">
+            <h2>Financial Information</h2>
+          </div>
+
+          <div class="details-grid">
+            <div>
+              <span>Credit Limit</span>
+              <strong>{{ party()!.creditLimit | number:'1.2-2' }}</strong>
+            </div>
+
+            <div>
+              <span>Currency</span>
+              <strong>{{ party()!.currency }}</strong>
+            </div>
+
+            <div>
+              <span>Bank Name</span>
+              <strong>{{ party()!.bankName || '-' }}</strong>
+            </div>
+
+            <div>
+              <span>Bank Account No</span>
+              <strong>{{ party()!.bankAccountNo || '-' }}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="details-card">
+          <div class="card-header">
+            <h2>Tax Information</h2>
+          </div>
+
+          <div class="details-grid">
+            <div>
+              <span>BIN</span>
+              <strong>{{ party()!.bin || '-' }}</strong>
+            </div>
+
+            <div>
+              <span>TIN</span>
+              <strong>{{ party()!.tin || '-' }}</strong>
+            </div>
+
+            <div>
+              <span>VAT Registered</span>
+              <strong>{{ party()!.vatRegistered ? 'Yes' : 'No' }}</strong>
+            </div>
+
+            <div>
+              <span>Trade License No</span>
+              <strong>{{ party()!.tradeLicenseNo || '-' }}</strong>
+            </div>
+
+            <div>
+              <span>Trade License Expiry</span>
+              <strong>{{ party()!.tradeLicenseExpiry | date }}</strong>
+            </div>
+
+            <div>
+              <span>NID No</span>
+              <strong>{{ party()!.nidNo || '-' }}</strong>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="document-card">
+        <div class="card-header">
+          <h2>Documents</h2>
+          <span>PDF / Image</span>
+        </div>
+
+        <div class="document-list">
+          @for (doc of getDocuments(); track doc.key) {
+            <div class="document-item">
+              <div>
+                <strong>{{ doc.title }}</strong>
+
+                @if (doc.url) {
+                  <span class="uploaded">Uploaded</span>
+                } @else {
+                  <span class="missing">Not uploaded</span>
+                }
+              </div>
+
+              <div class="doc-actions">
+                @if (doc.url) {
+                  <button type="button" class="btn-view" (click)="openDocument(doc.url)">
+                    View
+                  </button>
+                }
+
+                <label class="upload-btn">
+                  {{ doc.url ? 'Replace' : 'Upload' }}
+                  <input
+                    type="file"
+                    accept=".pdf,image/png,image/jpeg,image/jpg"
+                    hidden
+                    (change)="uploadDocument($event, doc.key)"
+                  />
+                </label>
+              </div>
+
+              @if (uploading() === doc.key) {
+                <small class="uploading">Uploading...</small>
+              }
+            </div>
+          }
+        </div>
+      </aside>
+    </section>
+  }
+</div>

@@ -1,0 +1,228 @@
+<div class="users-page">
+  <div class="page-header">
+    <div>
+      <h1>Users</h1>
+      <p>Manage system users, invitation, roles and access status</p>
+    </div>
+
+    <button class="primary-btn" type="button" (click)="openInviteModal()">
+      <i class="bi bi-plus-lg"></i>
+      Invite User
+    </button>
+  </div>
+
+  <div class="filter-card">
+    <input
+      type="text"
+      [(ngModel)]="search"
+      placeholder="Search by name or email"
+      (keyup.enter)="onSearch()"
+    />
+
+    <select [(ngModel)]="status">
+      <option value="">All Status</option>
+      <option value="PENDING">Pending</option>
+      <option value="ACTIVE">Active</option>
+      <option value="INACTIVE">Inactive</option>
+      <option value="LOCKED">Locked</option>
+    </select>
+
+    <button class="search-btn" type="button" (click)="onSearch()">Search</button>
+    <button class="clear-btn" type="button" (click)="clearSearch()">Clear</button>
+  </div>
+
+  <div class="table-card">
+    @if (loading()) {
+      <div class="state-box">
+        <i class="bi bi-arrow-repeat spin"></i>
+        Loading users...
+      </div>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th>Roles</th>
+              <th>Last Login</th>
+              <th>Created</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (user of users(); track user.id) {
+              <tr>
+                <td>
+                  <div class="user-cell">
+                    <div class="avatar">{{ user.name.charAt(0) }}</div>
+                    <div>
+                      <strong>{{ user.name }}</strong>
+                      <span>ID: {{ user.id }}</span>
+                    </div>
+                  </div>
+                </td>
+
+                <td>{{ user.email }}</td>
+
+                <td>
+                  <span class="status" [class]="user.status.toLowerCase()">
+                    {{ user.status }}
+                  </span>
+                </td>
+
+                <td>
+                  <span class="role-pill">
+                    {{ user.roles.join(', ') || '-' }}
+                  </span>
+                </td>
+
+                <td>{{ user.lastLoginAt ? (user.lastLoginAt | date: 'medium') : '-' }}</td>
+                <td>{{ user.createdAt | date: 'mediumDate' }}</td>
+
+                <td class="text-end">
+                  <div class="action-group">
+                    <button
+                      class="action-btn edit"
+                      type="button"
+                      [disabled]="isSuperAdmin(user)"
+                      (click)="openEditModal(user)"
+                    >
+                      <i class="bi bi-pencil"></i>
+                      Edit
+                    </button>
+
+                    @if (user.status === 'ACTIVE') {
+                      <button
+                        class="action-btn danger"
+                        type="button"
+                        [disabled]="isSuperAdmin(user)"
+                        (click)="deactivateUser(user)"
+                      >
+                        <i class="bi bi-slash-circle"></i>
+                        Deactivate
+                      </button>
+                    } @else if (user.status === 'INACTIVE') {
+                      <button
+                        class="action-btn success"
+                        type="button"
+                        [disabled]="isSuperAdmin(user)"
+                        (click)="activateUser(user)"
+                      >
+                        <i class="bi bi-check-circle"></i>
+                        Activate
+                      </button>
+                    } @else if (user.status === 'PENDING') {
+                      <button
+                        class="action-btn warning"
+                        type="button"
+                        [disabled]="isSuperAdmin(user)"
+                      
+                      >
+                        <i class="bi bi-envelope-arrow-up"></i>
+                        Resend Invite
+                      </button>
+                    } @else if (user.status === 'LOCKED') {
+                      <button
+                        class="action-btn warning"
+                        type="button"
+                        [disabled]="isSuperAdmin(user)"
+                      
+                      >
+                        <i class="bi bi-unlock"></i>
+                        Unlock
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7">
+                  <div class="state-box">No users found</div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <div class="pagination">
+      <span>Page {{ page + 1 }} of {{ totalPages || 1 }} · Total {{ totalElements }}</span>
+
+      <div>
+        <button type="button" (click)="previousPage()" [disabled]="page === 0">Prev</button>
+        <button type="button" (click)="nextPage()" [disabled]="page + 1 >= totalPages">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@if (showUserModal()) {
+  <div class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2>{{ selectedUser ? 'Edit User' : 'Invite User' }}</h2>
+          <p>
+            {{
+              selectedUser
+                ? 'Update user information and assigned role'
+                : 'Create a pending user and send invitation email'
+            }}
+          </p>
+        </div>
+
+        <button class="close-btn" type="button" (click)="closeUserModal()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <form [formGroup]="userForm" (ngSubmit)="submitUser()" class="modal-body">
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" formControlName="name" placeholder="Enter full name" />
+
+          @if (userForm.controls.name.touched && userForm.controls.name.invalid) {
+            <small class="field-error">Name is required</small>
+          }
+        </div>
+
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" formControlName="email" placeholder="Enter email address" />
+
+          @if (userForm.controls.email.touched && userForm.controls.email.invalid) {
+            <small class="field-error">Valid email is required</small>
+          }
+        </div>
+
+        <div class="form-group">
+          <label>Role</label>
+          <select formControlName="roleIds">
+            <option [ngValue]="[]">Select role</option>
+
+            @for (role of roles(); track role.id) {
+              <option [ngValue]="[role.id]">{{ role.name }}</option>
+            }
+          </select>
+
+          @if (userForm.controls.roleIds.touched && userForm.controls.roleIds.invalid) {
+            <small class="field-error">Role is required</small>
+          }
+        </div>
+
+        <div class="modal-actions">
+          <button class="clear-btn" type="button" (click)="closeUserModal()">Cancel</button>
+
+          <button class="primary-btn" type="submit" [disabled]="submitting()">
+            {{ submitting() ? 'Saving...' : selectedUser ? 'Update User' : 'Invite User' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

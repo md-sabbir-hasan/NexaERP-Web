@@ -1,0 +1,658 @@
+<div class="payment-form-page">
+  <section class="payment-hero">
+    <div>
+      <span class="eyebrow">Finance Payment</span>
+
+      <h1>{{ getPaymentTitle() }}</h1>
+
+      <p>
+        Create customer receipts or vendor payments with FIFO auto allocation.
+      </p>
+    </div>
+
+    <a routerLink="/payment" class="back-btn">
+      <i class="bi bi-arrow-left"></i>
+      Back to Payments
+    </a>
+  </section>
+
+  <form
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+    class="payment-card"
+  >
+    <!-- ================================================= -->
+    <!-- PAYMENT INFORMATION -->
+    <!-- ================================================= -->
+
+    <section class="form-section">
+      <div class="section-title">
+        <div>
+          <h2>Payment Information</h2>
+
+          <p>
+            Select party, payment account, method and amount.
+          </p>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <!-- Payment Type -->
+
+        <div class="form-group">
+          <label for="paymentType">
+            Payment Type
+          </label>
+
+          <select
+            id="paymentType"
+            formControlName="paymentType"
+          >
+            @for (type of paymentTypes; track type) {
+              <option [value]="type">
+                {{
+                  type === 'RECEIPT'
+                    ? 'Customer Receipt'
+                    : 'Vendor Payment'
+                }}
+              </option>
+            }
+          </select>
+        </div>
+
+        <!-- Party -->
+
+        <div class="form-group">
+          <label for="partyId">
+            {{ getPartyLabel() }}
+          </label>
+
+          <select
+            id="partyId"
+            formControlName="partyId"
+            (change)="onPartyChange()"
+          >
+            <option [ngValue]="null">
+              Select {{ getPartyLabel() }}
+            </option>
+
+            @for (party of parties(); track party.id) {
+              <option [ngValue]="party.id">
+                {{ party.code }} - {{ party.name }}
+              </option>
+            }
+          </select>
+
+          @if (
+            form.get('partyId')?.touched &&
+            form.get('partyId')?.invalid
+          ) {
+            <small class="error-text">
+              {{ getPartyLabel() }} is required
+            </small>
+          }
+        </div>
+
+        <!-- Payment Account -->
+
+        <div class="form-group">
+          <label for="accountId">
+            Payment Account
+          </label>
+
+          <select
+            id="accountId"
+            formControlName="accountId"
+          >
+            <option [ngValue]="null">
+              Select account
+            </option>
+
+            @for (account of accounts(); track account.id) {
+              <option [ngValue]="account.id">
+                {{ account.code }} - {{ account.name }}
+              </option>
+            }
+          </select>
+
+          @if (
+            form.get('accountId')?.touched &&
+            form.get('accountId')?.invalid
+          ) {
+            <small class="error-text">
+              Payment account is required
+            </small>
+          }
+        </div>
+
+        <!-- Payment Date -->
+
+        <div class="form-group">
+          <label for="paymentDate">
+            Payment Date
+          </label>
+
+          <input
+            id="paymentDate"
+            type="date"
+            formControlName="paymentDate"
+          />
+
+          @if (
+            form.get('paymentDate')?.touched &&
+            form.get('paymentDate')?.invalid
+          ) {
+            <small class="error-text">
+              Payment date is required
+            </small>
+          }
+        </div>
+
+        <!-- Amount -->
+
+        <div class="form-group">
+          <label for="amount">
+            Amount
+          </label>
+
+          <input
+            id="amount"
+            type="number"
+            min="0.01"
+            step="0.01"
+            formControlName="amount"
+          />
+
+          @if (
+            form.get('amount')?.touched &&
+            form.get('amount')?.invalid
+          ) {
+            <small class="error-text">
+              Amount must be greater than zero
+            </small>
+          }
+
+          @if (paymentExceedsOutstanding) {
+            <small class="warning-text">
+              Amount exceeds the current outstanding balance.
+              The extra amount will remain unallocated.
+            </small>
+          }
+        </div>
+
+        <!-- Currency -->
+
+        <div class="form-group">
+          <label for="currencyCode">
+            Currency
+          </label>
+
+          <input
+            id="currencyCode"
+            type="text"
+            formControlName="currencyCode"
+          />
+        </div>
+
+        <!-- Payment Method -->
+
+        <div class="form-group">
+          <label for="paymentMethod">
+            Payment Method
+          </label>
+
+          <select
+            id="paymentMethod"
+            formControlName="paymentMethod"
+          >
+            @for (method of paymentMethods; track method) {
+              <option [value]="method">
+                {{ getMethodLabel(method) }}
+              </option>
+            }
+          </select>
+        </div>
+
+        <!-- Transaction Reference -->
+
+        <div class="form-group">
+          <label for="transactionRef">
+            Transaction Reference
+          </label>
+
+          <input
+            id="transactionRef"
+            type="text"
+            formControlName="transactionRef"
+            placeholder="Cheque no, bank ref, bKash trx id..."
+          />
+        </div>
+
+        <!-- Notes -->
+
+        <div class="form-group full">
+          <label for="notes">
+            Notes
+          </label>
+
+          <textarea
+            id="notes"
+            formControlName="notes"
+            rows="3"
+            placeholder="Optional notes"
+          ></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================= -->
+    <!-- OUTSTANDING SUMMARY -->
+    <!-- ================================================= -->
+
+    @if (form.get('partyId')?.value) {
+      <section class="outstanding-section">
+        @if (summaryLoading()) {
+          <div class="outstanding-loading">
+            <i class="bi bi-arrow-repeat"></i>
+            Loading outstanding information...
+          </div>
+        } @else if (outstandingSummary(); as summary) {
+          <div class="outstanding-header">
+            <div>
+              <span class="eyebrow">
+                {{ getOutstandingTitle() }}
+              </span>
+
+              <h3>{{ summary.partyName }}</h3>
+            </div>
+
+            <div class="outstanding-main-amount">
+              <span>Current Due</span>
+
+              <strong>
+                {{ summary.dueAmount | number: '1.2-2' }}
+              </strong>
+
+              <small>
+                {{ form.get('currencyCode')?.value }}
+              </small>
+            </div>
+          </div>
+
+          <div class="outstanding-grid">
+            <div class="outstanding-item">
+              <span>Total Amount</span>
+
+              <strong>
+                {{ summary.totalAmount | number: '1.2-2' }}
+              </strong>
+            </div>
+
+            <div class="outstanding-item">
+              <span>Total Paid</span>
+
+              <strong>
+                {{ summary.paidAmount | number: '1.2-2' }}
+              </strong>
+            </div>
+
+            <div class="outstanding-item due">
+              <span>Outstanding Due</span>
+
+              <strong>
+                {{ summary.dueAmount | number: '1.2-2' }}
+              </strong>
+            </div>
+
+            <div class="outstanding-item">
+              <span>{{ getDocumentLabel() }}</span>
+
+              <strong>
+                {{ summary.documentCount }}
+              </strong>
+            </div>
+          </div>
+
+          @if (summary.dueAmount <= 0) {
+            <div class="outstanding-empty-message">
+              <i class="bi bi-check-circle"></i>
+
+              This {{ getPartyLabel().toLowerCase() }} currently has no outstanding balance.
+            </div>
+          }
+        }
+      </section>
+    }
+
+    <!-- ================================================= -->
+    <!-- ALLOCATION -->
+    <!-- ================================================= -->
+
+    <section class="allocation-section">
+      <div class="allocation-box">
+        <div>
+          <h3>Allocation</h3>
+
+          <p>
+            @if (form.get('autoAllocate')?.value) {
+              System will automatically allocate this payment
+              using FIFO.
+            } @else {
+              Allocate the payment manually against open documents.
+            }
+          </p>
+        </div>
+
+        <label class="switch-row">
+          <input
+            type="checkbox"
+            formControlName="autoAllocate"
+          />
+
+          <span>Auto Allocate</span>
+        </label>
+      </div>
+
+      @if (!form.get('autoAllocate')?.value) {
+        <div class="manual-allocation">
+          @if (allocations.controls.length > 0) {
+            <div class="allocation-table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Reference</th>
+
+                    <th class="text-end">
+                      Due Amount
+                    </th>
+
+                    <th width="220">
+                      Allocate
+                    </th>
+
+                    <th class="text-end">
+                      Remaining
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody formArrayName="allocations">
+                  @if (
+                    form.get('paymentType')?.value ===
+                    'RECEIPT'
+                  ) {
+                    @for (
+                      group of allocations.controls;
+                      track $index
+                    ) {
+                      <tr [formGroupName]="$index">
+                        <td>
+                          <strong>
+                            {{
+                              getInvoiceById(
+                                group.get('referenceId')?.value
+                              )?.invoiceNumber
+                            }}
+                          </strong>
+                        </td>
+
+                        <td class="text-end">
+                          {{
+                            getInvoiceById(
+                              group.get('referenceId')?.value
+                            )?.dueAmount
+                              | number: '1.2-2'
+                          }}
+                        </td>
+
+                        <td>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            formControlName="allocatedAmount"
+                            [class.invalid-input]="
+                              isAllocationInvalid($index)
+                            "
+                          />
+
+                          @if (
+                            isAllocationInvalid($index)
+                          ) {
+                            <small class="error-text">
+                              Cannot exceed due amount
+                            </small>
+                          }
+                        </td>
+
+                        <td class="text-end">
+                          {{
+                            remainingDue(
+                              getInvoiceById(
+                                group.get('referenceId')?.value
+                              )?.dueAmount ?? 0,
+                              group.get('allocatedAmount')?.value
+                            )
+                              | number: '1.2-2'
+                          }}
+                        </td>
+                      </tr>
+                    }
+                  } @else {
+                    @for (
+                      group of allocations.controls;
+                      track $index
+                    ) {
+                      <tr [formGroupName]="$index">
+                        <td>
+                          <strong>
+                            {{
+                              getBillById(
+                                group.get('referenceId')?.value
+                              )?.billNumber
+                            }}
+                          </strong>
+                        </td>
+
+                        <td class="text-end">
+                          {{
+                            getBillById(
+                              group.get('referenceId')?.value
+                            )?.dueAmount
+                              | number: '1.2-2'
+                          }}
+                        </td>
+
+                        <td>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            formControlName="allocatedAmount"
+                            [class.invalid-input]="
+                              isAllocationInvalid($index)
+                            "
+                          />
+
+                          @if (
+                            isAllocationInvalid($index)
+                          ) {
+                            <small class="error-text">
+                              Cannot exceed due amount
+                            </small>
+                          }
+                        </td>
+
+                        <td class="text-end">
+                          {{
+                            remainingDue(
+                              getBillById(
+                                group.get('referenceId')?.value
+                              )?.dueAmount ?? 0,
+                              group.get('allocatedAmount')?.value
+                            )
+                              | number: '1.2-2'
+                          }}
+                        </td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <div class="allocation-summary">
+              <div>
+                <span>Total Allocated</span>
+
+                <strong>
+                  {{ allocationTotal | number: '1.2-2' }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Unallocated</span>
+
+                <strong>
+                  {{ unallocatedAmount | number: '1.2-2' }}
+                </strong>
+              </div>
+            </div>
+          } @else if (form.get('partyId')?.value) {
+            <div class="empty-allocation">
+              <i class="bi bi-inbox"></i>
+
+              <strong>
+                No outstanding
+                {{
+                  form.get('paymentType')?.value ===
+                  'RECEIPT'
+                    ? 'invoices'
+                    : 'vendor bills'
+                }}
+              </strong>
+
+              <span>
+                There are no open documents available for manual allocation.
+              </span>
+            </div>
+          } @else {
+            <div class="empty-allocation">
+              <i class="bi bi-person-check"></i>
+
+              <strong>
+                Select a {{ getPartyLabel().toLowerCase() }}
+              </strong>
+
+              <span>
+                Outstanding documents will appear here.
+              </span>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <!-- ================================================= -->
+    <!-- PAYMENT SUMMARY -->
+    <!-- ================================================= -->
+
+    <section class="summary-section">
+      <div class="summary-card">
+        <span>Payment Amount</span>
+
+        <strong>
+          {{
+            (form.get('amount')?.value || 0)
+              | number: '1.2-2'
+          }}
+        </strong>
+
+        <small>
+          {{ form.get('currencyCode')?.value }}
+        </small>
+      </div>
+
+      @if (outstandingSummary(); as summary) {
+        <div class="summary-card">
+          <span>Outstanding Before Payment</span>
+
+          <strong>
+            {{ summary.dueAmount | number: '1.2-2' }}
+          </strong>
+
+          <small>
+            {{ form.get('currencyCode')?.value }}
+          </small>
+        </div>
+
+        <div class="summary-card">
+          <span>Estimated Due After Payment</span>
+
+          <strong>
+            {{
+              remainingDue(
+                summary.dueAmount,
+                form.get('amount')?.value ?? 0
+              )
+                | number: '1.2-2'
+            }}
+          </strong>
+
+          <small>
+            {{ form.get('currencyCode')?.value }}
+          </small>
+        </div>
+      }
+
+      <div class="hint-card">
+        <i class="bi bi-info-circle"></i>
+
+        <div>
+          <strong>Accounting Effect</strong>
+
+          <span>
+            @if (
+              form.get('paymentType')?.value ===
+              'RECEIPT'
+            ) {
+              Dr Cash/Bank, Cr Accounts Receivable
+            } @else {
+              Dr Accounts Payable, Cr Cash/Bank
+            }
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================= -->
+    <!-- ACTIONS -->
+    <!-- ================================================= -->
+
+    <div class="form-actions">
+      <a
+        routerLink="/payment"
+        class="cancel-btn"
+      >
+        Cancel
+      </a>
+
+      <button
+        class="save-btn"
+        type="submit"
+        [disabled]="
+          submitting() ||
+          hasInvalidAllocation()
+        "
+      >
+        <i class="bi bi-save"></i>
+
+        {{
+          submitting()
+            ? 'Saving...'
+            : 'Save Draft'
+        }}
+      </button>
+    </div>
+  </form>
+</div>

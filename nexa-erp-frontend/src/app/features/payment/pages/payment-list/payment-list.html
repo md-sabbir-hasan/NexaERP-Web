@@ -1,0 +1,166 @@
+<div class="payment-page">
+  <section class="payment-hero">
+    <div>
+      <span class="eyebrow">Finance Operations</span>
+      <h1>Payments</h1>
+      <p>Manage customer receipts and vendor payments with allocation tracking.</p>
+    </div>
+
+    <a *appHasPermission="'CREATE_PAYMENT'" routerLink="/payment/new" class="new-btn">
+      <i class="bi bi-plus-circle-fill"></i>
+      New Payment
+    </a>
+  </section>
+
+  <section class="summary-grid">
+    <div class="summary-card receipt">
+      <span>Customer Receipts</span>
+      <strong>{{ receiptTotal() | number:'1.2-2' }}</strong>
+    </div>
+
+    <div class="summary-card payment">
+      <span>Vendor Payments</span>
+      <strong>{{ paymentTotal() | number:'1.2-2' }}</strong>
+    </div>
+
+    <div class="summary-card draft">
+      <span>Draft Payments</span>
+      <strong>{{ draftCount() }}</strong>
+    </div>
+
+    <div class="summary-card posted">
+      <span>Posted Payments</span>
+      <strong>{{ postedCount() }}</strong>
+    </div>
+  </section>
+
+  <section class="filter-panel">
+    <input type="text" placeholder="Search payment no, party, method, transaction ref..." [ngModel]="search()"
+      (ngModelChange)="search.set($event)" />
+
+    <select [ngModel]="paymentType()" (ngModelChange)="paymentType.set($event)">
+      <option value="">All Types</option>
+      @for (type of paymentTypes; track type) {
+      <option [value]="type">{{ type }}</option>
+      }
+    </select>
+
+    <select [ngModel]="status()" (ngModelChange)="status.set($event)">
+      <option value="">All Status</option>
+      @for (s of statuses; track s) {
+      <option [value]="s">{{ s }}</option>
+      }
+    </select>
+
+    <button class="clear-btn" type="button" (click)="clearFilter()">
+      Clear
+    </button>
+  </section>
+
+  <section class="table-card">
+    <div class="table-header">
+      <h2>Payment List</h2>
+      <span>{{ filteredPayments().length }} Payments</span>
+    </div>
+
+    @if (loading()) {
+    <div class="loading-box">Loading...</div>
+    } @else {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Payment No</th>
+            <th>Type</th>
+            <th>Party</th>
+            <th>Date</th>
+            <th>Method</th>
+            <th class="text-end">Amount</th>
+            <th class="text-end">Allocated</th>
+            <th class="text-end">Unallocated</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (payment of filteredPayments(); track payment.id) {
+          <tr>
+            <td>
+              <strong>{{ payment.paymentNumber }}</strong>
+              @if (payment.transactionRef) {
+              <small>Ref: {{ payment.transactionRef }}</small>
+              }
+            </td>
+
+            <td>
+              <span class="type-pill" [class.receipt]="payment.paymentType === 'RECEIPT'"
+                [class.payment]="payment.paymentType === 'PAYMENT'">
+                {{ payment.paymentType }}
+              </span>
+            </td>
+
+            <td>{{ payment.partyName }}</td>
+
+            <td>{{ payment.paymentDate | date }}</td>
+
+            <td>{{ getMethodLabel(payment.paymentMethod) }}</td>
+
+            <td class="text-end amount-text" [class.receipt-amount]="payment.paymentType === 'RECEIPT'"
+              [class.payment-amount]="payment.paymentType === 'PAYMENT'">
+              {{ payment.amount | number:'1.2-2' }}
+            </td>
+
+            <td class="text-end">
+              {{ payment.allocatedAmount | number:'1.2-2' }}
+            </td>
+
+            <td class="text-end unallocated-text">
+              {{ payment.unallocatedAmount | number:'1.2-2' }}
+            </td>
+
+            <td>
+              <span class="status-badge" [class]="getStatusClass(payment.status)">
+                {{ payment.status }}
+              </span>
+            </td>
+
+            <td>
+              <div class="action-group">
+                <a [routerLink]="['/payment', payment.id]" class="btn-view">
+                  View
+                </a>
+
+                @if (payment.status === 'DRAFT') {
+                <button *appHasPermission="'POST_PAYMENT'" class="btn-post" type="button"
+                  (click)="postPayment(payment)">
+                  Post
+                </button>
+                }
+
+                @if (payment.status === 'POSTED') {
+                <button class="btn-light" type="button" (click)="downloadReceipt(payment)">
+                  PDF
+                </button>
+
+                <button *appHasPermission="'CANCEL_PAYMENT'" class="btn-cancel" type="button"
+                  (click)="cancelPayment(payment)">
+                  Cancel
+                </button>
+                }
+              </div>
+            </td>
+          </tr>
+          } @empty {
+          <tr>
+            <td colspan="10">
+              <div class="empty-box">No payments found</div>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  </section>
+</div>

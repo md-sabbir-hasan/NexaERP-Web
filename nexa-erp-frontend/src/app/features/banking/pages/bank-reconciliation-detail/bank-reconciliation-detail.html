@@ -1,0 +1,344 @@
+<div class="coa-page">
+  <section class="finance-hero">
+    <div>
+      <a class="back-link" routerLink="/banking/reconciliation">
+        <i class="bi bi-arrow-left"></i>
+        Back to Reconciliation History
+      </a>
+      <span class="eyebrow">Finance Console</span>
+      <h1>{{ reconciliation()?.bankAccountName }}</h1>
+      <p>Statement date: {{ reconciliation()?.statementDate }}</p>
+    </div>
+
+    <div class="hero-actions">
+      @if (!isCompleted) {
+        <button class="secondary-btn" type="button" (click)="openAdjustmentModal()">
+          <i class="bi bi-journal-plus"></i>
+          Add Adjustment
+        </button>
+        <button class="hero-btn" type="button" (click)="complete()">
+          <i class="bi bi-check2-circle"></i>
+          Complete
+        </button>
+      } @else {
+        <button class="secondary-btn" type="button" (click)="reopen()">
+          <i class="bi bi-arrow-counterclockwise"></i>
+          Reopen
+        </button>
+      }
+    </div>
+  </section>
+
+  @if (reconciliation(); as r) {
+    <section class="metric-grid">
+      <div class="metric-card">
+        <span>Bank Statement Balance</span>
+        <strong>{{ r.statementBalance | number: '1.2-2' }}</strong>
+        <small>As entered</small>
+      </div>
+
+      <div class="metric-card">
+        <span>Book Balance</span>
+        <strong>{{ r.bookBalance | number: '1.2-2' }}</strong>
+        <small>As of statement date</small>
+      </div>
+
+      <div class="metric-card credit">
+        <span>Deposits in Transit</span>
+        <strong>{{ r.depositsInTransit | number: '1.2-2' }}</strong>
+        <small>Unmatched credits</small>
+      </div>
+
+      <div class="metric-card debit">
+        <span>Outstanding Cheques</span>
+        <strong>{{ r.outstandingCheques | number: '1.2-2' }}</strong>
+        <small>Unmatched debits</small>
+      </div>
+    </section>
+
+    <section class="control-panel">
+      <span class="hint-note" style="margin: 0;" [style.background]="r.difference === 0 ? '#dcfce7' : '#fffbeb'" [style.color]="r.difference === 0 ? '#166534' : '#92400e'">
+        <i class="bi" [class.bi-check-circle]="r.difference === 0" [class.bi-exclamation-triangle]="r.difference !== 0"></i>
+        @if (r.difference === 0) {
+          Balances tie out — ready to complete.
+        } @else {
+          Difference: {{ r.difference | number: '1.2-2' }}. Match remaining transactions or add adjustments.
+        }
+      </span>
+
+      <span
+        class="status"
+        [class.reconciled]="r.status === 'COMPLETED'"
+        [class.pending]="r.status === 'IN_PROGRESS'"
+      >
+        {{ r.status === 'COMPLETED' ? 'Completed' : 'In Progress' }}
+      </span>
+    </section>
+  }
+
+  <section class="accounts-panel">
+    <div class="panel-header">
+      <h2>Import Bank Statement (CSV)</h2>
+      <span>Optional — auto-suggests matches</span>
+    </div>
+    <div class="control-panel" style="border: 0; border-radius: 0;">
+      <input type="file" accept=".csv" (change)="onCsvFileSelected($event)" [disabled]="isCompleted" />
+      <button class="hero-btn" type="button" (click)="uploadStatement()" [disabled]="isCompleted || uploading()">
+        {{ uploading() ? 'Importing...' : 'Import & Auto-match' }}
+      </button>
+      <span class="hint-note" style="margin: 0;">
+        <i class="bi bi-info-circle"></i>
+        Columns: Date, Amount, Description (optional), Type (optional; CREDIT/DEBIT), Reference (optional)
+      </span>
+    </div>
+  </section>
+
+  @if (unmatchedStatementLines().length > 0 || matchedStatementLines().length > 0) {
+    <section class="accounts-panel">
+      <div class="panel-header">
+        <h2>Imported Statement Lines</h2>
+        <span>{{ unmatchedStatementLines().length }} need review</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Type</th>
+              <th class="text-end">Amount</th>
+              <th>Status</th>
+              @if (!isCompleted) {
+                <th>Action</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (line of statementLines(); track line.id) {
+              <tr>
+                <td>{{ line.lineDate }}</td>
+                <td>{{ line.description }}</td>
+                <td>
+                  <span class="type-badge" [class.credit]="line.transactionType === 'CREDIT'" [class.debit]="line.transactionType === 'DEBIT'">
+                    {{ line.transactionType }}
+                  </span>
+                </td>
+                <td class="text-end">{{ line.amount | number: '1.2-2' }}</td>
+                <td>
+                  <span class="status" [class.reconciled]="line.status === 'MATCHED'" [class.pending]="line.status === 'UNMATCHED'">
+                    {{ line.status === 'MATCHED' ? 'Matched · ' + line.matchedTransactionNumber : 'Unmatched' }}
+                  </span>
+                </td>
+                @if (!isCompleted) {
+                  <td>
+                    @if (line.status === 'UNMATCHED') {
+                      <div style="display: flex; gap: 6px; align-items: center;">
+                        <select style="height: 36px;" (change)="setLineMatchSelection(line.id, $any($event.target).value)">
+                          <option value="">Match to existing txn...</option>
+                          @for (t of candidatesForLine(line); track t.id) {
+                            <option [value]="t.id">{{ t.transactionNumber }} — {{ t.amount | number: '1.2-2' }}</option>
+                          }
+                        </select>
+                        <button class="icon-action success" type="button" (click)="matchLine(line)" title="Match">
+                          <i class="bi bi-check-lg"></i>
+                        </button>
+                        <button class="icon-action edit" type="button" (click)="openConvertToAdjustment(line)" title="Not in books yet — create adjustment">
+                          <i class="bi bi-journal-plus"></i>
+                        </button>
+                      </div>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <section class="accounts-panel">
+    <div class="panel-header">
+      <h2>Unmatched Transactions</h2>
+      @if (!isCompleted) {
+        <button class="hero-btn" type="button" style="padding: 8px 14px; font-size: 13px;" (click)="matchSelected()">
+          Match Selected ({{ selectedIds().size }})
+        </button>
+      }
+    </div>
+
+    @if (loading()) {
+      <div class="state-box">
+        <i class="bi bi-arrow-repeat spin"></i>
+        Loading...
+      </div>
+    } @else if (unmatched().length === 0) {
+      <div class="state-box">No unmatched transactions. Everything is cleared for this statement date.</div>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              @if (!isCompleted) {
+                <th></th>
+              }
+              <th>Transaction</th>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Description</th>
+              <th class="text-end">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of unmatched(); track t.id) {
+              <tr>
+                @if (!isCompleted) {
+                  <td>
+                    <input type="checkbox" [checked]="isSelected(t.id)" (change)="toggleSelect(t.id)" />
+                  </td>
+                }
+                <td><strong>{{ t.transactionNumber }}</strong><span>{{ t.referenceNumber }}</span></td>
+                <td>{{ t.transactionDate }}</td>
+                <td>
+                  <span class="type-badge" [class.credit]="t.transactionType === 'CREDIT'" [class.debit]="t.transactionType === 'DEBIT'">
+                    {{ t.transactionType }}
+                  </span>
+                </td>
+                <td>{{ t.description }}</td>
+                <td class="text-end">
+                  <span class="amount" [class.credit]="t.transactionType === 'CREDIT'" [class.debit]="t.transactionType === 'DEBIT'">
+                    {{ t.amount | number: '1.2-2' }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <section class="accounts-panel">
+    <div class="panel-header">
+      <h2>Matched This Session</h2>
+      <span>{{ matched().length }} items</span>
+    </div>
+
+    @if (matched().length === 0) {
+      <div class="state-box">Nothing matched yet.</div>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Transaction</th>
+              <th>Date</th>
+              <th>Type</th>
+              <th class="text-end">Amount</th>
+              @if (!isCompleted) {
+                <th class="text-end">Action</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of matched(); track t.id) {
+              <tr>
+                <td><strong>{{ t.transactionNumber }}</strong></td>
+                <td>{{ t.transactionDate }}</td>
+                <td>
+                  <span class="type-badge" [class.credit]="t.transactionType === 'CREDIT'" [class.debit]="t.transactionType === 'DEBIT'">
+                    {{ t.transactionType }}
+                  </span>
+                </td>
+                <td class="text-end">
+                  <span class="amount" [class.credit]="t.transactionType === 'CREDIT'" [class.debit]="t.transactionType === 'DEBIT'">
+                    {{ t.amount | number: '1.2-2' }}
+                  </span>
+                </td>
+                @if (!isCompleted) {
+                  <td class="text-end">
+                    <button class="icon-action danger" type="button" (click)="unmatchOne(t)" title="Unmatch">
+                      <i class="bi bi-x-circle"></i>
+                    </button>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  @if (showAdjustmentModal()) {
+    <div class="modal-backdrop" (click)="closeAdjustmentModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h2>Add Adjustment</h2>
+            <p>Something on the bank statement that isn't in your books yet (e.g. bank charge, interest).</p>
+          </div>
+          <button class="close-btn" type="button" (click)="closeAdjustmentModal()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <form [formGroup]="adjustmentForm" (ngSubmit)="submitAdjustment()">
+          <div class="modal-body">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Type</label>
+                <select formControlName="transactionType">
+                  <option value="DEBIT">Debit (bank charge, etc.)</option>
+                  <option value="CREDIT">Credit (interest, etc.)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Date</label>
+                <input type="date" formControlName="transactionDate" />
+              </div>
+
+              <div class="form-group">
+                <label>Amount</label>
+                <input type="number" step="0.01" formControlName="amount" />
+              </div>
+
+              <div class="form-group">
+                <label>Contra Account</label>
+                <select formControlName="contraAccountId">
+                  <option [ngValue]="null">Select account</option>
+                  @for (account of contraAccounts(); track account.id) {
+                    <option [ngValue]="account.id">{{ account.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-group full">
+                <label>Reference Number</label>
+                <input type="text" formControlName="referenceNumber" />
+              </div>
+
+              <div class="form-group full">
+                <label>Description</label>
+                <input type="text" formControlName="description" placeholder="e.g. Bank service charge - July" />
+                @if (adjustmentForm.controls.description.invalid && adjustmentForm.controls.description.touched) {
+                  <small>Description is required</small>
+                }
+              </div>
+            </div>
+
+            <div class="modal-actions">
+              <button class="secondary-btn" type="button" style="color:#334155;border-color:#cbd5e1;" (click)="closeAdjustmentModal()">
+                Cancel
+              </button>
+              <button class="hero-btn" type="submit" [disabled]="submitting()">
+                {{ submitting() ? 'Saving...' : 'Save & Match' }}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

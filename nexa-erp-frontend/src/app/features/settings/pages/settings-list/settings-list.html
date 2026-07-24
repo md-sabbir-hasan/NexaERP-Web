@@ -1,0 +1,79 @@
+<div class="settings-page">
+  <div class="page-header">
+    <h1>Settings</h1>
+    <p>Default ledger account mappings used across invoices, bills and journal entries</p>
+  </div>
+
+  @if (loading()) {
+    <div class="state-box">
+      <i class="bi bi-arrow-repeat spin"></i>
+      Loading settings...
+    </div>
+  } @else {
+    <div class="card">
+      <h2>Default account mappings</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Setting</th>
+            <th>Current account</th>
+            <th>Change to</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of mappingRows(); track row.key) {
+            <tr>
+              <td>
+                <div class="label">{{ row.label }}</div>
+                @if (row.description) {
+                  <div class="desc">{{ row.description }}</div>
+                }
+              </td>
+              <td>{{ accountLabel(row.currentAccountId) }}</td>
+              <td>
+                <select [(ngModel)]="row.selectedAccountId">
+                  <option [ngValue]="null">Select account</option>
+                  @for (account of accounts(); track account.id) {
+                    <option [ngValue]="account.id">{{ account.code }} · {{ account.name }}</option>
+                  }
+                </select>
+              </td>
+              <td class="actions">
+                <button
+                  type="button"
+                  class="save-btn"
+                  [disabled]="!isDirty(row) || row.saving"
+                  (click)="save(row)"
+                >
+                  {{ row.saving ? 'Saving...' : 'Save' }}
+                </button>
+                @if (isDirty(row)) {
+                  <button type="button" class="cancel-btn" (click)="reset(row)">Cancel</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card coming-soon-card">
+      <h2>Company &amp; feature settings</h2>
+      <p class="hint">
+        These keys exist on the backend but the update endpoint doesn't support editing
+        them yet - shown here for visibility only.
+      </p>
+
+      <ul class="coming-soon-list">
+        @for (key of comingSoonKeys; track key) {
+          <li>
+            <span>{{ labels[key] }}</span>
+            <span class="badge">Coming soon</span>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+</div>

@@ -1,0 +1,286 @@
+<div class="party-statement-page">
+  <section class="report-hero">
+    <div>
+      <span class="eyebrow">Financial Reports</span>
+      <h1>Party Statement</h1>
+      <p>
+        Review customer or vendor transactions, debit, credit and running
+        balance for a selected period.
+      </p>
+    </div>
+
+    <a routerLink="/reports" class="back-btn">
+      <i class="bi bi-arrow-left"></i>
+      Back to Reports
+    </a>
+  </section>
+
+  <section class="filter-card">
+    <div class="filter-header">
+      <div>
+        <h2>Report Parameters</h2>
+        <p>Select a party and date range to generate the statement.</p>
+      </div>
+    </div>
+
+    <div class="filter-grid">
+      <div class="form-group party-field">
+        <label for="partyId">Party</label>
+
+        <select
+          id="partyId"
+          [ngModel]="selectedPartyId()"
+          (ngModelChange)="selectedPartyId.set($event)"
+        >
+          <option [ngValue]="null">Select party</option>
+
+          @for (party of parties(); track party.id) {
+            <option [ngValue]="party.id">
+              {{ party.code }} - {{ party.name }} ({{ party.type }})
+            </option>
+          }
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="fromDate">From Date</label>
+
+        <input
+          id="fromDate"
+          type="date"
+          [ngModel]="fromDate()"
+          (ngModelChange)="fromDate.set($event)"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="toDate">To Date</label>
+
+        <input
+          id="toDate"
+          type="date"
+          [ngModel]="toDate()"
+          (ngModelChange)="toDate.set($event)"
+        />
+      </div>
+
+      <div class="filter-actions">
+        <button type="button" class="clear-btn" (click)="clearReport()">
+          <i class="bi bi-arrow-counterclockwise"></i>
+          Clear
+        </button>
+
+        <button
+          type="button"
+          class="generate-btn"
+          [disabled]="loading()"
+          (click)="generateReport()"
+        >
+          <i
+            class="bi"
+            [class.bi-search]="!loading()"
+            [class.bi-arrow-repeat]="loading()"
+            [class.spin]="loading()"
+          ></i>
+
+          {{ loading() ? 'Generating...' : 'Generate' }}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  @if (loading()) {
+    <div class="state-box">
+      <i class="bi bi-arrow-repeat spin"></i>
+      <span>Generating party statement...</span>
+    </div>
+  } @else if (statement()) {
+    <section class="statement-header-card">
+      <div>
+        <span class="statement-label">Party Statement</span>
+        <h2>{{ statement()!.partyName }}</h2>
+
+        <p>
+          {{ statement()!.partyType }} ·
+          {{ statement()!.fromDate | date:'dd MMM yyyy' }}
+          to
+          {{ statement()!.toDate | date:'dd MMM yyyy' }}
+        </p>
+      </div>
+
+      <div class="report-actions">
+        <button type="button" class="print-btn" (click)="printReport()">
+          <i class="bi bi-printer"></i>
+          Print
+        </button>
+
+        <button type="button" class="pdf-btn" (click)="downloadPdf()">
+          <i class="bi bi-file-earmark-pdf"></i>
+          Download PDF
+        </button>
+
+        <button type="button" class="excel-btn" (click)="downloadExcel()">
+          <i class="bi bi-file-earmark-excel"></i>
+          Export Excel
+        </button>
+      </div>
+    </section>
+
+    <section class="summary-grid">
+      <div class="summary-card opening">
+        <span>Opening Balance</span>
+        <strong>
+          {{ statement()!.openingBalance | number:'1.2-2' }}
+        </strong>
+      </div>
+
+      <div class="summary-card debit">
+        <span>Total Debit</span>
+        <strong>{{ totalDebit() | number:'1.2-2' }}</strong>
+      </div>
+
+      <div class="summary-card credit">
+        <span>Total Credit</span>
+        <strong>{{ totalCredit() | number:'1.2-2' }}</strong>
+      </div>
+
+      <div class="summary-card closing">
+        <span>Closing Balance</span>
+        <strong>
+          {{ statement()!.closingBalance | number:'1.2-2' }}
+        </strong>
+      </div>
+    </section>
+
+    <section class="table-card">
+      <div class="table-header">
+        <div>
+          <h2>Statement Entries</h2>
+          <p>Chronological party transactions and running balance.</p>
+        </div>
+
+        <span>{{ statement()!.entries.length }} Entries</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Reference</th>
+              <th>Description</th>
+              <th class="text-end">Debit</th>
+              <th class="text-end">Credit</th>
+              <th class="text-end">Running Balance</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr class="opening-row">
+              <td>
+                {{ statement()!.fromDate | date:'dd MMM yyyy' }}
+              </td>
+
+              <td>
+                <span class="entry-type opening-balance">
+                  Opening Balance
+                </span>
+              </td>
+
+              <td>-</td>
+
+              <td>Opening balance brought forward</td>
+
+              <td class="text-end">-</td>
+              <td class="text-end">-</td>
+
+              <td class="text-end balance-cell">
+                {{ statement()!.openingBalance | number:'1.2-2' }}
+              </td>
+            </tr>
+
+            @for (entry of statement()!.entries; track $index) {
+              <tr>
+                <td>{{ entry.date | date:'dd MMM yyyy' }}</td>
+
+                <td>
+                  <span
+                    class="entry-type"
+                    [class]="getEntryTypeClass(entry.type)"
+                  >
+                    {{ getEntryTypeLabel(entry.type) }}
+                  </span>
+                </td>
+
+                <td>
+                  <strong>{{ entry.referenceNumber || '-' }}</strong>
+                </td>
+
+                <td>{{ entry.description || '-' }}</td>
+
+                <td class="text-end debit-cell">
+                  @if (entry.debit && entry.debit > 0) {
+                    {{ entry.debit | number:'1.2-2' }}
+                  } @else {
+                    -
+                  }
+                </td>
+
+                <td class="text-end credit-cell">
+                  @if (entry.credit && entry.credit > 0) {
+                    {{ entry.credit | number:'1.2-2' }}
+                  } @else {
+                    -
+                  }
+                </td>
+
+                <td class="text-end balance-cell">
+                  {{ entry.runningBalance | number:'1.2-2' }}
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7">
+                  <div class="empty-box">
+                    No transactions found for the selected period.
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+
+          <tfoot>
+            <tr>
+              <td colspan="4">Period Totals</td>
+
+              <td class="text-end">
+                {{ totalDebit() | number:'1.2-2' }}
+              </td>
+
+              <td class="text-end">
+                {{ totalCredit() | number:'1.2-2' }}
+              </td>
+
+              <td class="text-end">
+                {{ statement()!.closingBalance | number:'1.2-2' }}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  } @else {
+    <section class="empty-report">
+      <div class="empty-icon">
+        <i class="bi bi-file-earmark-bar-graph"></i>
+      </div>
+
+      <h2>Generate Party Statement</h2>
+
+      <p>
+        Select a party and date range, then click Generate to view the report.
+      </p>
+    </section>
+  }
+</div>

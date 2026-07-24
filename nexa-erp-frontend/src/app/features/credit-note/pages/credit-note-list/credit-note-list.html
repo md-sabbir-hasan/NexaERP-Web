@@ -1,0 +1,133 @@
+<div class="credit-note-page">
+  <section class="page-header">
+    <div>
+      <span class="eyebrow">Sales Adjustments</span>
+      <h1>Credit Notes</h1>
+      <p>Customer returns and invoice adjustments.</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-secondary" type="button" (click)="load()">
+        <i class="bi bi-arrow-clockwise"></i> Refresh</button
+      ><a
+        *appHasPermission="'CREATE_CREDIT_NOTE'"
+        routerLink="/credit-notes/new"
+        class="btn-primary"
+        ><i class="bi bi-plus-lg"></i> New Credit Note</a
+      >
+    </div>
+  </section>
+  <section class="summary-grid">
+    <article>
+      <span>Total</span><strong>{{ total() }}</strong>
+    </article>
+    <article>
+      <span>Draft</span><strong>{{ draft() }}</strong>
+    </article>
+    <article>
+      <span>Approved</span><strong>{{ approved() }}</strong>
+    </article>
+    <article>
+      <span>Posted</span><strong>{{ posted() }}</strong>
+    </article>
+  </section>
+  <section class="content-card">
+    <div class="toolbar">
+      <input
+        type="search"
+        placeholder="Search..."
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event)"
+      /><select [ngModel]="status()" (ngModelChange)="status.set($event)">
+        <option value="ALL">All statuses</option>
+        <option value="DRAFT">Draft</option>
+        <option value="APPROVED">Approved</option>
+        <option value="POSTED">Posted</option>
+        <option value="CANCELLED">Cancelled</option>
+      </select>
+    </div>
+    @if (loading()) {
+      <div class="state-box">Loading credit notes...</div>
+    } @else if (filtered().length === 0) {
+      <div class="state-box">No credit notes found</div>
+    } @else {
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Credit Note</th>
+              <th>Invoice</th>
+              <th>Customer</th>
+              <th>Date</th>
+              <th>Reason</th>
+              <th>Status</th>
+              <th>Total</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (note of filtered(); track note.id) {
+              <tr>
+                <td>
+                  <strong>{{ note.creditNoteNumber }}</strong
+                  ><small>{{ note.reference || '' }}</small>
+                </td>
+                <td>{{ note.invoiceNumber }}</td>
+                <td>{{ note.partyName }}</td>
+                <td>{{ note.creditNoteDate | date: 'dd MMM yyyy' }}</td>
+                <td>{{ reasonLabel(note.reason) }}</td>
+                <td>
+                  <span class="status-badge" [class]="statusClass(note.status)">{{
+                    note.status
+                  }}</span>
+                </td>
+                <td>{{ note.grandTotal | number: '1.2-2' }} BDT</td>
+                <td>
+                  <div class="action-group">
+                    @if (note.status === 'DRAFT') {
+                      <a
+                        *appHasPermission="'EDIT_CREDIT_NOTE'"
+                        [routerLink]="['/credit-notes', note.id, 'edit']"
+                        class="icon-btn"
+                        ><i class="bi bi-pencil"></i></a
+                      ><button
+                        *appHasPermission="'APPROVE_CREDIT_NOTE'"
+                        class="icon-btn success"
+                        (click)="approve(note)"
+                      >
+                        <i class="bi bi-check2-circle"></i></button
+                      ><button
+                        *appHasPermission="'DELETE_CREDIT_NOTE'"
+                        class="icon-btn danger"
+                        (click)="remove(note)"
+                      >
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    }
+                    @if (note.status === 'APPROVED') {
+                      <button
+                        *appHasPermission="'POST_CREDIT_NOTE'"
+                        class="icon-btn success"
+                        (click)="post(note)"
+                      >
+                        <i class="bi bi-send-check"></i>
+                      </button>
+                    }
+                    @if (note.status !== 'CANCELLED') {
+                      <button
+                        *appHasPermission="'CANCEL_CREDIT_NOTE'"
+                        class="icon-btn warning"
+                        (click)="cancel(note)"
+                      >
+                        <i class="bi bi-x-circle"></i>
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

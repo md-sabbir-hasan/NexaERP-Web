@@ -1,0 +1,155 @@
+:host {
+  display: block;
+}
+.credit-note-form-page {
+  padding: 26px;
+}
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.page-header h1 {
+  margin: 4px 0;
+  color: #172033;
+}
+.page-header p {
+  margin: 0;
+  color: #64748b;
+}
+.eyebrow {
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.btn-primary,
+.btn-secondary {
+  padding: 10px 15px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 700;
+}
+.btn-primary {
+  background: #2563eb;
+  color: #fff;
+  border: 0;
+}
+.btn-secondary {
+  background: #fff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+.form-card,
+.invoice-card,
+.totals-card {
+  background: #fff;
+  border: 1px solid #dbe3ef;
+  border-radius: 16px;
+  margin-bottom: 18px;
+}
+.form-grid {
+  padding: 22px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+.form-field label {
+  display: block;
+  margin-bottom: 7px;
+  font-weight: 700;
+  color: #334155;
+}
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px;
+}
+.full {
+  grid-column: 1/-1;
+}
+.invoice-summary {
+  padding: 18px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.invoice-summary span,
+.invoice-summary strong {
+  display: block;
+}
+.invoice-summary span {
+  color: #64748b;
+  font-size: 12px;
+}
+.table-responsive {
+  overflow: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th,
+td {
+  padding: 13px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+}
+th {
+  background: #f8fafc;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+.qty {
+  width: 110px;
+  padding: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+.totals-card {
+  padding: 20px;
+  text-align: right;
+}
+.totals-card span,
+.totals-card strong {
+  display: block;
+}
+.totals-card strong {
+  font-size: 28px;
+  color: #172033;
+}
+.totals-card small {
+  color: #dc2626;
+}
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-bottom: 24px;
+}
+.state-box {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+}
+@media (max-width: 800px) {
+  .page-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .form-grid,
+  .invoice-summary {
+    grid-template-columns: 1fr;
+  }
+  .full {
+    grid-column: auto;
+  }
+  .credit-note-form-page {
+    padding: 16px;
+  }
+}

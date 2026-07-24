@@ -1,0 +1,221 @@
+<div class="coa-page">
+  <section class="finance-hero">
+    <div>
+      <a class="back-link" routerLink="/fixed-assets">
+        <i class="bi bi-arrow-left"></i>
+        Back to Asset Register
+      </a>
+      <span class="eyebrow">Finance Console</span>
+      <h1>{{ asset()?.assetCode }} — {{ asset()?.name }}</h1>
+      <p>{{ asset()?.description }}</p>
+    </div>
+
+    <div class="hero-actions">
+      @if (isActive) {
+        <button class="secondary-btn" type="button" (click)="openRunModal()">
+          <i class="bi bi-calculator"></i>
+          Run Depreciation
+        </button>
+      }
+      @if (!isDisposed) {
+        <button class="hero-btn" type="button" (click)="openDisposeModal()">
+          <i class="bi bi-box-arrow-right"></i>
+          Dispose
+        </button>
+      }
+    </div>
+  </section>
+
+  @if (asset(); as a) {
+    <section class="metric-grid">
+      <div class="metric-card">
+        <span>Purchase Cost</span>
+        <strong>{{ a.purchaseCost | number: '1.2-2' }}</strong>
+        <small>{{ a.purchaseDate }}</small>
+      </div>
+      <div class="metric-card debit">
+        <span>Accumulated Depreciation</span>
+        <strong>{{ a.accumulatedDepreciation | number: '1.2-2' }}</strong>
+        <small>as of {{ a.lastDepreciationDate ?? '—' }}</small>
+      </div>
+      <div class="metric-card credit">
+        <span>Book Value</span>
+        <strong>{{ a.bookValue | number: '1.2-2' }}</strong>
+        <small>salvage: {{ a.salvageValue | number: '1.2-2' }}</small>
+      </div>
+      <div class="metric-card">
+        <span>Method</span>
+        <strong>{{ a.depreciationMethod === 'STRAIGHT_LINE' ? 'Straight Line' : 'Reducing Balance' }}</strong>
+        <small>
+          {{ a.usefulLifeYears }} years
+          @if (a.reducingBalanceRate) {
+            · {{ a.reducingBalanceRate }}%/yr
+          }
+        </small>
+      </div>
+    </section>
+
+    <section class="control-panel">
+      <span
+        class="status"
+        [class.reconciled]="a.status === 'ACTIVE'"
+        [class.pending]="a.status === 'FULLY_DEPRECIATED'"
+        [class.voided]="a.status === 'DISPOSED'"
+      >
+        {{ a.status.replace('_', ' ') }}
+      </span>
+
+      @if (a.status === 'DISPOSED') {
+        <span class="hint-note" style="margin: 0;">
+          <i class="bi bi-info-circle"></i>
+          Disposed {{ a.disposalDate }} for {{ a.disposalProceeds | number: '1.2-2' }} —
+          {{ (a.disposalGainLoss ?? 0) >= 0 ? 'Gain' : 'Loss' }} of {{ (a.disposalGainLoss ?? 0) | number: '1.2-2' }}
+        </span>
+      }
+    </section>
+  }
+
+  <section class="accounts-panel">
+    <div class="panel-header">
+      <h2>Depreciation History</h2>
+      <span>{{ history().length }} entries</span>
+    </div>
+
+    @if (loading()) {
+      <div class="state-box">
+        <i class="bi bi-arrow-repeat spin"></i>
+        Loading...
+      </div>
+    } @else if (history().length === 0) {
+      <div class="state-box">No depreciation posted yet for this asset.</div>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th class="text-end">Depreciation</th>
+              <th class="text-end">Accum. Dep. After</th>
+              <th class="text-end">Book Value After</th>
+              <th>Journal</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (h of history(); track h.id) {
+              <tr>
+                <td><strong>{{ h.periodDate }}</strong></td>
+                <td class="text-end">{{ h.depreciationAmount | number: '1.2-2' }}</td>
+                <td class="text-end">{{ h.accumulatedDepreciationAfter | number: '1.2-2' }}</td>
+                <td class="text-end">{{ h.bookValueAfter | number: '1.2-2' }}</td>
+                <td>#{{ h.journalEntryId }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  @if (showRunModal()) {
+    <div class="modal-backdrop" (click)="closeRunModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h2>Run Depreciation</h2>
+            <p>Posts a depreciation journal for this asset up to the selected date.</p>
+          </div>
+          <button class="close-btn" type="button" (click)="closeRunModal()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group full">
+              <label>As-of Date</label>
+              <input type="date" [ngModel]="runDate()" (ngModelChange)="runDate.set($event)" />
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button class="secondary-btn" type="button" style="color:#334155;border-color:#cbd5e1;" (click)="closeRunModal()">
+              Cancel
+            </button>
+            <button class="hero-btn" type="button" [disabled]="submitting()" (click)="submitRun()">
+              {{ submitting() ? 'Running...' : 'Run' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showDisposeModal()) {
+    <div class="modal-backdrop" (click)="closeDisposeModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h2>Dispose Asset</h2>
+            <p>Removes the asset from the books and records any gain/loss on disposal.</p>
+          </div>
+          <button class="close-btn" type="button" (click)="closeDisposeModal()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <form [formGroup]="disposeForm" (ngSubmit)="submitDispose()">
+          <div class="modal-body">
+            <div class="form-grid">
+              <div class="form-group full">
+                <label>Disposal Date</label>
+                <input type="date" formControlName="disposalDate" />
+              </div>
+
+              <div class="form-group full">
+                <label>Disposal Proceeds</label>
+                <input type="number" step="0.01" formControlName="disposalProceeds" />
+                <small style="color:#64748b;font-weight:500;">
+                  Estimated gain/loss: {{ estimatedGainLoss | number: '1.2-2' }}
+                </small>
+              </div>
+
+              <div class="form-group full">
+                <label>Proceeds Account (if any proceeds received)</label>
+                <select formControlName="proceedsAccountId">
+                  <option [ngValue]="null">Select account</option>
+                  @for (account of accounts(); track account.id) {
+                    <option [ngValue]="account.id">{{ account.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-group full">
+                <label>Gain/Loss on Disposal Account</label>
+                <select formControlName="gainLossAccountId">
+                  <option [ngValue]="null">Select account</option>
+                  @for (account of accounts(); track account.id) {
+                    <option [ngValue]="account.id">{{ account.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-group full">
+                <label>Notes</label>
+                <textarea rows="2" formControlName="notes"></textarea>
+              </div>
+            </div>
+
+            <div class="modal-actions">
+              <button class="secondary-btn" type="button" style="color:#334155;border-color:#cbd5e1;" (click)="closeDisposeModal()">
+                Cancel
+              </button>
+              <button class="hero-btn" type="submit" [disabled]="submitting()">
+                {{ submitting() ? 'Processing...' : 'Confirm Disposal' }}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

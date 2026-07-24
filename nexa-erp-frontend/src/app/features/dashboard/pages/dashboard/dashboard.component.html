@@ -1,0 +1,1287 @@
+<div class="dashboard-page">
+  <!-- ===================================================== -->
+  <!-- Loading state                                         -->
+  <!-- ===================================================== -->
+
+  @if (loading()) {
+    <section class="dashboard-skeleton" aria-label="Loading dashboard" aria-busy="true">
+      <div class="skeleton-header">
+        <div>
+          <div class="skeleton skeleton-eyebrow"></div>
+          <div class="skeleton skeleton-title"></div>
+          <div class="skeleton skeleton-subtitle"></div>
+        </div>
+
+        <div class="skeleton skeleton-button"></div>
+      </div>
+
+      <div class="skeleton-kpi-grid">
+        @for (item of [1, 2, 3, 4]; track item) {
+          <article class="skeleton-card">
+            <div class="skeleton skeleton-icon"></div>
+            <div class="skeleton skeleton-label"></div>
+            <div class="skeleton skeleton-value"></div>
+            <div class="skeleton skeleton-line"></div>
+          </article>
+        }
+      </div>
+
+      <div class="skeleton-content-grid">
+        <div class="skeleton-card skeleton-chart-card">
+          <div class="skeleton skeleton-section-title"></div>
+          <div class="skeleton skeleton-chart"></div>
+        </div>
+
+        <div class="skeleton-card skeleton-budget-card">
+          <div class="skeleton skeleton-section-title"></div>
+          <div class="skeleton skeleton-circle"></div>
+          <div class="skeleton skeleton-line"></div>
+          <div class="skeleton skeleton-line short"></div>
+        </div>
+      </div>
+    </section>
+  } @else {
+    <!-- =================================================== -->
+    <!-- Dashboard header                                    -->
+    <!-- =================================================== -->
+
+    <header class="dashboard-header">
+      <div class="dashboard-heading">
+        <div class="heading-mark" aria-hidden="true">
+          <i class="bi bi-grid-1x2-fill"></i>
+        </div>
+
+        <div>
+          <span class="dashboard-eyebrow"> Finance command center </span>
+
+          <h1>Business Overview</h1>
+
+          <div class="dashboard-header-meta">
+            <span>
+              <i class="bi bi-calendar3"></i>
+              {{ today | date: 'EEEE, dd MMMM yyyy' }}
+            </span>
+
+            @if (summary(); as dashboard) {
+              <span>
+                <i class="bi bi-clock"></i>
+                Server:
+                {{ dashboard.system.serverTime | date: 'dd MMM yyyy, hh:mm a' }}
+              </span>
+
+              <span>
+                <i class="bi bi-globe2"></i>
+                {{ dashboard.system.serverTimezone }}
+              </span>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-header-actions">
+        @if (lastUpdatedAt(); as updatedAt) {
+          <span class="last-updated"> Updated {{ updatedAt | date: 'hh:mm:ss a' }} </span>
+        }
+
+        <button
+          type="button"
+          class="refresh-button"
+          [disabled]="refreshing()"
+          (click)="refreshDashboard()"
+        >
+          <i class="bi bi-arrow-clockwise" [class.is-spinning]="refreshing()"></i>
+
+          <span>
+            {{ refreshing() ? 'Refreshing...' : 'Refresh' }}
+          </span>
+        </button>
+      </div>
+    </header>
+
+    <!-- =================================================== -->
+    <!-- Error banner                                        -->
+    <!-- =================================================== -->
+
+    @if (errorMessage(); as message) {
+      <section class="dashboard-error" role="alert">
+        <div class="error-icon">
+          <i class="bi bi-exclamation-triangle"></i>
+        </div>
+
+        <div class="error-copy">
+          <strong>Unable to load dashboard</strong>
+          <p>{{ message }}</p>
+        </div>
+
+        <button type="button" class="error-retry-button" (click)="retryLoad()">
+          <i class="bi bi-arrow-repeat"></i>
+          Retry
+        </button>
+      </section>
+    }
+
+    @if (summary(); as dashboard) {
+      @if (hasVisibleDashboardWidget()) {
+        <!-- =============================================== -->
+        <!-- Primary finance KPIs                            -->
+        <!-- =============================================== -->
+
+        <section class="dashboard-section" aria-labelledby="financial-overview-title">
+          <div class="section-heading">
+            <div>
+              <span class="section-kicker">Live position</span>
+              <h2 id="financial-overview-title">Financial Overview</h2>
+            </div>
+
+            <span class="section-caption"> Values calculated from current posted records </span>
+          </div>
+
+          <div class="kpi-grid">
+            @if (canViewCashPosition()) {
+              <article class="kpi-card kpi-card-cash">
+                <div class="kpi-card-top">
+                  <div class="kpi-icon">
+                    <i class="bi bi-bank"></i>
+                  </div>
+
+                  <span class="kpi-status kpi-status-positive">
+                    <i class="bi bi-circle-fill"></i>
+                    Live
+                  </span>
+                </div>
+
+                <div class="kpi-content">
+                  <span class="kpi-label">Cash Position</span>
+
+                  <strong class="kpi-value">
+                    ৳{{ displayValues().cashPosition | number: '1.2-2' }}
+                  </strong>
+
+                  <p>Current available position across cash and bank accounts.</p>
+                </div>
+
+                <a routerLink="/banking" class="kpi-link" aria-label="View banking">
+                  View banking
+                  <i class="bi bi-arrow-up-right"></i>
+                </a>
+              </article>
+            }
+
+            @if (canViewReceivable()) {
+              <article class="kpi-card kpi-card-receivable">
+                <div class="kpi-card-top">
+                  <div class="kpi-icon">
+                    <i class="bi bi-receipt"></i>
+                  </div>
+
+                  @if (dashboard.business.overdueInvoiceCount > 0) {
+                    <span class="kpi-status kpi-status-danger">
+                      {{ dashboard.business.overdueInvoiceCount }}
+                      overdue
+                    </span>
+                  } @else {
+                    <span class="kpi-status kpi-status-positive"> Current </span>
+                  }
+                </div>
+
+                <div class="kpi-content">
+                  <span class="kpi-label"> Accounts Receivable </span>
+
+                  <strong class="kpi-value">
+                    ৳{{ displayValues().accountsReceivable | number: '1.2-2' }}
+                  </strong>
+
+                  <p>Outstanding customer invoice balance.</p>
+                </div>
+
+                <div class="kpi-footer">
+                  <div>
+                    <span>Overdue amount</span>
+                    <strong>
+                      ৳{{ dashboard.business.overdueInvoiceAmount | number: '1.2-2' }}
+                    </strong>
+                  </div>
+
+                  <a routerLink="/invoice" class="kpi-link" aria-label="View invoices">
+                    View
+                    <i class="bi bi-arrow-up-right"></i>
+                  </a>
+                </div>
+              </article>
+            }
+
+            @if (canViewPayable()) {
+              <article class="kpi-card kpi-card-payable">
+                <div class="kpi-card-top">
+                  <div class="kpi-icon">
+                    <i class="bi bi-file-earmark-text"></i>
+                  </div>
+
+                  @if (dashboard.business.overdueBillCount > 0) {
+                    <span class="kpi-status kpi-status-warning">
+                      {{ dashboard.business.overdueBillCount }}
+                      overdue
+                    </span>
+                  } @else {
+                    <span class="kpi-status kpi-status-positive"> Current </span>
+                  }
+                </div>
+
+                <div class="kpi-content">
+                  <span class="kpi-label"> Accounts Payable </span>
+
+                  <strong class="kpi-value">
+                    ৳{{ displayValues().accountsPayable | number: '1.2-2' }}
+                  </strong>
+
+                  <p>Current vendor and expense obligations.</p>
+                </div>
+
+                <div class="kpi-footer">
+                  <div>
+                    <span>Overdue bills</span>
+                    <strong> ৳{{ dashboard.business.overdueBillAmount | number: '1.2-2' }} </strong>
+                  </div>
+
+                  <a routerLink="/vendor-bill" class="kpi-link" aria-label="View vendor bills">
+                    View
+                    <i class="bi bi-arrow-up-right"></i>
+                  </a>
+                </div>
+              </article>
+            }
+
+            @if (canViewExpenseSummary()) {
+              <article class="kpi-card kpi-card-expense">
+                <div class="kpi-card-top">
+                  <div class="kpi-icon">
+                    <i class="bi bi-wallet2"></i>
+                  </div>
+
+                  <span class="kpi-status kpi-status-neutral"> This month </span>
+                </div>
+
+                <div class="kpi-content">
+                  <span class="kpi-label"> Posted Expenses </span>
+
+                  <strong class="kpi-value">
+                    ৳{{ displayValues().postedThisMonthTotal | number: '1.2-2' }}
+                  </strong>
+
+                  <p>Total expenses posted during the current month.</p>
+                </div>
+
+                <div class="kpi-footer">
+                  <div>
+                    <span>Draft amount</span>
+                    <strong> ৳{{ dashboard.expense.draftTotalAmount | number: '1.2-2' }} </strong>
+                  </div>
+
+                  <a routerLink="/expense" class="kpi-link" aria-label="View expenses">
+                    View
+                    <i class="bi bi-arrow-up-right"></i>
+                  </a>
+                </div>
+              </article>
+            }
+          </div>
+        </section>
+
+        <!-- =============================================== -->
+        <!-- Attention center                                -->
+        <!-- =============================================== -->
+
+        @if (canViewAttentionCenter() && attentionItems().length > 0) {
+          <section class="dashboard-section attention-section" aria-labelledby="attention-title">
+            <div class="section-heading">
+              <div>
+                <span class="section-kicker"> Requires review </span>
+                <h2 id="attention-title">Attention Center</h2>
+              </div>
+
+              <span class="attention-count">
+                {{ attentionItems().length }}
+                {{ attentionItems().length === 1 ? 'item' : 'items' }}
+              </span>
+            </div>
+
+            <div class="attention-grid">
+              @for (item of attentionItems(); track item.id) {
+                <a
+                  [routerLink]="item.route"
+                  class="attention-card"
+                  [class.attention-critical]="item.type === 'critical'"
+                  [class.attention-warning]="item.type === 'warning'"
+                  [class.attention-info]="item.type === 'info'"
+                >
+                  <div class="attention-icon">
+                    <i class="bi" [class]="item.icon"></i>
+                  </div>
+
+                  <div class="attention-content">
+                    <strong>{{ item.title }}</strong>
+                    <span>{{ item.description }}</span>
+
+                    @if (item.amount !== undefined) {
+                      <b> ৳{{ item.amount | number: '1.2-2' }} </b>
+                    }
+                  </div>
+
+                  <i class="bi bi-chevron-right attention-arrow"></i>
+                </a>
+              }
+            </div>
+          </section>
+        }
+
+        <!-- =============================================== -->
+        <!-- Financial analytics                             -->
+        <!-- =============================================== -->
+
+        @if (canViewTrendChart() || canViewBudget()) {
+          <section class="dashboard-section" aria-labelledby="analytics-title">
+            <div class="section-heading">
+              <div>
+                <span class="section-kicker"> Performance analysis </span>
+                <h2 id="analytics-title">Financial Analytics</h2>
+              </div>
+            </div>
+
+            <div class="analytics-grid">
+              <!-- Revenue vs expense chart -->
+
+              @if (canViewTrendChart()) {
+                <article class="dashboard-card trend-card">
+                  <header class="card-header">
+                    <div>
+                      <span class="card-eyebrow"> Monthly movement </span>
+                      <h3>Revenue vs Expense</h3>
+                    </div>
+
+                    <div class="chart-legend">
+                      <span>
+                        <i class="legend-dot revenue-dot"></i>
+                        Revenue
+                      </span>
+
+                      <span>
+                        <i class="legend-dot expense-dot"></i>
+                        Expense
+                      </span>
+                    </div>
+                  </header>
+
+                  @if (trendChart(); as chart) {
+                    @if (chart.hasData) {
+                      <div class="chart-summary">
+                        <div>
+                          <span>Total revenue</span>
+                          <strong> ৳{{ chart.totalRevenue | number: '1.2-2' }} </strong>
+                        </div>
+
+                        <div>
+                          <span>Total expense</span>
+                          <strong> ৳{{ chart.totalExpense | number: '1.2-2' }} </strong>
+                        </div>
+
+                        <div>
+                          <span>Net movement</span>
+                          <strong
+                            [class.negative-value]="chart.totalRevenue - chart.totalExpense < 0"
+                          >
+                            ৳{{ chart.totalRevenue - chart.totalExpense | number: '1.2-2' }}
+                          </strong>
+                        </div>
+                      </div>
+
+                      <div class="chart-container" (mouseleave)="clearTrendPoint()">
+                        <svg
+                          class="trend-chart"
+                          [attr.viewBox]="'0 0 ' + chart.width + ' ' + chart.height"
+                          role="img"
+                          aria-label="Revenue and expense trend chart"
+                        >
+                          <defs>
+                            <linearGradient id="revenueAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop
+                                offset="0%"
+                                stop-color="currentColor"
+                                stop-opacity="0.22"
+                              ></stop>
+                              <stop offset="100%" stop-color="currentColor" stop-opacity="0"></stop>
+                            </linearGradient>
+
+                            <linearGradient id="expenseAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop
+                                offset="0%"
+                                stop-color="currentColor"
+                                stop-opacity="0.14"
+                              ></stop>
+                              <stop offset="100%" stop-color="currentColor" stop-opacity="0"></stop>
+                            </linearGradient>
+                          </defs>
+
+                          @for (grid of chart.gridLines; track grid.y) {
+                            <line
+                              class="chart-grid-line"
+                              [attr.x1]="chart.plotLeft"
+                              [attr.x2]="chart.plotRight"
+                              [attr.y1]="grid.y"
+                              [attr.y2]="grid.y"
+                            ></line>
+
+                            <text
+                              class="chart-axis-label"
+                              [attr.x]="chart.plotLeft - 12"
+                              [attr.y]="grid.y + 4"
+                              text-anchor="end"
+                            >
+                              {{ grid.label }}
+                            </text>
+                          }
+
+                          @if (chart.hasNegativeValues) {
+                            <line
+                              class="chart-zero-line"
+                              [attr.x1]="chart.plotLeft"
+                              [attr.x2]="chart.plotRight"
+                              [attr.y1]="chart.zeroLineY"
+                              [attr.y2]="chart.zeroLineY"
+                            ></line>
+                          }
+
+                          <path
+                            class="chart-area revenue-area"
+                            [attr.d]="chart.revenueArea"
+                            fill="url(#revenueAreaGradient)"
+                          ></path>
+
+                          <path
+                            class="chart-area expense-area"
+                            [attr.d]="chart.expenseArea"
+                            fill="url(#expenseAreaGradient)"
+                          ></path>
+
+                          <path class="chart-line revenue-line" [attr.d]="chart.revenueLine"></path>
+
+                          <path class="chart-line expense-line" [attr.d]="chart.expenseLine"></path>
+
+                          @if (selectedTrendX() !== null) {
+                            <line
+                              class="chart-hover-line"
+                              [attr.x1]="selectedTrendX()"
+                              [attr.x2]="selectedTrendX()"
+                              [attr.y1]="chart.plotTop"
+                              [attr.y2]="chart.plotBottom"
+                            ></line>
+                          }
+
+                          @for (point of chart.revenuePoints; track $index; let index = $index) {
+                            <circle
+                              class="chart-point chart-point-revenue"
+                              [class.is-active]="selectedTrendIndex() === index"
+                              [attr.cx]="point.x"
+                              [attr.cy]="point.y"
+                              r="5"
+                              tabindex="0"
+                              (mouseenter)="selectTrendPoint(index)"
+                              (focus)="selectTrendPoint(index)"
+                              (blur)="clearTrendPoint()"
+                            ></circle>
+                          }
+
+                          @for (point of chart.expensePoints; track $index; let index = $index) {
+                            <circle
+                              class="chart-point chart-point-expense"
+                              [class.is-active]="selectedTrendIndex() === index"
+                              [attr.cx]="point.x"
+                              [attr.cy]="point.y"
+                              r="5"
+                              tabindex="0"
+                              (mouseenter)="selectTrendPoint(index)"
+                              (focus)="selectTrendPoint(index)"
+                              (blur)="clearTrendPoint()"
+                            ></circle>
+                          }
+
+                          @for (month of chart.months; track $index; let index = $index) {
+                            <text
+                              class="chart-month-label"
+                              [attr.x]="chart.revenuePoints[index].x"
+                              [attr.y]="chart.plotBottom + 32"
+                              text-anchor="middle"
+                            >
+                              {{ month }}
+                            </text>
+                          }
+                        </svg>
+
+                        @if (selectedTrend(); as selected) {
+                          <div class="chart-tooltip">
+                            <strong>{{ selected.month }}</strong>
+
+                            <span>
+                              Revenue
+                              <b> ৳{{ selected.revenue | number: '1.2-2' }} </b>
+                            </span>
+
+                            <span>
+                              Expense
+                              <b> ৳{{ selected.expense | number: '1.2-2' }} </b>
+                            </span>
+                          </div>
+                        }
+                      </div>
+                    } @else {
+                      <div class="empty-state chart-empty-state">
+                        <div class="empty-state-icon">
+                          <i class="bi bi-graph-up"></i>
+                        </div>
+
+                        <h4>No financial movement yet</h4>
+                        <p>Revenue and expense trends will appear after transactions are posted.</p>
+                      </div>
+                    }
+                  } @else {
+                    <div class="empty-state chart-empty-state">
+                      <div class="empty-state-icon">
+                        <i class="bi bi-bar-chart"></i>
+                      </div>
+
+                      <h4>No trend data available</h4>
+                      <p>Monthly revenue and expense data has not been generated yet.</p>
+                    </div>
+                  }
+                </article>
+              }
+
+              <!-- Budget health -->
+
+              @if (canViewBudget()) {
+                <article class="dashboard-card budget-card">
+                  <header class="card-header">
+                    <div>
+                      <span class="card-eyebrow"> Planning control </span>
+                      <h3>Budget Health</h3>
+                    </div>
+
+                    <a routerLink="/budget" class="card-header-link">
+                      View budget
+                      <i class="bi bi-arrow-up-right"></i>
+                    </a>
+                  </header>
+
+                  @if (budgetView(); as budget) {
+                    <div class="budget-name-row">
+                      <div class="budget-icon">
+                        <i class="bi bi-pie-chart-fill"></i>
+                      </div>
+
+                      <div>
+                        <span>Active budget</span>
+                        <strong>
+                          {{ budget.activeBudgetName || 'Current Budget' }}
+                        </strong>
+                      </div>
+
+                      <span class="budget-state" [class.over-budget]="budget.expenseOverBudget">
+                        {{ budget.expenseOverBudget ? 'Over budget' : 'On track' }}
+                      </span>
+                    </div>
+
+                    <div class="budget-metric-block">
+                      <div class="budget-metric-header">
+                        <div>
+                          <span>Expense utilization</span>
+                          <strong>
+                            {{ budget.expenseUtilizationPercent | number: '1.0-1' }}%
+                          </strong>
+                        </div>
+
+                        <div class="budget-amount-pair">
+                          <span>
+                            Actual
+                            <b> ৳{{ budget.totalExpenseActualYtd | number: '1.2-2' }} </b>
+                          </span>
+
+                          <span>
+                            Budget
+                            <b> ৳{{ budget.totalExpenseBudget | number: '1.2-2' }} </b>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div
+                        class="progress-track"
+                        role="progressbar"
+                        aria-label="Expense budget utilization"
+                        [attr.aria-valuenow]="budget.expenseProgressPercent"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                      >
+                        <span
+                          class="progress-fill expense-progress"
+                          [class.is-over]="budget.expenseOverBudget"
+                          [style.width.%]="budget.expenseProgressPercent"
+                        ></span>
+                      </div>
+                    </div>
+
+                    <div class="budget-metric-block">
+                      <div class="budget-metric-header">
+                        <div>
+                          <span>Revenue achievement</span>
+                          <strong>
+                            {{ budget.revenueAchievementPercent | number: '1.0-1' }}%
+                          </strong>
+                        </div>
+
+                        <div class="budget-amount-pair">
+                          <span>
+                            Actual
+                            <b> ৳{{ budget.totalRevenueActualYtd | number: '1.2-2' }} </b>
+                          </span>
+
+                          <span>
+                            Target
+                            <b> ৳{{ budget.totalRevenueBudget | number: '1.2-2' }} </b>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div
+                        class="progress-track"
+                        role="progressbar"
+                        aria-label="Revenue target achievement"
+                        [attr.aria-valuenow]="budget.revenueProgressPercent"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                      >
+                        <span
+                          class="progress-fill revenue-progress"
+                          [class.target-exceeded]="budget.revenueTargetExceeded"
+                          [style.width.%]="budget.revenueProgressPercent"
+                        ></span>
+                      </div>
+                    </div>
+
+                    @if (budget.topAccounts.length > 0) {
+                      <div class="budget-accounts">
+                        <div class="subsection-heading">
+                          <strong>Highest utilization</strong>
+                          <span>
+                            {{ budget.topAccounts.length }}
+                            accounts
+                          </span>
+                        </div>
+
+                        <div class="budget-account-list">
+                          @for (account of budget.topAccounts; track account.accountName) {
+                            <div class="budget-account-item">
+                              <div class="budget-account-header">
+                                <span>
+                                  {{ account.accountName }}
+                                </span>
+
+                                <strong [class.over-value]="account.isOverBudget">
+                                  {{ account.utilizationPercent | number: '1.0-1' }}%
+                                </strong>
+                              </div>
+
+                              <div class="mini-progress-track">
+                                <span
+                                  [class.is-over]="account.isOverBudget"
+                                  [style.width.%]="account.progressPercent"
+                                ></span>
+                              </div>
+
+                              <div class="budget-account-values">
+                                <span> Actual: ৳{{ account.actualAmount | number: '1.2-2' }} </span>
+
+                                <span> Budget: ৳{{ account.budgetAmount | number: '1.2-2' }} </span>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  } @else {
+                    <div class="empty-state budget-empty-state">
+                      <div class="empty-state-icon">
+                        <i class="bi bi-pie-chart"></i>
+                      </div>
+
+                      <h4>No active budget</h4>
+                      <p>Activate a budget to view utilization and revenue achievement.</p>
+
+                      <a routerLink="/budget" class="empty-state-action">
+                        Open budgets
+                        <i class="bi bi-arrow-right"></i>
+                      </a>
+                    </div>
+                  }
+                </article>
+              }
+
+              @if (canViewBudget()) {
+                <article class="dashboard-card expense-donut-card">
+                  <header class="card-header">
+                    <div>
+                      <span class="card-eyebrow"> Account composition </span>
+                      <h3>Expense Distribution</h3>
+                    </div>
+
+                    <a routerLink="/budget" class="card-header-link">
+                      View details
+                      <i class="bi bi-arrow-up-right"></i>
+                    </a>
+                  </header>
+
+                  @if (expenseDonut(); as donut) {
+                    <div class="expense-donut-content">
+                      <div class="expense-donut-chart">
+                        <svg
+                          viewBox="0 0 180 180"
+                          role="img"
+                          aria-label="Expense distribution by account"
+                        >
+                          <circle
+                            class="donut-background"
+                            cx="90"
+                            cy="90"
+                            [attr.r]="donut.radius"
+                          ></circle>
+
+                          @for (segment of donut.segments; track segment.accountName) {
+                            <circle
+                              class="donut-segment"
+                              [class]="segment.colorClass"
+                              cx="90"
+                              cy="90"
+                              [attr.r]="donut.radius"
+                              [attr.stroke-dasharray]="segment.strokeDasharray"
+                              [attr.stroke-dashoffset]="segment.strokeDashoffset"
+                            >
+                              <title>
+                                {{ segment.accountName }}: ৳{{
+                                  segment.amount | number: '1.2-2'
+                                }}
+                                ({{ segment.percentage | number: '1.0-1' }}%)
+                              </title>
+                            </circle>
+                          }
+                        </svg>
+
+                        <div class="expense-donut-center">
+                          <span>Total actual</span>
+
+                          <strong> ৳{{ formatCompact(donut.totalAmount) }} </strong>
+
+                          <small>YTD expense</small>
+                        </div>
+                      </div>
+
+                      <div class="expense-donut-legend">
+                        @for (
+                          segment of donut.segments;
+                          track segment.accountName;
+                          let index = $index
+                        ) {
+                          <div class="donut-legend-item">
+                            <span class="donut-legend-color" [class]="segment.colorClass"></span>
+
+                            <div class="donut-legend-copy">
+                              <strong>
+                                {{ segment.accountName }}
+                              </strong>
+
+                              <span> ৳{{ segment.amount | number: '1.2-2' }} </span>
+                            </div>
+
+                            <b> {{ segment.percentage | number: '1.0-1' }}% </b>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="empty-state donut-empty-state">
+                      <div class="empty-state-icon">
+                        <i class="bi bi-pie-chart"></i>
+                      </div>
+
+                      <h4>No expense distribution</h4>
+
+                      <p>
+                        Account-wise expense distribution will appear when the active budget
+                        contains actual expense values.
+                      </p>
+                    </div>
+                  }
+                </article>
+              }
+            </div>
+          </section>
+        }
+
+        <!-- =============================================== -->
+        <!-- Operations                                      -->
+        <!-- =============================================== -->
+
+        @if (canViewJournal() || canViewAccounts() || canViewExpenseSummary()) {
+          <section class="dashboard-section" aria-labelledby="operations-title">
+            <div class="section-heading">
+              <div>
+                <span class="section-kicker"> Accounting operations </span>
+                <h2 id="operations-title">Operations Summary</h2>
+              </div>
+            </div>
+
+            <div class="operations-grid">
+              @if (canViewJournal()) {
+                <article class="dashboard-card operation-card">
+                  <div class="operation-card-header">
+                    <div class="operation-icon journal-icon">
+                      <i class="bi bi-journal-text"></i>
+                    </div>
+
+                    <div>
+                      <span>Journal Entries</span>
+                      <strong>
+                        {{ dashboard.finance.totalJournalEntries }}
+                      </strong>
+                    </div>
+
+                    <a routerLink="/journals" aria-label="Open journal entries">
+                      <i class="bi bi-arrow-up-right"></i>
+                    </a>
+                  </div>
+
+                  <div class="operation-breakdown">
+                    <div>
+                      <span class="breakdown-dot posted"></span>
+                      <label>Posted</label>
+                      <strong>
+                        {{ dashboard.finance.postedJournalEntries }}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span class="breakdown-dot draft"></span>
+                      <label>Draft</label>
+                      <strong>
+                        {{ dashboard.finance.draftJournalEntries }}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span class="breakdown-dot reversed"></span>
+                      <label>Reversed</label>
+                      <strong>
+                        {{ dashboard.finance.reversedJournalEntries }}
+                      </strong>
+                    </div>
+                  </div>
+                </article>
+              }
+
+              @if (canViewAccounts()) {
+                <article class="dashboard-card operation-card">
+                  <div class="operation-card-header">
+                    <div class="operation-icon accounts-icon">
+                      <i class="bi bi-diagram-3"></i>
+                    </div>
+
+                    <div>
+                      <span>Chart of Accounts</span>
+                      <strong>
+                        {{ dashboard.finance.totalAccounts }}
+                      </strong>
+                    </div>
+
+                    <a routerLink="/accounts" aria-label="Open chart of accounts">
+                      <i class="bi bi-arrow-up-right"></i>
+                    </a>
+                  </div>
+
+                  <p class="operation-description">
+                    Total accounts available in the current financial structure.
+                  </p>
+
+                  <a routerLink="/accounts" class="operation-action">
+                    Explore accounts
+                    <i class="bi bi-chevron-right"></i>
+                  </a>
+                </article>
+              }
+
+              @if (canViewExpenseSummary()) {
+                <article class="dashboard-card operation-card">
+                  <div class="operation-card-header">
+                    <div class="operation-icon expense-icon">
+                      <i class="bi bi-wallet2"></i>
+                    </div>
+
+                    <div>
+                      <span>Expense Workflow</span>
+                      <strong>
+                        {{ dashboard.expense.draftCount + dashboard.expense.recurringActiveCount }}
+                      </strong>
+                    </div>
+
+                    <a routerLink="/expense" aria-label="Open expenses">
+                      <i class="bi bi-arrow-up-right"></i>
+                    </a>
+                  </div>
+
+                  <div class="expense-workflow-list">
+                    <div>
+                      <span>
+                        <i class="bi bi-pencil-square"></i>
+                        Draft expenses
+                      </span>
+
+                      <strong>
+                        {{ dashboard.expense.draftCount }}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>
+                        <i class="bi bi-arrow-repeat"></i>
+                        Active recurring
+                      </span>
+
+                      <strong>
+                        {{ dashboard.expense.recurringActiveCount }}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>
+                        <i class="bi bi-calendar-event"></i>
+                        Due soon
+                      </span>
+
+                      <strong>
+                        {{ dashboard.expense.recurringDueSoonCount }}
+                      </strong>
+                    </div>
+                  </div>
+                </article>
+              }
+            </div>
+          </section>
+        }
+
+        <!-- =============================================== -->
+        <!-- Admin insights                                  -->
+        <!-- =============================================== -->
+
+        @if (
+          canViewUserAdministration() || canViewSecurityAdministration() || canViewServiceStatus()
+        ) {
+          <section class="dashboard-section" aria-labelledby="administration-title">
+            <div class="section-heading">
+              <div>
+                <span class="section-kicker"> Restricted overview </span>
+                <h2 id="administration-title">Administration</h2>
+              </div>
+
+              <span class="admin-only-badge">
+                <i class="bi bi-shield-lock"></i>
+                Permission controlled
+              </span>
+            </div>
+
+            <div class="admin-grid">
+              @if (canViewUserAdministration()) {
+                <article class="dashboard-card admin-card">
+                  <header class="admin-card-header">
+                    <div>
+                      <span class="card-eyebrow"> Access management </span>
+                      <h3>Users</h3>
+                    </div>
+
+                    <a routerLink="/users" aria-label="Manage users">
+                      <i class="bi bi-arrow-up-right"></i>
+                    </a>
+                  </header>
+
+                  <div class="admin-primary-stat">
+                    <strong>{{ dashboard.users.total }}</strong>
+                    <span>Total users</span>
+                  </div>
+
+                  <div class="user-status-grid">
+                    <div>
+                      <span class="user-status-dot active"></span>
+                      <label>Active</label>
+                      <strong>
+                        {{ dashboard.users.active }}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span class="user-status-dot pending"></span>
+                      <label>Pending</label>
+                      <strong>
+                        {{ dashboard.users.pending }}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span class="user-status-dot inactive"></span>
+                      <label>Inactive</label>
+                      <strong>
+                        {{ dashboard.users.inactive }}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span class="user-status-dot locked"></span>
+                      <label>Locked</label>
+                      <strong>
+                        {{ dashboard.users.locked }}
+                      </strong>
+                    </div>
+                  </div>
+                </article>
+              }
+
+              @if (canViewSecurityAdministration()) {
+                <article class="dashboard-card admin-card">
+                  <header class="admin-card-header">
+                    <div>
+                      <span class="card-eyebrow"> Authorization model </span>
+                      <h3>Security</h3>
+                    </div>
+
+                    <a routerLink="/roles" aria-label="Manage roles">
+                      <i class="bi bi-arrow-up-right"></i>
+                    </a>
+                  </header>
+
+                  <div class="security-metrics">
+                    <div>
+                      <div class="security-icon">
+                        <i class="bi bi-person-badge"></i>
+                      </div>
+
+                      <span>Roles</span>
+                      <strong>
+                        {{ dashboard.security.totalRoles }}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <div class="security-icon">
+                        <i class="bi bi-key"></i>
+                      </div>
+
+                      <span>Permissions</span>
+                      <strong>
+                        {{ dashboard.security.totalPermissions }}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <p class="admin-card-note">
+                    Dashboard visibility is controlled by user permissions, not hardcoded role
+                    names.
+                  </p>
+                </article>
+              }
+
+              @if (canViewServiceStatus()) {
+                <article class="dashboard-card admin-card">
+                  <header class="admin-card-header">
+                    <div>
+                      <span class="card-eyebrow"> Reported services </span>
+                      <h3>Service Status</h3>
+                    </div>
+
+                    <span class="version-badge"> v{{ dashboard.system.applicationVersion }} </span>
+                  </header>
+
+                  <div class="service-list">
+                    @for (service of reportedServices(); track service.id) {
+                      <div class="service-item">
+                        <div>
+                          <i class="bi" [class]="service.icon"></i>
+
+                          <span>{{ service.label }}</span>
+                        </div>
+
+                        <span class="service-status" [class]="healthClass(service.status)">
+                          <i class="bi bi-circle-fill"></i>
+                          {{ service.status }}
+                        </span>
+                      </div>
+                    }
+                  </div>
+
+                  <div class="system-meta">
+                    <span>
+                      Environment
+                      <strong>
+                        {{ dashboard.system.environment }}
+                      </strong>
+                    </span>
+
+                    <span>
+                      Timezone
+                      <strong>
+                        {{ dashboard.system.serverTimezone }}
+                      </strong>
+                    </span>
+                  </div>
+                </article>
+              }
+            </div>
+          </section>
+        }
+
+        <!-- =============================================== -->
+        <!-- Quick actions + recent activity                 -->
+        <!-- =============================================== -->
+
+        @if (quickActions().length > 0 || canViewRecentActivities()) {
+          <section class="dashboard-section" aria-labelledby="workspace-title">
+            <div class="section-heading">
+              <div>
+                <span class="section-kicker"> Daily workspace </span>
+                <h2 id="workspace-title">Actions & Activity</h2>
+              </div>
+            </div>
+
+            <div class="workspace-grid">
+              @if (quickActions().length > 0) {
+                <article class="dashboard-card quick-actions-card">
+                  <header class="card-header">
+                    <div>
+                      <span class="card-eyebrow"> Permission based </span>
+                      <h3>Quick Actions</h3>
+                    </div>
+                  </header>
+
+                  <div class="quick-action-grid">
+                    @for (action of quickActions(); track action.id) {
+                      <a
+                        [routerLink]="action.route"
+                        class="quick-action"
+                        [class.quick-action-primary]="action.emphasis === 'primary'"
+                      >
+                        <div class="quick-action-icon">
+                          <i class="bi" [class]="action.icon"></i>
+                        </div>
+
+                        <div>
+                          <strong>{{ action.label }}</strong>
+                          <span>
+                            {{ action.description }}
+                          </span>
+                        </div>
+
+                        <i class="bi bi-arrow-up-right quick-action-arrow"></i>
+                      </a>
+                    }
+                  </div>
+                </article>
+              }
+
+              @if (canViewRecentActivities()) {
+                <article class="dashboard-card activity-card">
+                  <header class="card-header">
+                    <div>
+                      <span class="card-eyebrow"> Audit timeline </span>
+                      <h3>Recent Activity</h3>
+                    </div>
+
+                    <a routerLink="/audit" class="card-header-link">
+                      View all
+                      <i class="bi bi-arrow-up-right"></i>
+                    </a>
+                  </header>
+
+                  @if (dashboard.recentActivities.length > 0) {
+                    <div class="activity-timeline">
+                      @for (
+                        activity of dashboard.recentActivities;
+                        track activityIdentity(activity, $index)
+                      ) {
+                        <div class="activity-item">
+                          <div class="activity-marker" [class]="activityClass(activity.action)">
+                            <i class="bi" [class]="activityIcon(activity.action)"></i>
+                          </div>
+
+                          <div class="activity-content">
+                            <div class="activity-title-row">
+                              <strong>
+                                {{ activity.action }}
+                                {{ formatEntityName(activity.entityName) }}
+                              </strong>
+
+                              <time>
+                                {{ activity.createdAt | date: 'dd MMM, hh:mm a' }}
+                              </time>
+                            </div>
+
+                            <p>
+                              {{ activity.userName || 'System user' }}
+
+                              @if (activity.entityId !== null && activity.entityId !== undefined) {
+                                <span> · Record #{{ activity.entityId }} </span>
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <div class="empty-state activity-empty-state">
+                      <div class="empty-state-icon">
+                        <i class="bi bi-clock-history"></i>
+                      </div>
+
+                      <h4>No recent activity</h4>
+                      <p>New system actions will appear here.</p>
+                    </div>
+                  }
+                </article>
+              }
+            </div>
+          </section>
+        }
+      } @else {
+        <!-- =============================================== -->
+        <!-- No permitted widgets                            -->
+        <!-- =============================================== -->
+
+        <section class="permission-empty-state">
+          <div class="permission-empty-icon">
+            <i class="bi bi-shield-lock"></i>
+          </div>
+
+          <span>Restricted workspace</span>
+          <h2>No dashboard widgets are available</h2>
+
+          <p>
+            Your account is active, but no dashboard permissions are currently assigned. Contact an
+            administrator if you need additional access.
+          </p>
+        </section>
+      }
+    } @else if (!errorMessage()) {
+      <section class="dashboard-empty">
+        <div class="empty-state-icon">
+          <i class="bi bi-grid"></i>
+        </div>
+
+        <h2>Dashboard data unavailable</h2>
+        <p>No dashboard information was returned.</p>
+
+        <button type="button" (click)="retryLoad()">Try again</button>
+      </section>
+    }
+  }
+</div>

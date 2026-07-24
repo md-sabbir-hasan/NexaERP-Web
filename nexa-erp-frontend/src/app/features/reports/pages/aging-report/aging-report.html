@@ -1,0 +1,276 @@
+<div class="aging-report-page">
+  <section class="report-hero">
+    <div>
+      <span class="eyebrow">Financial Reports</span>
+      <h1>Aging Report</h1>
+      <p>
+        Review outstanding customer and vendor balances by aging buckets.
+      </p>
+    </div>
+
+    <a routerLink="/reports" class="back-btn">
+      <i class="bi bi-arrow-left"></i>
+      Back to Reports
+    </a>
+  </section>
+
+  <section class="filter-card">
+    <div class="filter-header">
+      <div>
+        <h2>Report Parameters</h2>
+        <p>Select party type and report date.</p>
+      </div>
+    </div>
+
+    <div class="filter-grid">
+
+      <div class="form-group">
+        <label>Party Type</label>
+
+        <select
+          [ngModel]="partyType()"
+          (ngModelChange)="partyType.set($event)"
+        >
+          <option value="CUSTOMER">Customer</option>
+          <option value="VENDOR">Vendor</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>As Of Date</label>
+
+        <input
+          type="date"
+          [ngModel]="asOfDate()"
+          (ngModelChange)="asOfDate.set($event)"
+        />
+      </div>
+
+      <div class="filter-actions">
+        <button
+          type="button"
+          class="clear-btn"
+          (click)="clearReport()"
+        >
+          <i class="bi bi-arrow-counterclockwise"></i>
+          Clear
+        </button>
+
+        <button
+          type="button"
+          class="generate-btn"
+          [disabled]="loading()"
+          (click)="generateReport()"
+        >
+          <i
+            class="bi"
+            [class.bi-search]="!loading()"
+            [class.bi-arrow-repeat]="loading()"
+            [class.spin]="loading()"
+          ></i>
+
+          {{ loading() ? 'Generating...' : 'Generate' }}
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+  @if (loading()) {
+
+    <div class="state-box">
+      <i class="bi bi-arrow-repeat spin"></i>
+      Loading Aging Report...
+    </div>
+
+  } @else if (report()) {
+
+    <section class="report-header-card">
+
+      <div>
+
+        <span class="report-label">
+          {{ report()!.partyType }} Aging Report
+        </span>
+
+        <h2>
+          As of {{ report()!.asOfDate | date:'dd MMM yyyy' }}
+        </h2>
+
+        <p>
+          {{ rowCount() }} Parties
+        </p>
+
+      </div>
+
+      <div class="report-actions">
+
+        <button
+          class="print-btn"
+          type="button"
+          (click)="printReport()"
+        >
+          <i class="bi bi-printer"></i>
+          Print
+        </button>
+
+        <button
+          class="excel-btn"
+          type="button"
+          (click)="exportReport()"
+        >
+          <i class="bi bi-file-earmark-excel"></i>
+          Export Excel
+        </button>
+
+      </div>
+
+    </section>
+
+    <section class="summary-grid">
+
+      <div class="summary-card total">
+        <span>Total Outstanding</span>
+
+        <strong>
+          {{ report()!.totalDue | number:'1.2-2' }}
+        </strong>
+      </div>
+
+    </section>
+
+    <section class="table-card">
+
+      <div class="table-header">
+
+        <div>
+
+          <h2>Aging Details</h2>
+
+          <p>
+            Outstanding balances grouped by due period.
+          </p>
+
+        </div>
+
+      </div>
+
+      <div class="table-wrap">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>Party</th>
+              <th class="text-end">Current</th>
+              <th class="text-end">1–30</th>
+              <th class="text-end">31–60</th>
+              <th class="text-end">61–90</th>
+              <th class="text-end">91+</th>
+              <th class="text-end">Total Due</th>
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            @for (row of report()!.rows; track row.partyId) {
+
+              <tr>
+
+                <td>
+                  <strong>{{ row.partyName }}</strong>
+                </td>
+
+                <td class="text-end">
+                  {{ row.current | number:'1.2-2' }}
+                </td>
+
+                <td class="text-end">
+                  {{ row.days1to30 | number:'1.2-2' }}
+                </td>
+
+                <td class="text-end">
+                  {{ row.days31to60 | number:'1.2-2' }}
+                </td>
+
+                <td class="text-end">
+                  {{ row.days61to90 | number:'1.2-2' }}
+                </td>
+
+                <td class="text-end overdue-cell">
+                  {{ row.days91Plus | number:'1.2-2' }}
+                </td>
+
+                <td class="text-end total-cell">
+                  {{ row.totalDue | number:'1.2-2' }}
+                </td>
+
+              </tr>
+
+            } @empty {
+
+              <tr>
+
+                <td colspan="7">
+
+                  <div class="empty-box">
+
+                    No outstanding balances found.
+
+                  </div>
+
+                </td>
+
+              </tr>
+
+            }
+
+          </tbody>
+
+          <tfoot>
+
+            <tr>
+
+              <td colspan="6">
+                Total Outstanding
+              </td>
+
+              <td class="text-end">
+
+                {{ report()!.totalDue | number:'1.2-2' }}
+
+              </td>
+
+            </tr>
+
+          </tfoot>
+
+        </table>
+
+      </div>
+
+    </section>
+
+  } @else {
+
+    <section class="empty-report">
+
+      <div class="empty-icon">
+        <i class="bi bi-clock-history"></i>
+      </div>
+
+      <h2>Generate Aging Report</h2>
+
+      <p>
+
+        Select a party type and report date to view aging buckets.
+
+      </p>
+
+    </section>
+
+  }
+
+</div>

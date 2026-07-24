@@ -1,0 +1,493 @@
+.balance-sheet-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ==========================================================
+   Hero
+========================================================== */
+
+.report-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 28px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #0f172a, #1e3a8a);
+  color: #fff;
+
+  .eyebrow {
+    display: inline-block;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: #bfdbfe;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 34px;
+    font-weight: 900;
+  }
+
+  p {
+    margin-top: 8px;
+    max-width: 720px;
+    color: #dbeafe;
+    line-height: 1.6;
+  }
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.15);
+  color: white;
+  text-decoration: none;
+  font-weight: 800;
+
+  &:hover {
+    background: rgba(255,255,255,.25);
+  }
+}
+
+/* ==========================================================
+   Filter
+========================================================== */
+
+.filter-card,
+.report-header-card,
+.summary-card,
+.balance-status-card,
+.statement-card,
+.final-total-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+}
+
+.filter-card {
+  padding: 24px;
+}
+
+.filter-header {
+  margin-bottom: 20px;
+
+  h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 900;
+  }
+
+  p {
+    margin-top: 5px;
+    color: #64748b;
+  }
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: 250px auto;
+  gap: 18px;
+  align-items: end;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  label {
+    font-weight: 700;
+    color: #334155;
+  }
+
+  input {
+    height: 46px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    padding: 0 14px;
+
+    &:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
+  }
+}
+
+.filter-actions,
+.report-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.clear-btn,
+.generate-btn,
+.print-btn {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.excel-btn {
+  background: #dcfce7;
+  color: #166534;
+
+  &:hover {
+    background: #bbf7d0;
+  }
+}
+
+.clear-btn {
+  background: #f1f5f9;
+}
+
+.generate-btn {
+  background: #2563eb;
+  color: white;
+}
+
+.print-btn {
+  background: #e2e8f0;
+}
+
+/* ==========================================================
+   Header
+========================================================== */
+
+.report-header-card {
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .report-label {
+    color: #2563eb;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    margin: 6px 0;
+  }
+
+  p {
+    color: #64748b;
+  }
+}
+
+/* ==========================================================
+   Summary
+========================================================== */
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 18px;
+}
+
+.summary-card {
+  padding: 22px;
+
+  span {
+    color: #64748b;
+    font-weight: 700;
+  }
+
+  strong {
+    display: block;
+    margin-top: 8px;
+    font-size: 28px;
+    font-weight: 900;
+  }
+}
+
+.assets {
+  border-top: 5px solid #2563eb;
+}
+
+.liabilities {
+  border-top: 5px solid #dc2626;
+}
+
+.equity {
+  border-top: 5px solid #16a34a;
+}
+
+.combined {
+  border-top: 5px solid #7c3aed;
+}
+
+/* ==========================================================
+   Balanced
+========================================================== */
+
+.balance-status-card {
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.balance-status-card.balanced {
+  border-left: 6px solid #16a34a;
+  background: #f0fdf4;
+}
+
+.balance-status-card.unbalanced {
+  border-left: 6px solid #dc2626;
+  background: #fef2f2;
+}
+
+.status-values {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+
+  strong {
+    font-size: 26px;
+  }
+}
+
+.status-pill {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: white;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+/* ==========================================================
+   Tables
+========================================================== */
+
+.statement-grid {
+  display: grid;
+  grid-template-columns: 1.1fr .9fr;
+  gap: 20px;
+}
+
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.statement-card {
+  overflow: hidden;
+}
+
+.statement-card-header {
+  padding: 20px;
+  background: #f8fafc;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #e5e7eb;
+
+  span {
+    background: #e2e8f0;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+  }
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background: #f8fafc;
+
+  th {
+    padding: 14px;
+    text-align: left;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #64748b;
+  }
+}
+
+tbody td,
+tfoot td {
+  padding: 14px;
+  border-top: 1px solid #f1f5f9;
+}
+
+tfoot td {
+  font-weight: 900;
+}
+
+.asset-cell {
+  color: #2563eb;
+  font-weight: 900;
+}
+
+.liability-cell {
+  color: #dc2626;
+  font-weight: 900;
+}
+
+.equity-cell {
+  color: #16a34a;
+  font-weight: 900;
+}
+
+.profit-row {
+  background: #f8fafc;
+  font-weight: 800;
+}
+
+.grand-total-row {
+  background: #ecfeff;
+}
+
+.text-end {
+  text-align: right;
+}
+
+.empty-box {
+  padding: 40px;
+  text-align: center;
+  color: #64748b;
+}
+
+/* ==========================================================
+   Final Equation
+========================================================== */
+
+.final-total-card {
+  padding: 26px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 32px;
+
+  span {
+    display: block;
+    color: #64748b;
+  }
+
+  strong {
+    display: block;
+    margin-top: 8px;
+    font-size: 28px;
+    font-weight: 900;
+  }
+}
+
+.equals-sign {
+  font-size: 42px;
+  font-weight: 900;
+  color: #2563eb;
+}
+
+/* ==========================================================
+   Empty / Loading
+========================================================== */
+
+.state-box,
+.empty-report {
+  padding: 60px;
+  text-align: center;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+}
+
+.empty-icon {
+  width: 70px;
+  height: 70px;
+  margin: auto;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: #eff6ff;
+
+  i {
+    font-size: 30px;
+    color: #2563eb;
+  }
+}
+
+/* ==========================================================
+   Animation
+========================================================== */
+
+.spin {
+  animation: spin .8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================================
+   Responsive
+========================================================== */
+
+@media (max-width:1100px) {
+
+  .summary-grid {
+    grid-template-columns: repeat(2,1fr);
+  }
+
+  .statement-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width:768px) {
+
+  .report-hero,
+  .report-header-card,
+  .balance-status-card,
+  .final-total-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-actions,
+  .report-actions {
+    width: 100%;
+    flex-direction: column;
+
+    button {
+      width: 100%;
+    }
+  }
+
+  .status-values {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

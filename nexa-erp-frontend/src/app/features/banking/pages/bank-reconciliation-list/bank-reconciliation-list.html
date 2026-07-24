@@ -1,0 +1,156 @@
+<div class="coa-page">
+  <section class="finance-hero">
+    <div>
+      <a class="back-link" routerLink="/banking">
+        <i class="bi bi-arrow-left"></i>
+        Back to Bank Accounts
+      </a>
+      <span class="eyebrow">Finance Console</span>
+      <h1>Bank Reconciliation</h1>
+      <p>Match your bank statement against system records and tie out the balances.</p>
+    </div>
+
+    <div class="hero-actions">
+      <button
+      *appHasPermission="'CREATE_BANKING'"
+       class="hero-btn" type="button" (click)="openStartModal()">
+        <i class="bi bi-plus-circle"></i>
+        Start Reconciliation
+      </button>
+    </div>
+  </section>
+
+  <section class="control-panel">
+    <select [(ngModel)]="selectedAccountId" (ngModelChange)="onAccountChange()">
+      @for (account of bankAccounts(); track account.id) {
+        <option [ngValue]="account.id">{{ account.accountName }} ({{ account.bankName }})</option>
+      }
+    </select>
+
+    @if (selectedAccount) {
+      <span class="hint-note" style="margin: 0;">
+        <i class="bi bi-wallet2"></i>
+        Current book balance: {{ selectedAccount.currentBalance | number: '1.2-2' }}
+        {{ selectedAccount.currency }}
+      </span>
+    }
+  </section>
+
+  <section class="accounts-panel">
+    <div class="panel-header">
+      <h2>Reconciliation History</h2>
+      <span>{{ reconciliations().length }} sessions</span>
+    </div>
+
+    @if (loading()) {
+      <div class="state-box">
+        <i class="bi bi-arrow-repeat spin"></i>
+        Loading reconciliations...
+      </div>
+    } @else if (reconciliations().length === 0) {
+      <div class="state-box">No reconciliation done for this account yet. Start one to get going.</div>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Statement Date</th>
+              <th>Statement Balance</th>
+              <th>Book Balance</th>
+              <th>Difference</th>
+              <th>Status</th>
+              <th class="text-end">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of reconciliations(); track r.id) {
+              <tr>
+                <td><strong>{{ r.statementDate }}</strong></td>
+                <td>{{ r.statementBalance | number: '1.2-2' }}</td>
+                <td>{{ r.bookBalance | number: '1.2-2' }}</td>
+                <td>
+                  <span [class.amount]="true" [class.credit]="r.difference === 0" [class.debit]="r.difference !== 0">
+                    {{ r.difference | number: '1.2-2' }}
+                  </span>
+                </td>
+                <td>
+                  <span
+                    class="status"
+                    [class.reconciled]="r.status === 'COMPLETED'"
+                    [class.pending]="r.status === 'IN_PROGRESS'"
+                  >
+                    {{ r.status === 'COMPLETED' ? 'Completed' : 'In Progress' }}
+                  </span>
+                </td>
+                <td class="text-end">
+                  <button
+                  *appHasPermission="'CREATE_BANKING'"
+                   class="icon-action edit" type="button" (click)="openReconciliation(r)" title="Open">
+                    <i class="bi bi-arrow-up-right-circle"></i>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  @if (showModal()) {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h2>Start Bank Reconciliation</h2>
+            <p>{{ selectedAccount?.accountName }} — enter the statement details to begin matching.</p>
+          </div>
+          <button class="close-btn" type="button" (click)="closeModal()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <form [formGroup]="startForm" (ngSubmit)="submitStart()">
+          <div class="modal-body">
+            <div class="form-grid">
+              <div class="form-group full">
+                <label>Statement Date</label>
+                <input type="date" formControlName="statementDate" />
+                @if (startForm.controls.statementDate.invalid && startForm.controls.statementDate.touched) {
+                  <small>Statement date is required</small>
+                }
+              </div>
+
+              <div class="form-group full">
+                <label>Statement Closing Balance</label>
+                <input type="number" step="0.01" formControlName="statementBalance" />
+                <small style="color: #64748b; font-weight: 500;">
+                  As shown on your bank statement / netbanking, for this date.
+                </small>
+              </div>
+
+              <div class="form-group full">
+                <label>Notes (optional)</label>
+                <textarea rows="2" formControlName="notes"></textarea>
+              </div>
+            </div>
+
+            <div class="hint-note">
+              <i class="bi bi-info-circle"></i>
+              Only one reconciliation can be in progress per bank account at a time.
+            </div>
+
+            <div class="modal-actions">
+              <button class="secondary-btn" type="button" style="color:#334155;border-color:#cbd5e1;" (click)="closeModal()">
+                Cancel
+              </button>
+              <button class="hero-btn" type="submit" [disabled]="submitting()">
+                {{ submitting() ? 'Starting...' : 'Start' }}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

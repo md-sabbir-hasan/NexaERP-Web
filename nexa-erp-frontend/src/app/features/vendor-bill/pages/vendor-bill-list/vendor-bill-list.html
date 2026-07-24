@@ -1,0 +1,158 @@
+<div class="vendor-bill-page">
+  <section class="vendor-bill-hero">
+    <div>
+      <span class="eyebrow">Purchase Management</span>
+      <h1>Vendor Bills</h1>
+      <p>Create, approve, post and track supplier bills.</p>
+    </div>
+
+    <a *appHasPermission="'CREATE_VENDOR_BILL'" routerLink="/vendor-bill/new" class="new-btn">
+      <i class="bi bi-plus-circle"></i>
+      New Vendor Bill
+    </a>
+  </section>
+
+  <section class="summary-grid">
+    <div class="summary-card draft">
+      <span>Draft</span>
+      <strong>{{ draftCount() }}</strong>
+    </div>
+
+    <div class="summary-card approved">
+      <span>Approved</span>
+      <strong>{{ approvedCount() }}</strong>
+    </div>
+
+    <div class="summary-card posted">
+      <span>Posted</span>
+      <strong>{{ postedCount() }}</strong>
+    </div>
+
+    <div class="summary-card due">
+      <span>Total Due</span>
+      <strong>{{ totalDue() | number:'1.2-2' }}</strong>
+    </div>
+  </section>
+
+  <section class="filter-panel">
+    <input type="text" placeholder="Search bill no, vendor, reference..." [ngModel]="search()"
+      (ngModelChange)="search.set($event)" />
+
+    <select [ngModel]="status()" (ngModelChange)="status.set($event)">
+      <option value="">All Status</option>
+      @for (s of statuses; track s) {
+      <option [value]="s">{{ s }}</option>
+      }
+    </select>
+
+    <button class="clear-btn" type="button" (click)="clearFilter()">
+      Clear
+    </button>
+  </section>
+
+  <section class="table-card">
+    <div class="table-header">
+      <h2>Vendor Bill List</h2>
+      <span>{{ filteredBills().length }} Bills</span>
+    </div>
+
+    @if (loading()) {
+    <div class="loading-box">Loading...</div>
+    } @else {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Bill No</th>
+            <th>Vendor</th>
+            <th>Bill Date</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th class="text-end">Net Payable</th>
+            <th class="text-end">Paid</th>
+            <th class="text-end">Due</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (bill of filteredBills(); track bill.id) {
+          <tr>
+            <td>
+              <strong>{{ bill.billNumber }}</strong>
+              @if (bill.vendorBillRef) {
+              <small>Ref: {{ bill.vendorBillRef }}</small>
+              }
+            </td>
+
+            <td>{{ bill.partyName }}</td>
+
+            <td>{{ bill.billDate | date }}</td>
+
+            <td>
+              <span class="type-pill">{{ bill.billType }}</span>
+            </td>
+
+            <td>
+              <span class="status" [class]="getStatusClass(bill.status)">
+                {{ bill.status }}
+              </span>
+            </td>
+
+            <td class="text-end">
+              {{ bill.netPayable | number:'1.2-2' }}
+            </td>
+
+            <td class="text-end">
+              {{ bill.paidAmount | number:'1.2-2' }}
+            </td>
+
+            <td class="text-end due-text">
+              {{ bill.dueAmount | number:'1.2-2' }}
+            </td>
+
+            <td>
+              <div class="action-group">
+                <a [routerLink]="['/vendor-bill', bill.id]" class="btn-view">
+                  View
+                </a>
+
+                @if (bill.status === 'DRAFT') {
+                <a *appHasPermission="'EDIT_VENDOR_BILL'" [routerLink]="['/vendor-bill', bill.id, 'edit']"
+                  class="btn-edit">
+                  Edit
+                </a>
+
+                <button *appHasPermission="'APPROVE_VENDOR_BILL'" class="btn-approve" type="button"
+                  (click)="approveBill(bill)">
+                  Approve
+                </button>
+                }
+
+                @if (bill.status === 'APPROVED') {
+                <button *appHasPermission="'POST_VENDOR_BILL'" class="btn-post" type="button" (click)="postBill(bill)">
+                  Post
+                </button>
+                }
+
+                @if (bill.status === 'POSTED' || bill.status === 'PARTIAL') {
+                <button *appHasPermission="'CANCEL_VENDOR_BILL'" class="btn-cancel" type="button" (click)="cancelBill(bill)">
+                  Cancel
+                </button>
+                }
+              </div>
+            </td>
+          </tr>
+          } @empty {
+          <tr>
+            <td colspan="9">
+              <div class="empty-box">No vendor bills found</div>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  </section>
+</div>

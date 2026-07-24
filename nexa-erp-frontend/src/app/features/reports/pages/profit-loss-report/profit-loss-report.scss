@@ -1,0 +1,676 @@
+.profit-loss-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* =========================
+   Hero
+========================= */
+
+.report-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 28px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #0f172a, #1e3a8a);
+  color: #fff;
+
+  .eyebrow {
+    display: inline-block;
+    margin-bottom: 8px;
+    color: #bfdbfe;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 34px;
+    font-weight: 900;
+  }
+
+  p {
+    max-width: 700px;
+    margin: 9px 0 0;
+    color: #dbeafe;
+    line-height: 1.6;
+  }
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 900;
+  white-space: nowrap;
+  transition: 0.18s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
+}
+
+/* =========================
+   Filter
+========================= */
+
+.filter-card {
+  padding: 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  background: #fff;
+}
+
+.filter-header {
+  margin-bottom: 20px;
+
+  h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 21px;
+    font-weight: 900;
+  }
+
+  p {
+    margin: 6px 0 0;
+    color: #64748b;
+  }
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: 220px 220px auto;
+  gap: 16px;
+  align-items: end;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  label {
+    color: #334155;
+    font-size: 13px;
+    font-weight: 900;
+  }
+
+  input {
+    width: 100%;
+    height: 46px;
+    padding: 0 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    background: #fff;
+    color: #0f172a;
+    outline: none;
+    transition: 0.18s;
+
+    &:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+  }
+}
+
+.filter-actions,
+.report-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.clear-btn,
+.generate-btn,
+.print-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 17px;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: 0.18s;
+}
+
+.excel-btn {
+  background: #dcfce7;
+  color: #166534;
+
+  &:hover {
+    background: #bbf7d0;
+  }
+}
+
+.clear-btn {
+  background: #f1f5f9;
+  color: #334155;
+
+  &:hover {
+    background: #e2e8f0;
+  }
+}
+
+.generate-btn {
+  background: #2563eb;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: #1d4ed8;
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+}
+
+.print-btn {
+  background: #f1f5f9;
+  color: #334155;
+
+  &:hover {
+    background: #e2e8f0;
+  }
+}
+
+/* =========================
+   States
+========================= */
+
+.state-box,
+.empty-report {
+  padding: 56px 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  background: #fff;
+  text-align: center;
+  color: #64748b;
+}
+
+.state-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-weight: 900;
+
+  i {
+    color: #2563eb;
+    font-size: 22px;
+  }
+}
+
+.empty-report {
+  h2 {
+    margin: 14px 0 8px;
+    color: #0f172a;
+    font-size: 22px;
+    font-weight: 900;
+  }
+
+  p {
+    margin: 0;
+    color: #64748b;
+  }
+}
+
+.empty-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto;
+  border-radius: 18px;
+  background: #eff6ff;
+  color: #2563eb;
+  display: grid;
+  place-items: center;
+
+  i {
+    font-size: 29px;
+  }
+}
+
+/* =========================
+   Report Header
+========================= */
+
+.report-header-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding: 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  background: #fff;
+
+  .report-label {
+    display: inline-block;
+    margin-bottom: 7px;
+    color: #2563eb;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 26px;
+    font-weight: 900;
+  }
+
+  p {
+    margin: 7px 0 0;
+    color: #64748b;
+  }
+}
+
+/* =========================
+   Summary Cards
+========================= */
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.summary-card {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #fff;
+
+  span {
+    display: block;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  strong {
+    display: block;
+    margin-top: 10px;
+    color: #0f172a;
+    font-size: 27px;
+    font-weight: 900;
+    overflow-wrap: anywhere;
+  }
+
+  &.revenue {
+    border-top: 5px solid #16a34a;
+
+    strong {
+      color: #15803d;
+    }
+  }
+
+  &.expense {
+    border-top: 5px solid #dc2626;
+
+    strong {
+      color: #b91c1c;
+    }
+  }
+
+  &.net {
+    border-top: 5px solid #64748b;
+
+    &.profit {
+      border-top-color: #16a34a;
+
+      strong {
+        color: #15803d;
+      }
+    }
+
+    &.loss {
+      border-top-color: #dc2626;
+
+      strong {
+        color: #b91c1c;
+      }
+    }
+
+    &.neutral {
+      border-top-color: #64748b;
+
+      strong {
+        color: #475569;
+      }
+    }
+  }
+}
+
+/* =========================
+   Revenue / Expense Tables
+========================= */
+
+.statement-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  align-items: start;
+}
+
+.statement-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  background: #fff;
+}
+
+.statement-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px 22px;
+  border-bottom: 1px solid #e5e7eb;
+
+  h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 21px;
+    font-weight: 900;
+  }
+
+  p {
+    margin: 5px 0 0;
+    color: #64748b;
+    line-height: 1.5;
+  }
+
+  > span {
+    padding: 7px 11px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+}
+
+.revenue-header {
+  background: #f0fdf4;
+
+  > span {
+    background: #dcfce7;
+    color: #166534;
+  }
+}
+
+.expense-header {
+  background: #fef2f2;
+
+  > span {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+}
+
+thead th {
+  padding: 14px 15px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+tbody td {
+  padding: 14px 15px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  vertical-align: middle;
+}
+
+tbody tr:hover {
+  background: #f8fafc;
+}
+
+tfoot td {
+  padding: 15px;
+  border-top: 2px solid #cbd5e1;
+  background: #f8fafc;
+  color: #0f172a;
+  font-weight: 900;
+}
+
+.text-end {
+  text-align: right;
+}
+
+.revenue-cell {
+  color: #15803d;
+  font-weight: 900;
+}
+
+.expense-cell {
+  color: #b91c1c;
+  font-weight: 900;
+}
+
+.empty-box {
+  padding: 36px 20px;
+  text-align: center;
+  color: #64748b;
+  font-weight: 800;
+}
+
+/* =========================
+   Net Result
+========================= */
+
+.net-result-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  background: #fff;
+
+  span {
+    display: block;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  p {
+    margin: 6px 0 0;
+    color: #64748b;
+  }
+
+  > strong {
+    font-size: 32px;
+    font-weight: 900;
+    overflow-wrap: anywhere;
+  }
+
+  &.profit {
+    border-left: 6px solid #16a34a;
+    background: #f0fdf4;
+
+    > strong {
+      color: #15803d;
+    }
+  }
+
+  &.loss {
+    border-left: 6px solid #dc2626;
+    background: #fef2f2;
+
+    > strong {
+      color: #b91c1c;
+    }
+  }
+
+  &.neutral {
+    border-left: 6px solid #64748b;
+    background: #f8fafc;
+
+    > strong {
+      color: #475569;
+    }
+  }
+}
+
+/* =========================
+   Animation
+========================= */
+
+.spin {
+  animation: spin 0.85s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================
+   Responsive
+========================= */
+
+@media (max-width: 1100px) {
+  .statement-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .filter-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .filter-actions {
+    grid-column: 1 / -1;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .report-hero,
+  .report-header-card,
+  .statement-card-header,
+  .net-result-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-actions {
+    grid-column: auto;
+    width: 100%;
+    flex-direction: column;
+
+    button {
+      width: 100%;
+    }
+  }
+
+  .back-btn {
+    width: 100%;
+  }
+
+  .report-actions {
+    width: 100%;
+
+    button {
+      width: 100%;
+    }
+  }
+
+  .net-result-card > strong {
+    font-size: 27px;
+  }
+}
+
+/* =========================
+   Print
+========================= */
+
+@media print {
+  .report-hero,
+  .filter-card,
+  .report-actions,
+  .erp-header,
+  .erp-sidebar {
+    display: none !important;
+  }
+
+  .profit-loss-page {
+    gap: 12px;
+  }
+
+  .report-header-card,
+  .summary-card,
+  .statement-card,
+  .net-result-card {
+    border-color: #cbd5e1;
+    box-shadow: none;
+  }
+
+  .statement-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .table-wrap {
+    overflow: visible;
+  }
+
+  table {
+    min-width: 0;
+    font-size: 10px;
+  }
+
+  thead th,
+  tbody td,
+  tfoot td {
+    padding: 7px;
+  }
+}
+

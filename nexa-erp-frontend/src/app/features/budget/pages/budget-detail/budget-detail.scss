@@ -1,0 +1,269 @@
+.budget-detail-page { display: flex; flex-direction: column; gap: 24px; }
+
+.detail-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+
+  .eyebrow {
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: .15em;
+    font-size: 12px;
+    font-weight: 800;
+    color: #2563eb;
+    margin-bottom: 6px;
+  }
+
+  h1 { margin: 0; font-size: 28px; font-weight: 800; color: #0f172a; }
+  p { margin-top: 6px; color: #64748b; }
+}
+
+.hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.btn-back, .btn-variance {
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: #f1f5f9;
+  color: #334155;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.btn-variance { background: #eff6ff; color: #2563eb; }
+
+.btn-activate, .btn-close, .btn-delete {
+  padding: 12px 18px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-activate { background: #16a34a; color: white; &:hover { background: #15803d; } }
+.btn-close { background: #f97316; color: white; &:hover { background: #ea580c; } }
+.btn-delete { background: #fee2e2; color: #991b1b; &:hover { background: #fecaca; } }
+
+.status-row { display: flex; align-items: center; gap: 14px; }
+
+.status-badge {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+
+  &.draft { background: #fef9c3; color: #92400e; }
+  &.approved { background: #e0e7ff; color: #3730a3; }
+  &.active { background: #dcfce7; color: #166534; }
+  &.closed { background: #f1f5f9; color: #475569; }
+  &.cancelled { background: #fee2e2; color: #991b1b; }
+}
+
+.description { color: #64748b; font-size: 14px; }
+
+.summary-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; }
+
+.summary-card {
+  background: white;
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+  padding: 20px;
+
+  span { color: #64748b; display: block; margin-bottom: 8px; font-size: 14px; }
+  strong { font-size: 26px; font-weight: 800; color: #0f172a; }
+
+  &.expense { border-top: 4px solid #dc2626; }
+  &.revenue { border-top: 4px solid #16a34a; }
+  &.lines { border-top: 4px solid #2563eb; }
+}
+
+.lines-card { background: white; border-radius: 20px; border: 1px solid #e5e7eb; overflow: hidden; }
+
+.lines-header {
+  padding: 22px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e5e7eb;
+
+  h2 { margin: 0; font-size: 22px; }
+}
+
+.btn-add-line {
+  border: none;
+  border-radius: 12px;
+  background: #2563eb;
+  color: white;
+  font-weight: 700;
+  padding: 10px 18px;
+  cursor: pointer;
+
+  &:hover { background: #1d4ed8; }
+}
+
+.line-form {
+  padding: 22px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label { font-size: 13px; font-weight: 700; color: #334155; }
+
+  input, select {
+    height: 44px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    padding: 0 12px;
+    outline: none;
+    font-size: 14px;
+
+    &:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+  }
+}
+
+.toggle-group {
+  .toggle-options { display: flex; gap: 24px; flex-wrap: wrap; }
+
+  .toggle-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #0f172a;
+    cursor: pointer;
+
+    input { height: auto; width: auto; }
+  }
+}
+
+.period-grid {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.period-grid-header, .period-row {
+  display: grid;
+  grid-template-columns: 1fr 160px;
+  gap: 12px;
+  padding: 10px 16px;
+  align-items: center;
+}
+
+.period-grid-header {
+  background: #f1f5f9;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.period-row {
+  border-top: 1px solid #f1f5f9;
+
+  input {
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    padding: 0 10px;
+  }
+}
+
+.period-total {
+  padding: 10px 16px;
+  font-weight: 800;
+  color: #16a34a;
+  border-top: 1px solid #e5e7eb;
+  text-align: right;
+
+  &.mismatch { color: #dc2626; }
+}
+
+.line-form-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+.btn-cancel-link {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  background: #e2e8f0;
+  color: #334155;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-submit {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  background: #16a34a;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:disabled { opacity: .6; cursor: not-allowed; }
+  &:hover:not(:disabled) { background: #15803d; }
+}
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 800px; }
+
+thead th {
+  background: #f8fafc;
+  color: #64748b;
+  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+tbody td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; }
+tbody tr:hover { background: #f8fafc; }
+.text-end { text-align: right; }
+
+.type-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+
+  &.expense { background: #fee2e2; color: #991b1b; }
+  &.revenue { background: #dcfce7; color: #166534; }
+}
+
+.actions-cell { display: flex; gap: 8px; }
+
+.btn-edit, .btn-delete-line {
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-edit { background: #eff6ff; color: #2563eb; }
+.btn-delete-line { background: #fee2e2; color: #991b1b; }
+
+.loading-box, .empty-box { padding: 60px; text-align: center; color: #64748b; font-weight: 700; }
+
+@media (max-width: 768px) {
+  .form-row { grid-template-columns: 1fr; }
+  .summary-grid { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,35 @@
+<div class="timeline-wrap">
+  <button class="history-btn" type="button" (click)="toggle()">
+    <i class="bi bi-clock-history"></i>
+    History
+    <i class="bi" [class.bi-chevron-up]="open()" [class.bi-chevron-down]="!open()"></i>
+  </button>
+
+  @if (open()) {
+    <div class="timeline-panel">
+      @if (loading()) {
+        <div class="state-box">
+          <i class="bi bi-arrow-repeat spin"></i>
+          Loading history...
+        </div>
+      } @else if (logs().length === 0) {
+        <div class="state-box">No history recorded yet</div>
+      } @else {
+        <ul class="timeline">
+          @for (log of logs(); track log.id) {
+            <li>
+              <span class="dot" [class]="actionClass(log.action)"></span>
+              <div class="entry">
+                <div class="entry-head">
+                  <span class="action-pill" [class]="actionClass(log.action)">{{ log.action }}</span>
+                  <span class="entry-user">{{ log.userName }}</span>
+                  <span class="entry-time">{{ log.createdAt | date: 'medium' }}</span>
+                </div>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+</div>

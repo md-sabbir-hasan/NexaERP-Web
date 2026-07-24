@@ -1,0 +1,213 @@
+<div class="vendor-bill-form-page">
+  <section class="vendor-bill-hero">
+    <div>
+      <span class="eyebrow">Purchase Bill</span>
+      <h1>{{ billId ? 'Edit Vendor Bill' : 'New Vendor Bill' }}</h1>
+      <p>Create supplier bills with VAT, TDS and net payable calculation.</p>
+    </div>
+
+    <a routerLink="/vendor-bill" class="back-btn">
+      <i class="bi bi-arrow-left"></i>
+      Back to Vendor Bills
+    </a>
+  </section>
+
+  @if (loading()) {
+    <div class="state-box">
+      <i class="bi bi-arrow-repeat spin"></i>
+      Loading vendor bill...
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submitDraft()" class="bill-card">
+      <section class="header-section">
+        <div class="section-title">
+          <div>
+            <h2>Bill Information</h2>
+            <p>Vendor, bill date, posting date and reference</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group vendor">
+            <label>Vendor</label>
+            <select formControlName="partyId" (change)="onVendorChange()">
+              <option [ngValue]="null">Select vendor</option>
+              @for (vendor of vendors(); track vendor.id) {
+                <option [ngValue]="vendor.id">
+                  {{ vendor.code }} - {{ vendor.name }}
+                </option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Bill Date</label>
+            <input type="date" formControlName="billDate" (change)="onBillDateChange()" />
+          </div>
+
+          <div class="form-group">
+            <label>Posting Date</label>
+            <input type="date" formControlName="postingDate" />
+          </div>
+
+          <div class="form-group">
+            <label>Bill Type</label>
+            <select formControlName="billType">
+              @for (type of billTypes; track type) {
+                <option [value]="type">{{ type }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Vendor Bill Ref</label>
+            <input type="text" formControlName="vendorBillRef" placeholder="Vendor invoice no" />
+          </div>
+
+          <div class="form-group">
+            <label>Payment Terms</label>
+            <input type="number" formControlName="paymentTerms" min="0" />
+          </div>
+
+          <div class="form-group">
+            <label>Currency</label>
+            <input type="text" formControlName="currencyCode" />
+          </div>
+
+          <div class="form-group">
+            <label>Reference Type</label>
+            <select formControlName="referenceType">
+              @for (type of referenceTypes; track type) {
+                <option [value]="type">{{ type }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group full">
+            <label>Reference ID</label>
+            <input type="text" formControlName="referenceId" placeholder="PO / GRN / Manual reference" />
+          </div>
+
+          <div class="form-group full">
+            <label>Notes</label>
+            <textarea formControlName="notes" rows="3" placeholder="Internal notes or vendor remarks"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <section class="items-section">
+        <div class="section-title">
+          <div>
+            <h2>Bill Items</h2>
+            <p>Select expense account and enter VAT/TDS details</p>
+          </div>
+
+          <button class="add-line-btn" type="button" (click)="addItem()">
+            <i class="bi bi-plus-lg"></i>
+            Add Item
+          </button>
+        </div>
+
+        <div class="items-table" formArrayName="items">
+          <div class="item-head">
+            <span>Expense Account</span>
+            <span>Description</span>
+            <span>Qty</span>
+            <span>Price</span>
+            <span>Disc %</span>
+            <span>VAT %</span>
+            <span>TDS %</span>
+            <span>Total</span>
+            <span></span>
+          </div>
+
+          @for (item of items.controls; track $index) {
+            <div class="item-row" [formGroupName]="$index">
+              <select formControlName="expenseAccountId">
+                <option [ngValue]="null">Select account</option>
+                @for (account of expenseAccounts(); track account.id) {
+                  <option [ngValue]="account.id">
+                    {{ account.code }} - {{ account.name }}
+                  </option>
+                }
+              </select>
+
+              <input type="text" formControlName="description" placeholder="Item description" />
+
+              <input type="number" formControlName="quantity" min="0.01" step="0.01" />
+
+              <input type="number" formControlName="unitPrice" min="0" step="0.01" />
+
+              <input type="number" formControlName="discountPercent" min="0" step="0.01" />
+
+              <input type="number" formControlName="vatRate" min="0" step="0.01" />
+
+              <input type="number" formControlName="tdsRate" min="0" step="0.01" />
+
+              <div class="line-total">
+                {{ getLineTotal($index) | number:'1.2-2' }}
+              </div>
+
+              <button class="remove-btn" type="button" (click)="removeItem($index)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="bottom-section">
+        <div class="bill-hint">
+          <i class="bi bi-info-circle"></i>
+          <div>
+            <strong>Accounting Note</strong>
+            <span>
+              Posting will debit Expense/Input VAT and credit Accounts Payable/TDS Payable.
+            </span>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <div>
+            <span>Subtotal</span>
+            <strong>{{ getSubTotal() | number:'1.2-2' }}</strong>
+          </div>
+
+          <div>
+            <span>Discount</span>
+            <strong>{{ getDiscountTotal() | number:'1.2-2' }}</strong>
+          </div>
+
+          <div>
+            <span>VAT</span>
+            <strong>{{ getVatTotal() | number:'1.2-2' }}</strong>
+          </div>
+
+          <div>
+            <span>TDS</span>
+            <strong>{{ getTdsTotal() | number:'1.2-2' }}</strong>
+          </div>
+
+          <div>
+            <span>Grand Total</span>
+            <strong>{{ getGrandTotal() | number:'1.2-2' }}</strong>
+          </div>
+
+          <div class="grand-total">
+            <span>Net Payable</span>
+            <strong>{{ getNetPayable() | number:'1.2-2' }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <a routerLink="/vendor-bill" class="cancel-btn">Cancel</a>
+
+        <button class="save-btn" type="submit" [disabled]="submitting()">
+          <i class="bi bi-save"></i>
+          {{ submitting() ? 'Saving...' : 'Save Draft' }}
+        </button>
+      </div>
+    </form>
+  }
+</div>

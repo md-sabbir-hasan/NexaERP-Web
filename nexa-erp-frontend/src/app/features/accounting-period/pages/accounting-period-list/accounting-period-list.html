@@ -1,0 +1,74 @@
+<div class="feature-page">
+  <section class="page-hero">
+    <div>
+      <span class="eyebrow">Finance Control</span>
+      <h1>Accounting Periods</h1>
+      <p>Open or close posting periods and protect finalized financial reports.</p>
+    </div>
+    <div class="hero-actions">
+      <a class="btn-secondary" routerLink="/fiscal-years"><i class="bi bi-calendar-range"></i> Fiscal Years</a>
+      <button *appHasPermission="'CREATE_ACCOUNTING_PERIOD'" class="btn-secondary" type="button" (click)="generate()"><i class="bi bi-calendar-plus"></i> Generate Months</button>
+      <button *appHasPermission="'CREATE_ACCOUNTING_PERIOD'" class="btn-primary" type="button" (click)="openCreate()"><i class="bi bi-plus-lg"></i> Custom Period</button>
+    </div>
+  </section>
+
+  <section class="filter-card">
+    <label><span>Fiscal year</span><select [value]="selectedFiscalYearId() ?? ''" (change)="onFiscalYearChange(($any($event.target)).value)"><option value="">All fiscal years</option>@for (year of fiscalYears(); track year.id) { <option [value]="year.id">{{ year.name }} · {{ year.status }}</option> }</select></label>
+    <label class="search-label"><span>Search</span><div class="search-box"><i class="bi bi-search"></i><input #searchBox type="search" placeholder="Search periods..." (input)="search.set(searchBox.value)" /></div></label>
+    <button class="icon-btn" type="button" title="Refresh" (click)="loadPeriods()"><i class="bi bi-arrow-clockwise"></i></button>
+  </section>
+
+  <section class="summary-grid">
+    <article class="summary-card"><span>Total periods</span><strong>{{ totalCount() }}</strong></article>
+    <article class="summary-card"><span>Open</span><strong>{{ openCount() }}</strong></article>
+    <article class="summary-card"><span>Closed</span><strong>{{ closedCount() }}</strong></article>
+    <article class="summary-card"><span>Current</span><strong>{{ currentCount() }}</strong></article>
+  </section>
+
+  <section class="content-card">
+    @if (loading()) {
+      <div class="state-box"><i class="bi bi-arrow-repeat spin"></i> Loading accounting periods...</div>
+    } @else if (filteredPeriods().length === 0) {
+      <div class="state-box"><i class="bi bi-calendar-x"></i><strong>No accounting periods found</strong><span>Select a fiscal year and generate monthly periods.</span></div>
+    } @else {
+      <div class="period-grid">
+        @for (period of filteredPeriods(); track period.id) {
+          <article class="period-card" [class.current-card]="period.current">
+            <div class="period-head"><div><span class="period-no">Period {{ period.periodNumber }}</span><h3>{{ period.name }}</h3></div><span class="status" [class]="statusClass(period)">{{ statusLabel(period) }}</span></div>
+            <div class="period-dates"><i class="bi bi-calendar3"></i><span>{{ period.startDate | date:'mediumDate' }} — {{ period.endDate | date:'mediumDate' }}</span></div>
+            <div class="period-meta"><span><i class="bi bi-calendar-range"></i> {{ period.fiscalYearName }}</span>@if (period.closedAt) { <span><i class="bi bi-lock"></i> {{ period.closedAt | date:'medium' }}</span> }</div>
+            @if (period.remarks) { <p class="remarks">{{ period.remarks }}</p> }
+            <div class="card-actions">
+              @if (period.status === 'OPEN') {
+                <button *appHasPermission="'EDIT_ACCOUNTING_PERIOD'" class="action-btn" type="button" [disabled]="actionId() === period.id" (click)="openEdit(period)"><i class="bi bi-pencil"></i> Edit</button>
+                <button *appHasPermission="'CLOSE_ACCOUNTING_PERIOD'" class="action-btn warning" type="button" [disabled]="actionId() === period.id" (click)="toggleStatus(period)"><i class="bi bi-lock"></i> Close</button>
+                <button *appHasPermission="'DELETE_ACCOUNTING_PERIOD'" class="icon-danger" type="button" title="Delete" [disabled]="actionId() === period.id" (click)="remove(period)"><i class="bi bi-trash3"></i></button>
+              } @else {
+                <button *appHasPermission="'OPEN_ACCOUNTING_PERIOD'" class="action-btn success" type="button" [disabled]="actionId() === period.id" (click)="toggleStatus(period)"><i class="bi bi-unlock"></i> Reopen</button>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+</div>
+
+@if (formOpen()) {
+  <div class="modal-backdrop" (click)="closeForm()">
+    <section class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-head"><div><span class="eyebrow">{{ editingId() ? 'Update' : 'Create' }}</span><h2>{{ editingId() ? 'Edit Accounting Period' : 'Custom Accounting Period' }}</h2></div><button type="button" class="close-btn" (click)="closeForm()"><i class="bi bi-x-lg"></i></button></div>
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <div class="form-grid">
+          <label class="full"><span>Fiscal year *</span><select formControlName="fiscalYearId">@for (year of fiscalYears(); track year.id) { <option [ngValue]="year.id">{{ year.name }} · {{ year.status }}</option> }</select></label>
+          <label><span>Period name *</span><input formControlName="name" placeholder="January 2026" /></label>
+          <label><span>Period number *</span><input type="number" min="1" max="99" formControlName="periodNumber" /></label>
+          <label><span>Start date *</span><input type="date" formControlName="startDate" /></label>
+          <label><span>End date *</span><input type="date" formControlName="endDate" /></label>
+          <label class="full"><span>Remarks</span><textarea rows="3" formControlName="remarks" placeholder="Optional remarks"></textarea></label>
+        </div>
+        <div class="modal-actions"><button class="btn-secondary" type="button" (click)="closeForm()">Cancel</button><button class="btn-primary" type="submit" [disabled]="saving()">@if (saving()) { <i class="bi bi-arrow-repeat spin"></i> } {{ editingId() ? 'Update' : 'Create' }}</button></div>
+      </form>
+    </section>
+  </div>
+}

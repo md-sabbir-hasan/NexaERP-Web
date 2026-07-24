@@ -1,0 +1,103 @@
+<div class="budget-page">
+  <section class="budget-hero">
+    <div>
+      <span class="eyebrow">Finance Operations</span>
+      <h1>Budgets</h1>
+      <p>Plan and track annual revenue and expense budgets by fiscal year.</p>
+    </div>
+
+    <a routerLink="/budget/new" class="new-btn">
+      <i class="bi bi-plus-circle-fill"></i>
+      New Budget
+    </a>
+  </section>
+
+  <section class="summary-grid">
+    <div class="summary-card expense">
+      <span>Active Expense Budget</span>
+      <strong>{{ totalExpenseBudget() | number:'1.2-2' }}</strong>
+    </div>
+
+    <div class="summary-card revenue">
+      <span>Active Revenue Budget</span>
+      <strong>{{ totalRevenueBudget() | number:'1.2-2' }}</strong>
+    </div>
+
+    <div class="summary-card active">
+      <span>Active Budgets</span>
+      <strong>{{ activeCount() }}</strong>
+    </div>
+
+    <div class="summary-card draft">
+      <span>Draft Budgets</span>
+      <strong>{{ draftCount() }}</strong>
+    </div>
+  </section>
+
+  <section class="filter-panel">
+    <input type="text" placeholder="Search budget no, name, fiscal year..." [ngModel]="search()"
+      (ngModelChange)="search.set($event)" />
+
+    <select [ngModel]="status()" (ngModelChange)="status.set($event)">
+      <option value="">All Status</option>
+      @for (s of statuses; track s) {
+      <option [value]="s">{{ s }}</option>
+      }
+    </select>
+
+    <button class="clear-btn" type="button" (click)="clearFilter()">Clear</button>
+  </section>
+
+  <section class="table-card">
+    <div class="table-header">
+      <h2>Budget List</h2>
+      <span>{{ filteredBudgets().length }} Budgets</span>
+    </div>
+
+    @if (loading()) {
+    <div class="loading-box">Loading...</div>
+    } @else {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Budget No</th>
+            <th>Name</th>
+            <th>Fiscal Year</th>
+            <th>Version</th>
+            <th class="text-end">Expense Budget</th>
+            <th class="text-end">Revenue Budget</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (budget of filteredBudgets(); track budget.id) {
+          <tr>
+            <td><strong>{{ budget.budgetNumber }}</strong></td>
+            <td>{{ budget.name }}</td>
+            <td>{{ budget.fiscalYearName }}</td>
+            <td>v{{ budget.versionNumber }}</td>
+            <td class="text-end">{{ budget.totalExpenseBudget | number:'1.2-2' }}</td>
+            <td class="text-end">{{ budget.totalRevenueBudget | number:'1.2-2' }}</td>
+            <td>
+              <span class="status-badge" [class]="getStatusClass(budget.status)">{{ budget.status }}</span>
+            </td>
+            <td>
+              <a [routerLink]="['/budget', budget.id]" class="btn-view">View</a>
+            </td>
+          </tr>
+          } @empty {
+          <tr>
+            <td colspan="8">
+              <div class="empty-box">No budgets found</div>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  </section>
+</div>

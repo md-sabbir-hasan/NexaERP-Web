@@ -1,0 +1,359 @@
+<div class="balance-sheet-page">
+  <section class="report-hero">
+    <div>
+      <span class="eyebrow">Financial Reports</span>
+      <h1>Balance Sheet</h1>
+      <p>
+        Review assets, liabilities and equity position as of a selected date.
+      </p>
+    </div>
+
+    <a routerLink="/reports" class="back-btn">
+      <i class="bi bi-arrow-left"></i>
+      Back to Reports
+    </a>
+  </section>
+
+  <section class="filter-card">
+    <div class="filter-header">
+      <div>
+        <h2>Report Parameters</h2>
+        <p>Select an as-of date to generate the Balance Sheet.</p>
+      </div>
+    </div>
+
+    <div class="filter-grid">
+      <div class="form-group">
+        <label for="asOfDate">As Of Date</label>
+
+        <input
+          id="asOfDate"
+          type="date"
+          [ngModel]="asOfDate()"
+          (ngModelChange)="asOfDate.set($event)"
+        />
+      </div>
+
+      <div class="filter-actions">
+        <button type="button" class="clear-btn" (click)="clearReport()">
+          <i class="bi bi-arrow-counterclockwise"></i>
+          Clear
+        </button>
+
+        <button
+          type="button"
+          class="generate-btn"
+          [disabled]="loading()"
+          (click)="generateReport()"
+        >
+          <i
+            class="bi"
+            [class.bi-search]="!loading()"
+            [class.bi-arrow-repeat]="loading()"
+            [class.spin]="loading()"
+          ></i>
+
+          {{ loading() ? 'Generating...' : 'Generate' }}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  @if (loading()) {
+    <div class="state-box">
+      <i class="bi bi-arrow-repeat spin"></i>
+      <span>Generating Balance Sheet...</span>
+    </div>
+  } @else if (report()) {
+    <section class="report-header-card">
+      <div>
+        <span class="report-label">Balance Sheet</span>
+        <h2>As of {{ report()!.asOfDate | date:'dd MMM yyyy' }}</h2>
+
+        <p>
+          {{ assetCount() }} asset accounts ·
+          {{ liabilityCount() }} liability accounts ·
+          {{ equityCount() }} equity accounts
+        </p>
+      </div>
+
+      <div class="report-actions">
+        <button type="button" class="print-btn" (click)="printReport()">
+          <i class="bi bi-printer"></i>
+          Print
+        </button>
+
+        <button type="button" class="excel-btn" (click)="exportReport()">
+          <i class="bi bi-file-earmark-excel"></i>
+          Export Excel
+        </button>
+      </div>
+    </section>
+
+    <section class="summary-grid">
+      <div class="summary-card assets">
+        <span>Total Assets</span>
+        <strong>{{ report()!.totalAssets | number:'1.2-2' }}</strong>
+      </div>
+
+      <div class="summary-card liabilities">
+        <span>Total Liabilities</span>
+        <strong>{{ report()!.totalLiabilities | number:'1.2-2' }}</strong>
+      </div>
+
+      <div class="summary-card equity">
+        <span>Total Equity</span>
+        <strong>{{ report()!.totalEquity | number:'1.2-2' }}</strong>
+      </div>
+
+      <div class="summary-card combined">
+        <span>Liabilities + Equity</span>
+        <strong>
+          {{ report()!.totalLiabilitiesAndEquity | number:'1.2-2' }}
+        </strong>
+      </div>
+    </section>
+
+    <section
+      class="balance-status-card"
+      [class]="getBalanceStatusClass()"
+    >
+      <div>
+        <span>
+          {{ report()!.isBalanced ? 'Balance Sheet Balanced' : 'Balance Sheet Unbalanced' }}
+        </span>
+
+        <p>
+          Assets should equal Liabilities plus Equity.
+        </p>
+      </div>
+
+      <div class="status-values">
+        <div>
+          <small>Difference</small>
+          <strong>{{ getDifference() | number:'1.2-2' }}</strong>
+        </div>
+
+        <span class="status-pill">
+          {{ report()!.isBalanced ? 'BALANCED' : 'UNBALANCED' }}
+        </span>
+      </div>
+    </section>
+
+    <section class="statement-grid">
+      <section class="statement-card assets-card">
+        <div class="statement-card-header">
+          <div>
+            <h2>Assets</h2>
+            <p>Resources owned by the business.</p>
+          </div>
+
+          <span>{{ assetCount() }} Accounts</span>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Account Code</th>
+                <th>Account Name</th>
+                <th class="text-end">Amount</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (row of report()!.assets; track row.accountId) {
+                <tr>
+                  <td>
+                    <strong>{{ row.accountCode }}</strong>
+                  </td>
+
+                  <td>{{ row.accountName }}</td>
+
+                  <td class="text-end asset-cell">
+                    {{ row.amount | number:'1.2-2' }}
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="3">
+                    <div class="empty-box">No asset balances found.</div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+
+            <tfoot>
+              <tr>
+                <td colspan="2">Total Assets</td>
+                <td class="text-end">
+                  {{ report()!.totalAssets | number:'1.2-2' }}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </section>
+
+      <div class="right-column">
+        <section class="statement-card liabilities-card">
+          <div class="statement-card-header">
+            <div>
+              <h2>Liabilities</h2>
+              <p>Obligations payable by the business.</p>
+            </div>
+
+            <span>{{ liabilityCount() }} Accounts</span>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Account Code</th>
+                  <th>Account Name</th>
+                  <th class="text-end">Amount</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (row of report()!.liabilities; track row.accountId) {
+                  <tr>
+                    <td>
+                      <strong>{{ row.accountCode }}</strong>
+                    </td>
+
+                    <td>{{ row.accountName }}</td>
+
+                    <td class="text-end liability-cell">
+                      {{ row.amount | number:'1.2-2' }}
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="3">
+                      <div class="empty-box">
+                        No liability balances found.
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+
+              <tfoot>
+                <tr>
+                  <td colspan="2">Total Liabilities</td>
+                  <td class="text-end">
+                    {{ report()!.totalLiabilities | number:'1.2-2' }}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </section>
+
+        <section class="statement-card equity-card">
+          <div class="statement-card-header">
+            <div>
+              <h2>Equity</h2>
+              <p>Owner equity and accumulated profit.</p>
+            </div>
+
+            <span>{{ equityCount() }} Accounts</span>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Account Code</th>
+                  <th>Account Name</th>
+                  <th class="text-end">Amount</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (row of report()!.equity; track row.accountId) {
+                  <tr>
+                    <td>
+                      <strong>{{ row.accountCode }}</strong>
+                    </td>
+
+                    <td>{{ row.accountName }}</td>
+
+                    <td class="text-end equity-cell">
+                      {{ row.amount | number:'1.2-2' }}
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="3">
+                      <div class="empty-box">
+                        No equity balances found.
+                      </div>
+                    </td>
+                  </tr>
+                }
+
+                <tr class="profit-row">
+                  <td>-</td>
+                  <td>
+                    <strong>Current Period Profit / Loss</strong>
+                  </td>
+                  <td class="text-end">
+                    {{ report()!.netProfit | number:'1.2-2' }}
+                  </td>
+                </tr>
+              </tbody>
+
+              <tfoot>
+                <tr>
+                  <td colspan="2">Equity Before Profit</td>
+                  <td class="text-end">
+                    {{ report()!.totalEquityExcludingProfit | number:'1.2-2' }}
+                  </td>
+                </tr>
+
+                <tr class="grand-total-row">
+                  <td colspan="2">Total Equity</td>
+                  <td class="text-end">
+                    {{ report()!.totalEquity | number:'1.2-2' }}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="final-total-card">
+      <div>
+        <span>Total Assets</span>
+        <strong>{{ report()!.totalAssets | number:'1.2-2' }}</strong>
+      </div>
+
+      <div class="equals-sign">=</div>
+
+      <div>
+        <span>Total Liabilities + Equity</span>
+        <strong>
+          {{ report()!.totalLiabilitiesAndEquity | number:'1.2-2' }}
+        </strong>
+      </div>
+    </section>
+  } @else {
+    <section class="empty-report">
+      <div class="empty-icon">
+        <i class="bi bi-bank"></i>
+      </div>
+
+      <h2>Generate Balance Sheet</h2>
+
+      <p>
+        Select an as-of date and click Generate to review assets, liabilities
+        and equity.
+      </p>
+    </section>
+  }
+</div>

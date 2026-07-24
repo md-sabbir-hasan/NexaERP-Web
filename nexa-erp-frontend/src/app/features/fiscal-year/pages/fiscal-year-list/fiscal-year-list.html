@@ -1,0 +1,422 @@
+<div class="fiscal-year-page">
+  <section class="page-header">
+    <div>
+      <span class="eyebrow">Finance Configuration</span>
+      <h1>Fiscal Years</h1>
+      <p>
+        Manage financial years and generate their monthly accounting periods.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn-secondary"
+        (click)="loadFiscalYears()"
+        [disabled]="loading()"
+      >
+        <i
+          class="bi bi-arrow-clockwise"
+          [class.spin]="loading()"
+        ></i>
+        Refresh
+      </button>
+
+      <button
+        *appHasPermission="'CREATE_FISCAL_YEAR'"
+        type="button"
+        class="btn-primary"
+        (click)="openCreate()"
+      >
+        <i class="bi bi-plus-lg"></i>
+        New Fiscal Year
+      </button>
+    </div>
+  </section>
+
+  <section class="summary-grid">
+    <article class="summary-card">
+      <div class="summary-icon">
+        <i class="bi bi-calendar-range"></i>
+      </div>
+
+      <div>
+        <span>Total Years</span>
+        <strong>{{ totalCount() }}</strong>
+      </div>
+    </article>
+
+    <article class="summary-card active-card">
+      <div class="summary-icon">
+        <i class="bi bi-play-circle"></i>
+      </div>
+
+      <div>
+        <span>Active</span>
+        <strong>{{ activeCount() }}</strong>
+      </div>
+    </article>
+
+    <article class="summary-card draft-card">
+      <div class="summary-icon">
+        <i class="bi bi-pencil-square"></i>
+      </div>
+
+      <div>
+        <span>Draft</span>
+        <strong>{{ draftCount() }}</strong>
+      </div>
+    </article>
+
+    <article class="summary-card closed-card">
+      <div class="summary-icon">
+        <i class="bi bi-lock"></i>
+      </div>
+
+      <div>
+        <span>Closed</span>
+        <strong>{{ closedCount() }}</strong>
+      </div>
+    </article>
+  </section>
+
+  <section class="content-card">
+    <div class="toolbar">
+      <div class="search-box">
+        <i class="bi bi-search"></i>
+
+        <input
+          type="search"
+          placeholder="Search fiscal year..."
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+        />
+      </div>
+
+      <span class="result-count">
+        {{ filteredFiscalYears().length }} result(s)
+      </span>
+    </div>
+
+    @if (loading()) {
+      <div class="state-box">
+        <i class="bi bi-arrow-repeat spin"></i>
+        Loading fiscal years...
+      </div>
+    } @else if (filteredFiscalYears().length === 0) {
+      <div class="state-box empty-state">
+        <i class="bi bi-calendar-x"></i>
+        <h3>No fiscal years found</h3>
+        <p>Create a fiscal year to start managing accounting periods.</p>
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Date Range</th>
+              <th>Status</th>
+              <th>Description</th>
+              <th>Created</th>
+              <th class="actions-column">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (
+              year of filteredFiscalYears();
+              track year.id
+            ) {
+              <tr>
+                <td>
+                  <div class="year-name">
+                    <span class="year-icon">
+                      <i class="bi bi-calendar3"></i>
+                    </span>
+
+                    <div>
+                      <strong>{{ year.name }}</strong>
+
+                      @if (year.status === 'ACTIVE') {
+                        <small>Current fiscal year</small>
+                      }
+                    </div>
+                  </div>
+                </td>
+
+                <td>
+                  <div class="date-range">
+                    <span>
+                      {{ year.startDate | date: 'dd MMM yyyy' }}
+                    </span>
+
+                    <i class="bi bi-arrow-right"></i>
+
+                    <span>
+                      {{ year.endDate | date: 'dd MMM yyyy' }}
+                    </span>
+                  </div>
+                </td>
+
+                <td>
+                  <span
+                    class="status-badge"
+                    [class]="statusClass(year)"
+                  >
+                    {{ year.status }}
+                  </span>
+                </td>
+
+                <td>
+                  <span class="description">
+                    {{ year.description || '—' }}
+                  </span>
+                </td>
+
+                <td>
+                  {{ year.createdAt | date: 'dd MMM yyyy' }}
+                </td>
+
+                <td>
+                  <div class="action-group">
+                    <button
+                      *appHasPermission="'CREATE_ACCOUNTING_PERIOD'"
+                      type="button"
+                      class="icon-btn"
+                      title="Generate accounting periods"
+                      [disabled]="
+                        actionId() === year.id ||
+                        year.status === 'CLOSED'
+                      "
+                      (click)="generate(year)"
+                    >
+                      @if (actionId() === year.id) {
+                        <i class="bi bi-arrow-repeat spin"></i>
+                      } @else {
+                        <i class="bi bi-calendar-plus"></i>
+                      }
+                    </button>
+
+                    @if (year.status !== 'CLOSED') {
+                      <button
+                        *appHasPermission="'EDIT_FISCAL_YEAR'"
+                        type="button"
+                        class="icon-btn"
+                        title="Edit fiscal year"
+                        [disabled]="actionId() === year.id"
+                        (click)="openEdit(year)"
+                      >
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                    }
+
+                    @if (year.status === 'DRAFT') {
+                      <button
+                        *appHasPermission="'ACTIVATE_FISCAL_YEAR'"
+                        type="button"
+                        class="icon-btn success"
+                        title="Activate fiscal year"
+                        [disabled]="actionId() === year.id"
+                        (click)="activate(year)"
+                      >
+                        @if (actionId() === year.id) {
+                          <i class="bi bi-arrow-repeat spin"></i>
+                        } @else {
+                          <i class="bi bi-play-fill"></i>
+                        }
+                      </button>
+                    }
+
+                    @if (year.status === 'ACTIVE') {
+                      <button
+                        *appHasPermission="'CLOSE_FISCAL_YEAR'"
+                        type="button"
+                        class="icon-btn warning"
+                        title="Close fiscal year"
+                        [disabled]="actionId() === year.id"
+                        (click)="close(year)"
+                      >
+                        @if (actionId() === year.id) {
+                          <i class="bi bi-arrow-repeat spin"></i>
+                        } @else {
+                          <i class="bi bi-lock"></i>
+                        }
+                      </button>
+                    }
+
+                    @if (year.status === 'DRAFT') {
+                      <button
+                        *appHasPermission="'DELETE_FISCAL_YEAR'"
+                        type="button"
+                        class="icon-btn danger"
+                        title="Delete fiscal year"
+                        [disabled]="actionId() === year.id"
+                        (click)="remove(year)"
+                      >
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  @if (formOpen()) {
+    <div class="modal-backdrop" (click)="closeForm()">
+      <section
+        class="form-modal"
+        role="dialog"
+        aria-modal="true"
+        (click)="$event.stopPropagation()"
+      >
+        <header class="modal-header">
+          <div>
+            <span class="eyebrow">
+              {{ editingId() === null ? 'Create' : 'Update' }}
+            </span>
+
+            <h2>
+              {{
+                editingId() === null
+                  ? 'New Fiscal Year'
+                  : 'Edit Fiscal Year'
+              }}
+            </h2>
+          </div>
+
+          <button
+            type="button"
+            class="modal-close"
+            [disabled]="saving()"
+            (click)="closeForm()"
+          >
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </header>
+
+        <form
+          class="fiscal-form"
+          [formGroup]="form"
+          (ngSubmit)="save()"
+        >
+          <div class="form-grid">
+            <div class="form-field full-width">
+              <label for="fiscalYearName">
+                Fiscal Year Name
+                <span>*</span>
+              </label>
+
+              <input
+                id="fiscalYearName"
+                type="text"
+                formControlName="name"
+                placeholder="Example: FY 2026"
+              />
+
+              @if (
+                form.controls.name.touched &&
+                form.controls.name.invalid
+              ) {
+                <small class="field-error">
+                  Fiscal year name is required.
+                </small>
+              }
+            </div>
+
+            <div class="form-field">
+              <label for="startDate">
+                Start Date
+                <span>*</span>
+              </label>
+
+              <input
+                id="startDate"
+                type="date"
+                formControlName="startDate"
+              />
+
+              @if (
+                form.controls.startDate.touched &&
+                form.controls.startDate.invalid
+              ) {
+                <small class="field-error">
+                  Start date is required.
+                </small>
+              }
+            </div>
+
+            <div class="form-field">
+              <label for="endDate">
+                End Date
+                <span>*</span>
+              </label>
+
+              <input
+                id="endDate"
+                type="date"
+                formControlName="endDate"
+              />
+
+              @if (
+                form.controls.endDate.touched &&
+                form.controls.endDate.invalid
+              ) {
+                <small class="field-error">
+                  End date is required.
+                </small>
+              }
+            </div>
+
+            <div class="form-field full-width">
+              <label for="description">
+                Description
+              </label>
+
+              <textarea
+                id="description"
+                rows="4"
+                formControlName="description"
+                placeholder="Optional description"
+              ></textarea>
+            </div>
+          </div>
+
+          <footer class="modal-actions">
+            <button
+              type="button"
+              class="btn-secondary"
+              [disabled]="saving()"
+              (click)="closeForm()"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              class="btn-primary"
+              [disabled]="saving()"
+            >
+              @if (saving()) {
+                <i class="bi bi-arrow-repeat spin"></i>
+                Saving...
+              } @else {
+                <i class="bi bi-check-lg"></i>
+                {{
+                  editingId() === null
+                    ? 'Create Fiscal Year'
+                    : 'Update Fiscal Year'
+                }}
+              }
+            </button>
+          </footer>
+        </form>
+      </section>
+    </div>
+  }
+</div>

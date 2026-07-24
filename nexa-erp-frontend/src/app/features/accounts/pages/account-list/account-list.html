@@ -1,0 +1,328 @@
+<div class="coa-page">
+  <section class="finance-hero">
+    <div>
+      <span class="eyebrow">Finance Console</span>
+      <h1>Chart of Accounts</h1>
+      <p>Organize financial accounts with hierarchy, controls and accounting rules.</p>
+    </div>
+
+    <button
+    *appHasPermission="'CREATE_ACCOUNT'"
+     class="hero-btn" type="button" (click)="openCreateModal()">
+      <i class="bi bi-plus-circle"></i>
+      New Account
+    </button>
+  </section>
+
+  <section class="metric-grid">
+    <div class="metric-card">
+      <span>Total Accounts</span>
+      <strong>{{ totalAccounts }}</strong>
+      <small>All ledger accounts</small>
+    </div>
+
+    <div class="metric-card">
+      <span>Active Accounts</span>
+      <strong>{{ activeAccounts }}</strong>
+      <small>Available for posting</small>
+    </div>
+
+    <div class="metric-card">
+      <span>Root Groups</span>
+      <strong>{{ rootAccounts }}</strong>
+      <small>Main account classes</small>
+    </div>
+
+    <div class="metric-card">
+      <span>Net Balance</span>
+      <strong>{{ totalBalance | number:'1.2-2' }}</strong>
+      <small>Current visible balance</small>
+    </div>
+  </section>
+
+  <section class="control-panel">
+    <div class="search-box">
+      <i class="bi bi-search"></i>
+      <input
+        type="text"
+        [(ngModel)]="search"
+        placeholder="Search by code or account name"
+        (keyup.enter)="applyFilter()"
+      />
+    </div>
+
+    <select [(ngModel)]="type" (change)="applyFilter()">
+      <option value="">All Types</option>
+      @for (accountType of accountTypes; track accountType) {
+        <option [value]="accountType">{{ accountType }}</option>
+      }
+    </select>
+
+    <select [(ngModel)]="active" (change)="applyFilter()">
+      <option value="">All Status</option>
+      <option [ngValue]="true">Active</option>
+      <option [ngValue]="false">Inactive</option>
+    </select>
+
+    <button class="filter-btn" type="button" (click)="applyFilter()">Search</button>
+    <button class="clear-btn" type="button" (click)="clearFilter()">Clear</button>
+
+    <div class="view-toggle">
+      <button [class.active]="viewMode === 'TREE'" type="button" (click)="setViewMode('TREE')">
+        <i class="bi bi-diagram-3"></i>
+        Tree
+      </button>
+      <button [class.active]="viewMode === 'TABLE'" type="button" (click)="setViewMode('TABLE')">
+        <i class="bi bi-table"></i>
+        Table
+      </button>
+    </div>
+  </section>
+
+  <section class="workspace">
+    <div class="accounts-panel">
+      <div class="panel-header">
+        <h2>{{ viewMode === 'TREE' ? 'Account Tree' : 'Account Table' }}</h2>
+        <span>{{ accounts().length }} items</span>
+      </div>
+
+      @if (loading()) {
+        <div class="state-box">
+          <i class="bi bi-arrow-repeat spin"></i>
+          Loading accounts...
+        </div>
+      } @else if (viewMode === 'TREE') {
+        <div class="tree-list">
+          @for (root of treeAccounts(); track root.id) {
+            <ng-container
+              [ngTemplateOutlet]="accountNode"
+              [ngTemplateOutletContext]="{ account: root, level: 0 }"
+            />
+          }
+        </div>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Account</th>
+                <th>Type</th>
+                <th>Parent</th>
+                <th>Balance</th>
+                <th>Status</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (account of accounts(); track account.id) {
+                <tr>
+                  <td>
+                    <strong>{{ account.code }}</strong>
+                    <span>{{ account.name }}</span>
+                  </td>
+                  <td><span class="type-badge" [class]="getTypeClass(account.type)">{{ account.type }}</span></td>
+                  <td>{{ account.parentName || 'Root' }}</td>
+                  <td>{{ account.currentBalance | number:'1.2-2' }}</td>
+                  <td>
+                    <span class="status" [class.active]="account.isActive" [class.inactive]="!account.isActive">
+                      {{ account.isActive ? 'Active' : 'Inactive' }}
+                    </span>
+                  </td>
+                  <td class="text-end">
+                    <button
+                    *appHasPermission="'EDIT_ACCOUNT'"
+                     class="icon-action edit" type="button" (click)="openEditModal(account)">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    @if (account.isActive) {
+                      <button
+                       *appHasPermission="'DEACTIVATE_ACCOUNT'"
+                       class="icon-action danger" type="button" (click)="deactivateAccount(account)">
+                        <i class="bi bi-slash-circle"></i>
+                      </button>
+                    } @else {
+                      <button
+                       *appHasPermission="'DEACTIVATE_ACCOUNT'"
+                       class="icon-action success" type="button" (click)="activateAccount(account)">
+                        <i class="bi bi-check-circle"></i>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    <aside class="details-panel">
+      @if (selectedAccount()) {
+        <div class="detail-header">
+          <div class="detail-icon">
+            <i class="bi bi-wallet2"></i>
+          </div>
+          <div>
+            <h2>{{ selectedAccount()!.name }}</h2>
+            <p>{{ selectedAccount()!.code }}</p>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div>
+            <span>Type</span>
+            <strong>{{ selectedAccount()!.type }}</strong>
+          </div>
+          <div>
+            <span>Nature</span>
+            <strong>{{ getNaturalBalance(selectedAccount()!.type) }}</strong>
+          </div>
+          <div>
+            <span>Status</span>
+            <strong>{{ selectedAccount()!.isActive ? 'Active' : 'Inactive' }}</strong>
+          </div>
+          <div>
+            <span>Balance</span>
+            <strong>{{ selectedAccount()!.currentBalance | number:'1.2-2' }}</strong>
+          </div>
+          <div>
+            <span>Parent</span>
+            <strong>{{ selectedAccount()!.parentName || 'Root Account' }}</strong>
+          </div>
+          <div>
+            <span>System</span>
+            <strong>{{ selectedAccount()!.isDefault ? 'Default' : 'Custom' }}</strong>
+          </div>
+        </div>
+
+        <p class="description">{{ selectedAccount()!.description || 'No description provided.' }}</p>
+
+        <div class="detail-actions">
+          <button
+           *appHasPermission="'EDIT_ACCOUNT'"
+           type="button" (click)="openEditModal(selectedAccount()!)">
+            <i class="bi bi-pencil"></i>
+            Edit
+          </button>
+
+          @if (selectedAccount()!.isActive) {
+            <button
+             *appHasPermission="'DEACTIVATE_ACCOUNT'"
+             class="danger" type="button" (click)="deactivateAccount(selectedAccount()!)">
+              <i class="bi bi-slash-circle"></i>
+              Deactivate
+            </button>
+          } @else {
+            <button
+             *appHasPermission="'DEACTIVATE_ACCOUNT'"
+             class="success" type="button" (click)="activateAccount(selectedAccount()!)">
+              <i class="bi bi-check-circle"></i>
+              Activate
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="state-box">
+          Select an account to view details
+        </div>
+      }
+    </aside>
+  </section>
+</div>
+
+<ng-template #accountNode let-account="account" let-level="level">
+  <div
+    class="tree-node"
+    [class.selected]="selectedAccount()?.id === account.id"
+    [style.paddingLeft.px]="18 + level * 22"
+    (click)="selectAccount(account)"
+  >
+    <div class="node-main">
+      <i class="bi" [class]="account.children?.length ? 'bi-folder2-open' : 'bi-file-earmark-text'"></i>
+      <div>
+        <strong>{{ account.code }} · {{ account.name }}</strong>
+        <span>{{ account.type }} · {{ account.currentBalance | number:'1.2-2' }}</span>
+      </div>
+    </div>
+
+    <span class="status mini" [class.active]="account.isActive" [class.inactive]="!account.isActive">
+      {{ account.isActive ? 'Active' : 'Inactive' }}
+    </span>
+  </div>
+
+  @for (child of account.children || []; track child.id) {
+    <ng-container
+      [ngTemplateOutlet]="accountNode"
+      [ngTemplateOutletContext]="{ account: child, level: level + 1 }"
+    />
+  }
+</ng-template>
+
+@if (showModal()) {
+  <div class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2>{{ editingAccount ? 'Edit Account' : 'New Account' }}</h2>
+          <p>{{ editingAccount ? 'Update account information' : 'Create a new financial account' }}</p>
+        </div>
+
+        <button class="close-btn" type="button" (click)="closeModal()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <form [formGroup]="accountForm" (ngSubmit)="submitAccount()" class="modal-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Code</label>
+            <input type="text" formControlName="code" placeholder="Example: 1110" />
+            @if (accountForm.controls.code.touched && accountForm.controls.code.invalid) {
+              <small>Numeric account code is required</small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label>Type</label>
+            <select formControlName="type">
+              @for (accountType of accountTypes; track accountType) {
+                <option [value]="accountType">{{ accountType }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group full">
+            <label>Name</label>
+            <input type="text" formControlName="name" placeholder="Account name" />
+            @if (accountForm.controls.name.touched && accountForm.controls.name.invalid) {
+              <small>Name is required</small>
+            }
+          </div>
+
+          <div class="form-group full">
+            <label>Parent Account</label>
+            <select formControlName="parentId">
+              <option [ngValue]="null">No Parent / Root</option>
+              @for (account of getParentOptions(); track account.id) {
+                <option [ngValue]="account.id">{{ account.code }} - {{ account.name }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group full">
+            <label>Description</label>
+            <textarea formControlName="description" rows="3" placeholder="Short description"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="clear-btn" type="button" (click)="closeModal()">Cancel</button>
+          <button class="hero-btn" type="submit" [disabled]="submitting()">
+            {{ submitting() ? 'Saving...' : editingAccount ? 'Update Account' : 'Create Account' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

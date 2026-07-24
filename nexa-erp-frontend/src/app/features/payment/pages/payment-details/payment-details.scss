@@ -1,0 +1,317 @@
+.payment-details-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.state-box {
+  padding: 3rem;
+  text-align: center;
+  background: #fff;
+  border-radius: 16px;
+  color: #6b7280;
+}
+
+/* ---------------- Hero ---------------- */
+
+.details-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  padding: 1.75rem 2rem;
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+
+  h1 {
+    margin: .35rem 0;
+    font-size: 2rem;
+    color: #111827;
+  }
+
+  p {
+    margin: 0;
+    color: #6b7280;
+  }
+
+  .eyebrow {
+    font-size: .75rem;
+    font-weight: 700;
+    color: #2563eb;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+}
+
+/* ---------------- Status ---------------- */
+
+.status {
+  padding: .55rem 1rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: .85rem;
+}
+
+.status-posted {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.status-draft {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.status-cancelled {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* ---------------- Actions ---------------- */
+
+.action-bar {
+  display: flex;
+  gap: .75rem;
+  flex-wrap: wrap;
+
+  button,
+  a {
+    border: none;
+    text-decoration: none;
+    cursor: pointer;
+    padding: .8rem 1.3rem;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: .2s;
+  }
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.btn-light {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.btn-post {
+  background: #16a34a;
+  color: white;
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: white;
+}
+
+/* ---------------- Info ---------------- */
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.info-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 1.25rem;
+
+  span {
+    display: block;
+    color: #6b7280;
+    font-size: .85rem;
+  }
+
+  strong {
+    display: block;
+    margin-top: .45rem;
+    color: #111827;
+    font-size: 1.05rem;
+  }
+}
+
+/* ---------------- Layout ---------------- */
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 2fr 360px;
+  gap: 1.5rem;
+}
+
+.main-card,
+.summary-card,
+.notes-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 1.5rem;
+}
+
+/* ---------------- Table ---------------- */
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.2rem;
+  }
+
+  span {
+    color: #6b7280;
+  }
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+
+  thead {
+    background: #f9fafb;
+  }
+
+  th,
+  td {
+    padding: .9rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  th {
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+  }
+}
+
+.text-end {
+  text-align: right;
+}
+
+.total-cell {
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.ref-pill {
+  display: inline-block;
+  padding: .3rem .75rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: .8rem;
+  font-weight: 600;
+}
+
+.empty-box {
+  padding: 2rem;
+  text-align: center;
+  color: #9ca3af;
+}
+
+/* ---------------- Summary ---------------- */
+
+.summary-card {
+
+  h2 {
+    margin-bottom: 1.5rem;
+  }
+
+  > div {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  span {
+    color: #6b7280;
+  }
+
+  strong {
+    color: #111827;
+  }
+
+  .due strong {
+    color: #2563eb;
+    font-size: 1.1rem;
+  }
+}
+
+/* ---------------- Notes ---------------- */
+
+.notes-card {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+
+  span {
+    display: block;
+    font-size: .8rem;
+    color: #6b7280;
+    margin-bottom: .4rem;
+  }
+
+  strong {
+    color: #111827;
+  }
+
+  p {
+    margin: 0;
+    color: #374151;
+    line-height: 1.6;
+  }
+}
+
+/* ---------------- Responsive ---------------- */
+
+@media (max-width: 1200px) {
+
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-card {
+    order: -1;
+  }
+
+  .info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .notes-card {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+
+  .details-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .action-bar {
+    flex-direction: column;
+
+    button,
+    a {
+      width: 100%;
+      text-align: center;
+    }
+  }
+}

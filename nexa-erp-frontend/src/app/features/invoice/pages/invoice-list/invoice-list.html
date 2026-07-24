@@ -1,0 +1,263 @@
+<div class="invoice-page">
+
+  <!-- Hero -->
+  <section class="invoice-hero">
+
+    <div>
+      <span class="eyebrow">Sales Management</span>
+
+      <h1>Invoices</h1>
+
+      <p>
+        Create, manage and monitor customer invoices.
+      </p>
+    </div>
+
+    <a *appHasPermission="'CREATE_INVOICE'" routerLink="/invoice/new" class="new-btn">
+
+      <i class="bi bi-plus-circle"></i>
+      New Invoice
+    </a>
+
+  </section>
+
+  <!-- Summary -->
+
+  <section class="summary-grid">
+
+    <div class="summary-card draft">
+
+      <span>Draft</span>
+
+      <strong>{{ draftCount() }}</strong>
+
+    </div>
+
+    <div class="summary-card posted">
+
+      <span>Posted</span>
+
+      <strong>{{ postedCount() }}</strong>
+
+    </div>
+
+    <div class="summary-card paid">
+
+      <span>Paid</span>
+
+      <strong>{{ paidCount() }}</strong>
+
+    </div>
+
+    <div class="summary-card due">
+
+      <span>Total Due</span>
+
+      <strong>
+
+        {{ totalDue() | number:'1.2-2' }}
+
+      </strong>
+
+    </div>
+
+  </section>
+
+  <!-- Filter -->
+
+  <section class="filter-panel">
+
+    <input type="text" placeholder="Search invoice..." [ngModel]="search()" (ngModelChange)="search.set($event)">
+
+    <select [ngModel]="status()" (ngModelChange)="status.set($event)">
+
+      <option value="">All Status</option>
+
+      @for (s of statuses; track s) {
+
+      <option [value]="s">
+
+        {{ s }}
+
+      </option>
+
+      }
+
+    </select>
+
+    <button class="clear-btn" (click)="clearFilter()">
+
+      Clear
+
+    </button>
+
+  </section>
+
+  <!-- Table -->
+
+  <section class="table-card">
+
+    <div class="table-header">
+
+      <h2>Invoice List</h2>
+
+      <span>
+
+        {{ filteredInvoices().length }}
+
+        Invoices
+
+      </span>
+
+    </div>
+
+    @if (loading()) {
+
+    <div class="loading-box">
+
+      Loading...
+
+    </div>
+
+    } @else {
+
+    <div class="table-wrap">
+
+      <table>
+
+        <thead>
+
+          <tr>
+
+            <th>No</th>
+
+            <th>Customer</th>
+
+            <th>Date</th>
+
+            <th>Status</th>
+
+            <th class="text-end">Grand Total</th>
+
+            <th class="text-end">Paid</th>
+
+            <th class="text-end">Due</th>
+
+            <th>Actions</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          @for (invoice of filteredInvoices(); track invoice.id) {
+
+          <tr>
+
+            <td>
+
+              <strong>
+
+                {{ invoice.invoiceNumber }}
+
+              </strong>
+
+            </td>
+
+            <td>
+
+              {{ invoice.partyName }}
+
+            </td>
+
+            <td>
+
+              {{ invoice.invoiceDate | date }}
+
+            </td>
+
+            <td>
+
+              <span class="status" [class]="getStatusClass(invoice.status)">
+
+                {{ invoice.status }}
+
+              </span>
+
+            </td>
+
+            <td class="text-end">
+
+              {{ invoice.grandTotal | number:'1.2-2' }}
+
+            </td>
+
+            <td class="text-end">
+
+              {{ invoice.paidAmount | number:'1.2-2' }}
+
+            </td>
+
+            <td class="text-end">
+
+              {{ invoice.dueAmount | number:'1.2-2' }}
+
+            </td>
+
+            <td>
+
+              <div class="action-group">
+
+                <a [routerLink]="['/invoice', invoice.id]" class="btn-view">
+
+                  View
+
+                </a>
+
+                @if (invoice.status === 'DRAFT') {
+
+                <a *appHasPermission="'EDIT_INVOICE'" [routerLink]="['/invoice', invoice.id, 'edit']" class="btn-edit">
+
+                  Edit
+                </a>
+
+                <button *appHasPermission="'POST_INVOICE'" type="button" class="btn-post"
+                  (click)="postInvoice(invoice)">
+
+                  Post
+                </button>
+                }
+
+                @if (
+                invoice.status === 'POSTED'
+                ||
+                invoice.status === 'PARTIAL'
+                ) {
+
+                <button *appHasPermission="'CANCEL_INVOICE'" type="button" class="btn-cancel"
+                  (click)="cancelInvoice(invoice)">
+
+                  Cancel
+                </button>
+                }
+
+              </div>
+
+            </td>
+
+          </tr>
+
+          }
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+    }
+
+  </section>
+
+</div>

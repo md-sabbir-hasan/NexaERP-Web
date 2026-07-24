@@ -1,0 +1,206 @@
+<div class="party-form-page">
+  <section class="party-hero">
+    <div>
+      <span class="eyebrow">CRM & Finance</span>
+      <h1>{{ partyId ? 'Edit Party' : 'New Party' }}</h1>
+      <p>Create and manage customers, vendors and financial information.</p>
+    </div>
+
+    <a routerLink="/party" class="back-btn">
+      <i class="bi bi-arrow-left"></i>
+      Back to Parties
+    </a>
+  </section>
+
+  @if (loading()) {
+    <div class="state-box">Loading party...</div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" class="party-card">
+      <section class="form-section">
+        <div class="section-title">
+          <h2>Basic Information</h2>
+          <p>Name, type and company details</p>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Name</label>
+            <input type="text" formControlName="name" placeholder="Party name" />
+          </div>
+
+          <div class="form-group">
+            <label>Party Type</label>
+            <select formControlName="type">
+              @for (type of partyTypes; track type) {
+                <option [value]="type">{{ type }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Company Name</label>
+            <input type="text" formControlName="companyName" />
+          </div>
+
+          <div class="form-group">
+            <label>Contact Person</label>
+            <input type="text" formControlName="contactPerson" />
+          </div>
+
+          <div class="form-group">
+            <label>Job Position</label>
+            <input type="text" formControlName="jobPosition" />
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <div class="section-title">
+          <h2>Contact & Address</h2>
+          <p>Phone, email and address information</p>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="text" formControlName="phone" placeholder="Required" />
+          </div>
+
+          <div class="form-group">
+            <label>Mobile</label>
+            <input type="text" formControlName="mobile" />
+          </div>
+
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" formControlName="email" />
+          </div>
+
+          <div class="form-group">
+            <label>Country</label>
+            <input type="text" formControlName="country" />
+          </div>
+
+          <div class="form-group full">
+            <label>Street</label>
+            <input type="text" formControlName="street" />
+          </div>
+
+          <div class="form-group">
+            <label>City</label>
+            <input type="text" formControlName="city" />
+          </div>
+
+          <div class="form-group">
+            <label>State</label>
+            <input type="text" formControlName="state" />
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <div class="section-title">
+          <h2>Financial Information</h2>
+          <p>Terms, currency, opening balance and bank details</p>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Credit Limit</label>
+            <input type="number" formControlName="creditLimit" min="0" step="0.01" />
+          </div>
+
+          <div class="form-group">
+            <label>Payment Terms</label>
+            <input type="number" formControlName="paymentTerms" min="0" />
+          </div>
+
+          <div class="form-group">
+            <label>Opening Balance</label>
+            <input type="number" formControlName="openingBalance" step="0.01" />
+          </div>
+
+          <div class="form-group">
+            <label>Currency</label>
+            <input type="text" formControlName="currency" />
+          </div>
+
+          <div class="form-group">
+            <label>Bank Name</label>
+            <input type="text" formControlName="bankName" />
+          </div>
+
+          <div class="form-group">
+            <label>Bank Account No</label>
+            <input type="text" formControlName="bankAccountNo" />
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <div class="section-title">
+          <h2>Tax & Documents</h2>
+          <p>BIN, TIN, NID and trade license information</p>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>BIN</label>
+            <input type="text" formControlName="bin" />
+          </div>
+
+          <div class="form-group">
+            <label>TIN</label>
+            <input type="text" formControlName="tin" />
+          </div>
+
+          <div class="form-group checkbox-group">
+            <label>
+              <input type="checkbox" formControlName="vatRegistered" />
+              VAT Registered
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label>Trade License No</label>
+            <input type="text" formControlName="tradeLicenseNo" />
+          </div>
+
+          <div class="form-group">
+            <label>Trade License Expiry</label>
+            <input type="date" formControlName="tradeLicenseExpiry" />
+          </div>
+
+          <div class="form-group">
+            <label>BIN Certificate No</label>
+            <input type="text" formControlName="binCertificateNo" />
+          </div>
+
+          <div class="form-group">
+            <label>TIN Certificate No</label>
+            <input type="text" formControlName="tinCertificateNo" />
+          </div>
+
+          <div class="form-group">
+            <label>NID No</label>
+            <input type="text" formControlName="nidNo" />
+          </div>
+
+          <div class="form-group full">
+            <label>Notes</label>
+            <textarea formControlName="notes" rows="3"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <a routerLink="/party" class="cancel-btn">Cancel</a>
+
+        <button class="save-btn" type="submit" [disabled]="submitting()">
+          <i class="bi bi-save"></i>
+          {{ submitting() ? 'Saving...' : 'Save Party' }}
+        </button>
+      </div>
+    </form>
+  }
+</div>

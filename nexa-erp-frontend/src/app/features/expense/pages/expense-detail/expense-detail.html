@@ -1,0 +1,101 @@
+<div class="expense-detail-page">
+  @if (loading()) {
+  <div class="loading-box">Loading...</div>
+  } @else if (expense(); as e) {
+
+  <section class="detail-hero">
+    <div>
+      <span class="eyebrow">Expense</span>
+      <h1>{{ e.expenseNumber }}</h1>
+      <p>{{ e.expenseAccountName }} — {{ e.expenseDate | date }}</p>
+    </div>
+
+    <div class="hero-actions">
+      <a routerLink="/expense" class="btn-back">Back to List</a>
+      @if (e.status === 'DRAFT') {
+      <button *appHasPermission="'CREATE_EXPENSE'" class="btn-post" type="button" (click)="postExpense()">
+        Post Expense
+      </button>
+      }
+      @if (e.status === 'POSTED') {
+      <button *appHasPermission="'CANCEL_EXPENSE'" class="btn-cancel" type="button" (click)="cancelExpense()">
+        Cancel Expense
+      </button>
+      }
+    </div>
+  </section>
+
+  <section class="status-row">
+    <span class="status-badge" [class]="e.status.toLowerCase()">{{ e.status }}</span>
+    <span class="payment-badge" [class]="e.paymentStatus.toLowerCase()">{{ e.paymentStatus }}</span>
+  </section>
+
+  <section class="detail-grid">
+    <div class="detail-card">
+      <h3>Amount Summary</h3>
+      <div class="row"><span>Total Amount</span><strong>{{ e.amount | number:'1.2-2' }}</strong></div>
+      <div class="row"><span>Paid Amount</span><strong>{{ e.paidAmount | number:'1.2-2' }}</strong></div>
+      <div class="row due"><span>Due Amount</span><strong>{{ e.dueAmount | number:'1.2-2' }}</strong></div>
+    </div>
+
+    <div class="detail-card">
+      <h3>Payment Info</h3>
+      <div class="row"><span>Paid Immediately</span><strong>{{ e.paidImmediately ? 'Yes' : 'No' }}</strong></div>
+      @if (e.paymentAccountName) {
+      <div class="row"><span>Paid From</span><strong>{{ e.paymentAccountName }}</strong></div>
+      }
+      @if (e.partyName) {
+      <div class="row"><span>Party</span><strong>{{ e.partyName }}</strong></div>
+      }
+      @if (e.referenceNumber) {
+      <div class="row"><span>Reference</span><strong>{{ e.referenceNumber }}</strong></div>
+      }
+    </div>
+
+    @if (e.notes) {
+    <div class="detail-card full">
+      <h3>Notes</h3>
+      <p>{{ e.notes }}</p>
+    </div>
+    }
+
+    @if (e.attachmentUrl) {
+    <div class="detail-card full">
+      <h3>Receipt</h3>
+      <a [href]="e.attachmentUrl" target="_blank" class="attachment-link">View Attached Receipt</a>
+    </div>
+    }
+
+    @if (e.paymentStatus === 'UNPAID' || e.paymentStatus === 'PARTIAL') {
+    <div class="detail-card full pay-hint">
+      <h3>Pay this expense</h3>
+      <p>
+        Due amount <strong>{{ e.dueAmount | number:'1.2-2' }}</strong> — go to
+        <a *appHasPermission="'CREATE_PAYMENT'" routerLink="/payment/new">Payments → New Payment</a>,
+        select party <strong>{{ e.partyName }}</strong>, Payment Type = PAYMENT,
+        and allocate against this expense.
+      </p>
+    </div>
+    }
+
+    @if (e.status === 'CANCELLED') {
+    <div class="detail-card full cancel-info">
+      <h3>Cancellation Info</h3>
+      <div class="row"><span>Cancelled At</span><strong>{{ e.cancelledAt | date:'medium' }}</strong></div>
+      <div class="row"><span>Reason</span><strong>{{ e.cancelReason }}</strong></div>
+    </div>
+    }
+
+    @if (e.status === 'DRAFT') {
+    <section class="draft-notice">
+      ⚠️ Ei expense ta ekhono <strong>DRAFT</strong> — journal entry post hoyni, kono taka kata hoyni ba payable e
+      bosheni।
+      Review kore <strong>"Post Expense"</strong> button e click koro finalize korte।
+    </section>
+    }
+  </section>
+
+  } @else {
+  <div class="empty-box">Expense not found</div>
+  }
+</div>

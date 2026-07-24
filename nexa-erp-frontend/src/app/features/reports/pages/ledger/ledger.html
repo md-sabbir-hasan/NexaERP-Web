@@ -1,0 +1,181 @@
+<div class="ledger-page">
+  <section class="ledger-hero">
+    <div>
+      <span class="eyebrow">Financial Reports</span>
+      <h1>Ledger Report</h1>
+      <p>Review account-wise debit, credit, opening balance and running balance.</p>
+    </div>
+
+    <div class="hero-actions">
+      <button type="button" (click)="printReport()" [disabled]="!ledger()">
+        <i class="bi bi-printer"></i>
+        Print
+      </button>
+
+      <button type="button" (click)="exportReport()" [disabled]="!ledger()">
+        <i class="bi bi-file-earmark-excel"></i>
+        Export
+      </button>
+
+      <button type="button" (click)="refreshReport()" [disabled]="!ledger()">
+        <i class="bi bi-arrow-clockwise"></i>
+        Refresh
+      </button>
+    </div>
+  </section>
+
+  <section class="filter-panel">
+    <div class="form-group account">
+      <label>Account</label>
+      <select [(ngModel)]="accountId">
+        <option [ngValue]="null">Select account</option>
+        @for (account of accounts(); track account.id) {
+          <option [ngValue]="account.id">{{ account.code }} - {{ account.name }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>From Date</label>
+      <input type="date" [(ngModel)]="fromDate" />
+    </div>
+
+    <div class="form-group">
+      <label>To Date</label>
+      <input type="date" [(ngModel)]="toDate" />
+    </div>
+
+    <button class="generate-btn" type="button" (click)="generateReport()">
+      <i class="bi bi-bar-chart-line"></i>
+      Generate
+    </button>
+
+    <button class="clear-btn" type="button" (click)="clearReport()">Clear</button>
+  </section>
+
+  @if (loading()) {
+    <div class="state-box">
+      <i class="bi bi-arrow-repeat spin"></i>
+      Loading ledger...
+    </div>
+  } @else if (ledger()) {
+    <section class="report-title">
+      <div>
+        <h2>{{ ledger()!.accountCode }} · {{ ledger()!.accountName }}</h2>
+        <p>{{ ledger()!.accountType }} · {{ ledger()!.fromDate }} to {{ ledger()!.toDate }}</p>
+      </div>
+
+      <span class="account-badge">{{ ledger()!.accountType }}</span>
+    </section>
+
+    <section class="summary-grid">
+      <div class="summary-card opening">
+        <span>Opening Balance</span>
+        <strong>
+          {{ abs(ledger()!.openingBalance) | number: '1.2-2' }}
+          {{ getBalanceSide(ledger()!.openingBalance) }}
+        </strong>
+      </div>
+
+      <div class="summary-card debit">
+        <span>Total Debit</span>
+        <strong>{{ ledger()!.totalDebit | number: '1.2-2' }}</strong>
+      </div>
+
+      <div class="summary-card credit">
+        <span>Total Credit</span>
+        <strong>{{ ledger()!.totalCredit | number: '1.2-2' }}</strong>
+      </div>
+
+      <div class="summary-card closing">
+        <span>Closing Balance</span>
+        <strong>
+          {{ abs(ledger()!.closingBalance) | number: '1.2-2' }}
+          {{ getBalanceSide(ledger()!.closingBalance) }}
+        </strong>
+      </div>
+    </section>
+
+    <section class="ledger-table-card">
+      <div class="table-header">
+        <h2>Ledger Entries</h2>
+        <span>{{ ledger()!.entries.length }} transactions</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Journal</th>
+              <th>Reference</th>
+              <th>Source</th>
+              <th>Description</th>
+              <th class="text-end">Debit</th>
+              <th class="text-end">Credit</th>
+              <th class="text-end">Running Balance</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr class="opening-row">
+              <td colspan="7">Opening Balance</td>
+              <td class="text-end">
+                {{ abs(ledger()!.openingBalance) | number: '1.2-2' }}
+                {{ getBalanceSide(ledger()!.openingBalance) }}
+              </td>
+            </tr>
+
+            @for (entry of ledger()!.entries; track entry.journalEntryId + '-' + entry.date) {
+              <tr>
+                <td>{{ entry.date }}</td>
+                <td>
+                  <strong>{{ entry.journalEntryNumber }}</strong>
+                </td>
+                <td>{{ entry.referenceNumber || '-' }}</td>
+                <td>
+                  <span class="source-pill">{{ entry.sourceType }}</span>
+                </td>
+                <td>{{ entry.description || '-' }}</td>
+                <td class="text-end debit-text">
+                  {{ entry.debit | number: '1.2-2' }}
+                </td>
+                <td class="text-end credit-text">
+                  {{ entry.credit | number: '1.2-2' }}
+                </td>
+                <td class="text-end balance-cell">
+                  {{ abs(entry.runningBalance) | number: '1.2-2' }}
+                  {{ getBalanceSide(entry.runningBalance) }}
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="8">
+                  <div class="empty-box">No transactions found for this period</div>
+                </td>
+              </tr>
+            }
+
+            <tr class="closing-row">
+              <td colspan="5">Closing Balance</td>
+              <td class="text-end">{{ ledger()!.totalDebit | number: '1.2-2' }}</td>
+              <td class="text-end">{{ ledger()!.totalCredit | number: '1.2-2' }}</td>
+              <td class="text-end">
+                {{ abs(ledger()!.closingBalance) | number: '1.2-2' }}
+                {{ getBalanceSide(ledger()!.closingBalance) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  } @else {
+    <section class="empty-report">
+      <div class="empty-icon">
+        <i class="bi bi-journal-richtext"></i>
+      </div>
+      <h2>Generate Ledger Report</h2>
+      <p>Select an account and date range to view account-wise ledger transactions.</p>
+    </section>
+  }
+</div>

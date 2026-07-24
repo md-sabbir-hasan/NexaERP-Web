@@ -1,0 +1,162 @@
+<div class="payment-details-page">
+  @if (loading()) {
+  <div class="state-box">Loading payment...</div>
+  } @else if (payment()) {
+  <section class="details-hero">
+    <div>
+      <span class="eyebrow">Finance Payment</span>
+      <h1>{{ payment()!.paymentNumber }}</h1>
+      <p>{{ payment()!.partyName }} · {{ payment()!.paymentDate | date }}</p>
+    </div>
+
+    <span class="status" [class]="getStatusClass(payment()!.status)">
+      {{ payment()!.status }}
+    </span>
+  </section>
+
+  <section class="action-bar">
+    <a routerLink="/payment" class="btn-secondary">
+      <i class="bi bi-arrow-left"></i>
+      Back
+    </a>
+
+    @if (payment()!.status === 'POSTED') {
+    <button type="button" class="btn-light" (click)="downloadReceipt()">
+      <i class="bi bi-file-earmark-pdf"></i>
+      Receipt PDF
+    </button>
+    }
+
+    @if (canPost()) {
+    <button *appHasPermission="'POST_PAYMENT'" type="button" class="btn-post" (click)="postPayment()">
+      <i class="bi bi-check-circle"></i>
+      Post
+    </button>
+    }
+
+    @if (canCancel()) {
+    <button *appHasPermission="'CANCEL_PAYMENT'" type="button" class="btn-danger" (click)="cancelPayment()">
+      <i class="bi bi-x-circle"></i>
+      Cancel
+    </button>
+    }
+  </section>
+
+  <section class="info-grid">
+    <div class="info-card">
+      <span>Payment Type</span>
+      <strong>{{ payment()!.paymentType }}</strong>
+    </div>
+
+    <div class="info-card">
+      <span>Party</span>
+      <strong>{{ payment()!.partyName }}</strong>
+    </div>
+
+    <div class="info-card">
+      <span>Account</span>
+      <strong>{{ payment()!.accountName }}</strong>
+    </div>
+
+    <div class="info-card">
+      <span>Method</span>
+      <strong>{{ payment()!.paymentMethod }}</strong>
+    </div>
+  </section>
+
+  <section class="content-grid">
+    <div class="main-card">
+      <div class="card-header">
+        <h2>Allocations</h2>
+        <span>{{ payment()!.allocations.length }} items</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Reference Type</th>
+              <th>Reference ID</th>
+              <th class="text-end">Allocated Amount</th>
+              <th>Created At</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (allocation of payment()!.allocations; track allocation.id) {
+            <tr>
+              <td>
+                <span class="ref-pill">{{ allocation.referenceType }}</span>
+              </td>
+              <td>#{{ allocation.referenceId }}</td>
+              <td class="text-end total-cell">
+                {{ allocation.allocatedAmount | number:'1.2-2' }}
+              </td>
+              <td>{{ allocation.createdAt | date:'medium' }}</td>
+            </tr>
+            } @empty {
+            <tr>
+              <td colspan="4">
+                <div class="empty-box">No allocations. Amount is kept as advance/unallocated.</div>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <aside class="summary-card">
+      <h2>Summary</h2>
+
+      <div>
+        <span>Amount</span>
+        <strong>{{ payment()!.amount | number:'1.2-2' }}</strong>
+      </div>
+
+      <div>
+        <span>Allocated</span>
+        <strong>{{ payment()!.allocatedAmount | number:'1.2-2' }}</strong>
+      </div>
+
+      <div class="due">
+        <span>Unallocated</span>
+        <strong>{{ payment()!.unallocatedAmount | number:'1.2-2' }}</strong>
+      </div>
+
+      <div>
+        <span>Currency</span>
+        <strong>{{ payment()!.currencyCode }}</strong>
+      </div>
+
+      <div>
+        <span>Exchange Rate</span>
+        <strong>{{ payment()!.exchangeRate | number:'1.2-4' }}</strong>
+      </div>
+    </aside>
+  </section>
+
+  <section class="notes-card">
+    <div>
+      <span>Transaction Ref</span>
+      <strong>{{ payment()!.transactionRef || '-' }}</strong>
+    </div>
+
+    <div>
+      <span>Accounting Effect</span>
+      <p>
+        @if (payment()!.paymentType === 'RECEIPT') {
+        Dr Cash/Bank, Cr Accounts Receivable
+        } @else {
+        Dr Accounts Payable, Cr Cash/Bank
+        }
+      </p>
+    </div>
+
+    <div>
+      <span>Notes</span>
+      <p>{{ payment()!.notes || 'No notes provided.' }}</p>
+    </div>
+  </section>
+  }
+</div>

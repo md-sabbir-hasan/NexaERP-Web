@@ -1,0 +1,174 @@
+<div class="roles-page">
+  <div class="page-header">
+    <div>
+      <h1>Roles</h1>
+      <p>Manage system roles and assigned permissions</p>
+    </div>
+
+    <button class="primary-btn" type="button" (click)="openCreateModal()">
+      <i class="bi bi-plus-lg"></i>
+      Create Role
+    </button>
+  </div>
+
+  <div class="filter-card">
+    <input
+      type="text"
+      [(ngModel)]="search"
+      placeholder="Search role by name or description"
+    />
+  </div>
+
+  <div class="table-card">
+    @if (loading()) {
+      <div class="state-box">
+        <i class="bi bi-arrow-repeat spin"></i>
+        Loading roles...
+      </div>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Role</th>
+              <th>Description</th>
+              <th>Users</th>
+              <th>Permissions</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (role of filteredRoles(); track role.id) {
+              <tr>
+                <td>
+                  <div class="role-cell">
+                    <div class="role-icon">
+                      <i class="bi bi-person-badge"></i>
+                    </div>
+                    <div>
+                      <strong>{{ role.name }}</strong>
+                      @if (isSuperAdmin(role)) {
+                        <span class="locked">Protected</span>
+                      }
+                    </div>
+                  </div>
+                </td>
+
+                <td>{{ role.description || '-' }}</td>
+                <td>{{ role.userCount }}</td>
+                <td>
+                  <span class="permission-pill">
+                    {{ role.permissions.length }} permissions
+                  </span>
+                </td>
+
+                <td class="text-end">
+                  <button
+                    class="action-btn edit"
+                    type="button"
+                    [disabled]="isSuperAdmin(role)"
+                    (click)="openEditModal(role)"
+                  >
+                    <i class="bi bi-pencil"></i>
+                    Edit
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5">
+                  <div class="state-box">No roles found</div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+
+@if (showModal()) {
+  <div class="modal-backdrop">
+    <div class="modal-card large">
+      <div class="modal-header">
+        <div>
+          <h2>{{ selectedRole ? 'Edit Role' : 'Create Role' }}</h2>
+          <p>Configure role information and permissions</p>
+        </div>
+
+        <button class="close-btn" type="button" (click)="closeModal()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <form [formGroup]="roleForm" (ngSubmit)="submitRole()" class="modal-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Role Name</label>
+            <input type="text" formControlName="name" placeholder="Example: ACCOUNTANT" />
+
+            @if (roleForm.controls.name.touched && roleForm.controls.name.invalid) {
+              <small class="field-error">Role name is required</small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label>Description</label>
+            <input type="text" formControlName="description" placeholder="Short description" />
+          </div>
+        </div>
+
+        <div class="permissions-section">
+          <div class="section-title">
+            <h3>Permissions</h3>
+            <span>{{ roleForm.controls.permissionIds.value.length }} selected</span>
+          </div>
+
+          @if (roleForm.controls.permissionIds.touched && roleForm.controls.permissionIds.invalid) {
+            <small class="field-error">At least one permission is required</small>
+          }
+
+          <div class="permission-groups">
+            @for (group of groupedPermissions(); track group.module) {
+              <div class="permission-group">
+                <h4>{{ group.module }}</h4>
+
+                <div class="permission-list">
+                  @for (permission of group.permissions; track permission.id) {
+                    <label class="permission-item">
+                      <input
+                        type="checkbox"
+                        [checked]="hasPermissionSelected(permission.id)"
+                        (change)="togglePermission(permission.id)"
+                      />
+                      <span>
+                        <strong>{{ permission.name }}</strong>
+                        <small>{{ permission.code }}</small>
+                      </span>
+                    </label>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="clear-btn" type="button" (click)="closeModal()">Cancel</button>
+
+          <button class="primary-btn" type="submit" [disabled]="submitting()">
+            {{
+              submitting()
+                ? 'Saving...'
+                : selectedRole
+                  ? 'Update Role'
+                  : 'Create Role'
+            }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

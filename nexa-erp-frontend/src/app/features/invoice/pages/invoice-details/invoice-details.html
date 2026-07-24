@@ -1,0 +1,162 @@
+<div class="invoice-details-page">
+  @if (loading()) {
+  <div class="state-box">Loading invoice...</div>
+  } @else if (invoice()) {
+  <section class="details-hero">
+    <div>
+      <span class="eyebrow">Sales Invoice</span>
+      <h1>{{ invoice()!.invoiceNumber }}</h1>
+      <p>{{ invoice()!.partyName }} · {{ invoice()!.invoiceDate | date }}</p>
+    </div>
+
+    <span class="status" [class]="getStatusClass(invoice()!.status)">
+      {{ invoice()!.status }}
+    </span>
+  </section>
+
+  <section class="action-bar">
+    <a routerLink="/invoice" class="btn-secondary">
+      <i class="bi bi-arrow-left"></i>
+      Back
+    </a>
+
+    <button type="button" class="btn-light" (click)="printInvoice()">
+      <i class="bi bi-printer"></i>
+      Print
+    </button>
+
+    <button type="button" class="btn-light" disabled title="Coming soon">
+      <i class="bi bi-file-earmark-pdf"></i>
+      PDF
+    </button>
+
+    @if (invoice()!.status === 'DRAFT') {
+    <a *appHasPermission="'EDIT_INVOICE'" [routerLink]="['/invoice', invoice()!.id, 'edit']" class="btn-edit">
+
+      <i class="bi bi-pencil"></i>
+      Edit
+    </a>
+
+    <button *appHasPermission="'POST_INVOICE'" type="button" class="btn-post" (click)="postInvoice()">
+
+      <i class="bi bi-check-circle"></i>
+      Post
+    </button>
+    }
+
+    @if (invoice()!.status === 'POSTED' || invoice()!.status === 'PARTIAL') {
+    <button *appHasPermission="'CANCEL_INVOICE'" type="button" class="btn-danger" (click)="cancelInvoice()">
+      <i class="bi bi-x-circle"></i>
+      Cancel
+    </button>
+    }
+  </section>
+
+  <section class="info-grid">
+    <div class="info-card">
+      <span>Customer</span>
+      <strong>{{ invoice()!.partyName }}</strong>
+    </div>
+
+    <div class="info-card">
+      <span>Invoice Date</span>
+      <strong>{{ invoice()!.invoiceDate | date }}</strong>
+    </div>
+
+    <div class="info-card">
+      <span>Due Date</span>
+      <strong>{{ invoice()!.dueDate | date }}</strong>
+    </div>
+
+    <div class="info-card">
+      <span>Currency</span>
+      <strong>{{ invoice()!.currencyCode }}</strong>
+    </div>
+  </section>
+
+  <section class="content-grid">
+    <div class="items-card">
+      <div class="card-header">
+        <h2>Invoice Items</h2>
+        <span>{{ invoice()!.items.length }} items</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th class="text-end">Qty</th>
+              <th class="text-end">Unit Price</th>
+              <th class="text-end">Discount</th>
+              <th class="text-end">VAT</th>
+              <th class="text-end">Line Total</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (item of invoice()!.items; track item.id) {
+            <tr>
+              <td>
+                <strong>{{ item.description }}</strong>
+              </td>
+              <td class="text-end">{{ item.quantity | number:'1.2-2' }}</td>
+              <td class="text-end">{{ item.unitPrice | number:'1.2-2' }}</td>
+              <td class="text-end">{{ item.discountAmount | number:'1.2-2' }}</td>
+              <td class="text-end">{{ item.vatAmount | number:'1.2-2' }}</td>
+              <td class="text-end total-cell">{{ item.lineTotal | number:'1.2-2' }}</td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <aside class="summary-card">
+      <h2>Summary</h2>
+
+      <div>
+        <span>Subtotal</span>
+        <strong>{{ invoice()!.subTotal | number:'1.2-2' }}</strong>
+      </div>
+
+      <div>
+        <span>Discount</span>
+        <strong>{{ invoice()!.discountAmount | number:'1.2-2' }}</strong>
+      </div>
+
+      <div>
+        <span>VAT</span>
+        <strong>{{ invoice()!.vatAmount | number:'1.2-2' }}</strong>
+      </div>
+
+      <div class="grand">
+        <span>Grand Total</span>
+        <strong>{{ invoice()!.grandTotal | number:'1.2-2' }}</strong>
+      </div>
+
+      <div>
+        <span>Paid</span>
+        <strong>{{ invoice()!.paidAmount | number:'1.2-2' }}</strong>
+      </div>
+
+      <div class="due">
+        <span>Due</span>
+        <strong>{{ invoice()!.dueAmount | number:'1.2-2' }}</strong>
+      </div>
+    </aside>
+  </section>
+
+  <section class="notes-card">
+    <div>
+      <span>Reference</span>
+      <strong>{{ invoice()!.reference || '-' }}</strong>
+    </div>
+
+    <div>
+      <span>Notes</span>
+      <p>{{ invoice()!.notes || 'No notes provided.' }}</p>
+    </div>
+  </section>
+  }
+</div>

@@ -1,0 +1,387 @@
+<div class="coa-page">
+  <section class="finance-hero">
+    <div>
+      <a class="back-link" routerLink="/banking">
+        <i class="bi bi-arrow-left"></i>
+        Back to Bank Accounts
+      </a>
+      <span class="eyebrow">Finance Console</span>
+      <h1>Bank Transactions</h1>
+      <p>Record deposits, withdrawals and view all bank account movements.</p>
+    </div>
+
+    <div class="hero-actions">
+      <button
+       *appHasPermission="'CREATE_BANKING'"
+        class="secondary-btn" type="button" (click)="openTransferModal()">
+        <i class="bi bi-arrow-left-right"></i>
+        Transfer
+      </button>
+
+      <button
+       *appHasPermission="'CREATE_BANKING'"
+        class="hero-btn" type="button" (click)="openCreateModal()">
+        <i class="bi bi-plus-circle"></i>
+        New Transaction
+      </button>
+    </div>
+  </section>
+
+  <section class="metric-grid">
+    <div class="metric-card">
+      <span>Total Transactions</span>
+      <strong>{{ transactions().length }}</strong>
+      <small>All accounts</small>
+    </div>
+
+    <div class="metric-card credit">
+      <span>Total Credit</span>
+      <strong>{{ totalCredit | number: '1.2-2' }}</strong>
+      <small>Money in</small>
+    </div>
+
+    <div class="metric-card debit">
+      <span>Total Debit</span>
+      <strong>{{ totalDebit | number: '1.2-2' }}</strong>
+      <small>Money out</small>
+    </div>
+
+    <div class="metric-card">
+      <span>Reconciled</span>
+      <strong>{{ reconciledCount }}</strong>
+      <small>Out of {{ transactions().length }}</small>
+    </div>
+  </section>
+
+  <section class="control-panel">
+    <div class="search-box">
+      <i class="bi bi-search"></i>
+      <input
+        type="text"
+        [(ngModel)]="search"
+        placeholder="Search by transaction no, reference or description"
+      />
+    </div>
+
+    <select [(ngModel)]="accountFilter">
+      <option value="">All Accounts</option>
+      @for (account of bankAccounts(); track account.id) {
+        <option [ngValue]="account.id">{{ account.accountName }}</option>
+      }
+    </select>
+
+    <select [(ngModel)]="typeFilter">
+      <option value="">All Types</option>
+      @for (type of transactionTypes; track type) {
+        <option [value]="type">{{ type }}</option>
+      }
+    </select>
+
+    <button class="clear-btn" type="button" (click)="clearFilter()">Clear</button>
+  </section>
+
+  <section class="accounts-panel">
+    <div class="panel-header">
+      <h2>Transactions</h2>
+      <span>{{ filteredTransactions().length }} items</span>
+    </div>
+
+    @if (loading()) {
+      <div class="state-box">
+        <i class="bi bi-arrow-repeat spin"></i>
+        Loading transactions...
+      </div>
+    } @else if (filteredTransactions().length === 0) {
+      <div class="state-box">No transactions found. Record one to get started.</div>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Transaction</th>
+              <th>Account</th>
+              <th>Type</th>
+              <th>Contra</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (txn of filteredTransactions(); track txn.id) {
+              <tr [class.voided-row]="txn.voided">
+                <td>
+                  <strong>{{ txn.transactionNumber }}</strong>
+                  <span
+                    >{{ txn.transactionDate }}
+                    @if (txn.referenceNumber) {
+                      • {{ txn.referenceNumber }}
+                    }
+                  </span>
+                </td>
+                <td>{{ txn.bankAccountName }}</td>
+                <td>
+                  <span
+                    class="type-badge"
+                    [class.credit]="txn.transactionType === 'CREDIT'"
+                    [class.debit]="txn.transactionType === 'DEBIT'"
+                  >
+                    <i
+                      class="bi"
+                      [class.bi-arrow-down-circle]="txn.transactionType === 'CREDIT'"
+                      [class.bi-arrow-up-circle]="txn.transactionType === 'DEBIT'"
+                    ></i>
+                    {{ txn.transactionType }}
+                  </span>
+                </td>
+                <td>{{ txn.contraAccountName || '—' }}</td>
+                <td
+                  class="amount"
+                  [class.credit]="txn.transactionType === 'CREDIT'"
+                  [class.debit]="txn.transactionType === 'DEBIT'"
+                >
+                  {{ txn.transactionType === 'CREDIT' ? '+' : '-'
+                  }}{{ txn.amount | number: '1.2-2' }}
+                </td>
+                <td>
+                  @if (txn.voided) {
+                    <span class="status voided">Voided</span>
+                  } @else if (txn.reconciled) {
+                    <span class="status reconciled">Reconciled</span>
+                  } @else {
+                    <span class="status pending">Pending</span>
+                  }
+                </td>
+                <td class="text-end">
+                  @if (!txn.voided) {
+                    @if (!txn.reconciled) {
+                      <button
+                      *appHasPermission="'CREATE_BANKING'"
+                        class="icon-action success"
+                        type="button"
+                        (click)="reconcileTransaction(txn)"
+                        title="Reconcile"
+                      >
+                        <i class="bi bi-check-circle"></i>
+                      </button>
+                      <button
+                      *appHasPermission="'CREATE_BANKING'"
+                        class="icon-action danger"
+                        type="button"
+                        (click)="voidTransactionAction(txn)"
+                        title="Void"
+                      >
+                        <i class="bi bi-x-circle"></i>
+                      </button>
+                    } @else {
+                      <button
+                      *appHasPermission="'CREATE_BANKING'"
+                        class="icon-action"
+                        type="button"
+                        (click)="unreconcileTransaction(txn)"
+                        title="Un-reconcile"
+                      >
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                      </button>
+                    }
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>
+
+@if (showModal()) {
+  <div class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2>New Bank Transaction</h2>
+          <p>Record a deposit or withdrawal</p>
+        </div>
+
+        <button class="close-btn" type="button" (click)="closeModal()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <form [formGroup]="transactionForm" (ngSubmit)="submitTransaction()" class="modal-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Bank Account</label>
+            <select formControlName="bankAccountId">
+              <option [ngValue]="null">Select account</option>
+              @for (account of bankAccounts(); track account.id) {
+                <option [ngValue]="account.id">{{ account.accountName }}</option>
+              }
+            </select>
+            @if (
+              transactionForm.controls.bankAccountId.touched &&
+              transactionForm.controls.bankAccountId.invalid
+            ) {
+              <small>Bank account is required</small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label>Transaction Type</label>
+            <select formControlName="transactionType">
+              <option value="CREDIT">Credit (Money In)</option>
+              <option value="DEBIT">Debit (Money Out)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Transaction Date</label>
+            <input type="date" formControlName="transactionDate" />
+          </div>
+
+          <div class="form-group">
+            <label>Amount</label>
+            <input type="number" step="0.01" min="0.01" formControlName="amount" />
+            @if (
+              transactionForm.controls.amount.touched && transactionForm.controls.amount.invalid
+            ) {
+              <small>Enter a valid amount greater than 0</small>
+            }
+          </div>
+
+          <div class="form-group full">
+            <label>Contra Account</label>
+            <select formControlName="contraAccountId">
+              <option [ngValue]="null">Select the other side of the entry</option>
+              @for (coa of contraAccounts(); track coa.id) {
+                <option [ngValue]="coa.id">{{ coa.code }} - {{ coa.name }}</option>
+              }
+            </select>
+            @if (
+              transactionForm.controls.contraAccountId.touched &&
+              transactionForm.controls.contraAccountId.invalid
+            ) {
+              <small>Contra account is required</small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label>Reference Number</label>
+            <input type="text" formControlName="referenceNumber" placeholder="Optional" />
+          </div>
+
+          <div class="form-group full">
+            <label>Description</label>
+            <textarea
+              formControlName="description"
+              rows="2"
+              placeholder="Optional notes"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="clear-btn" type="button" (click)="closeModal()">Cancel</button>
+          <button class="hero-btn" type="submit" [disabled]="submitting()">
+            {{ submitting() ? 'Saving...' : 'Create Transaction' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+@if (showTransferModal()) {
+  <div class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2>Transfer Funds</h2>
+          <p>Move money between your bank, cash or mobile wallet accounts</p>
+        </div>
+
+        <button class="close-btn" type="button" (click)="closeTransferModal()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <form [formGroup]="transferForm" (ngSubmit)="submitTransfer()" class="modal-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>From Account</label>
+            <select formControlName="fromBankAccountId">
+              <option [ngValue]="null">Select source account</option>
+              @for (account of bankAccounts(); track account.id) {
+                <option [ngValue]="account.id">{{ account.accountName }}</option>
+              }
+            </select>
+            @if (
+              transferForm.controls.fromBankAccountId.touched &&
+              transferForm.controls.fromBankAccountId.invalid
+            ) {
+              <small>Source account is required</small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label>To Account</label>
+            <select formControlName="toBankAccountId">
+              <option [ngValue]="null">Select destination account</option>
+              @for (account of bankAccounts(); track account.id) {
+                <option [ngValue]="account.id">{{ account.accountName }}</option>
+              }
+            </select>
+            @if (
+              transferForm.controls.toBankAccountId.touched &&
+              transferForm.controls.toBankAccountId.invalid
+            ) {
+              <small>Destination account is required</small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label>Transaction Date</label>
+            <input type="date" formControlName="transactionDate" />
+          </div>
+
+          <div class="form-group">
+            <label>Amount</label>
+            <input type="number" step="0.01" min="0.01" formControlName="amount" />
+            @if (transferForm.controls.amount.touched && transferForm.controls.amount.invalid) {
+              <small>Enter a valid amount greater than 0</small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label>Reference Number</label>
+            <input type="text" formControlName="referenceNumber" placeholder="Optional" />
+          </div>
+
+          <div class="form-group full">
+            <label>Description</label>
+            <textarea
+              formControlName="description"
+              rows="2"
+              placeholder="Optional notes"
+            ></textarea>
+          </div>
+        </div>
+
+        <p class="hint-note">
+          <i class="bi bi-info-circle"></i>
+          This creates two linked transactions — a debit on the source account and a credit on the
+          destination account.
+        </p>
+
+        <div class="modal-actions">
+          <button class="clear-btn" type="button" (click)="closeTransferModal()">Cancel</button>
+          <button class="hero-btn" type="submit" [disabled]="submitting()">
+            {{ submitting() ? 'Processing...' : 'Complete Transfer' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

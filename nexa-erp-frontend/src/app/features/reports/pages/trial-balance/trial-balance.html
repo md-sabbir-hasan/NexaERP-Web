@@ -1,0 +1,149 @@
+<div class="trial-page">
+  <section class="trial-hero">
+    <div>
+      <span class="eyebrow">Financial Reports</span>
+      <h1>Trial Balance</h1>
+      <p>Review debit and credit balances to verify accounting accuracy.</p>
+    </div>
+
+    <div class="hero-actions">
+      <button type="button" disabled title="Coming Soon">
+        <i class="bi bi-printer"></i>
+        Print
+      </button>
+
+      <button type="button" (click)="exportReport()" [disabled]="!report()">
+        <i class="bi bi-file-earmark-excel"></i>
+        Export
+      </button>
+
+      <button type="button" (click)="refreshReport()" [disabled]="!report()">
+        <i class="bi bi-arrow-clockwise"></i>
+        Refresh
+      </button>
+    </div>
+  </section>
+
+  <section class="filter-panel">
+    <div class="form-group">
+      <label>As Of Date</label>
+      <input type="date" [(ngModel)]="asOfDate" />
+    </div>
+
+    <button class="generate-btn" type="button" (click)="generateReport()">
+      <i class="bi bi-bar-chart-line"></i>
+      Generate
+    </button>
+
+    <button class="clear-btn" type="button" (click)="clearReport()">
+      Clear
+    </button>
+  </section>
+
+  @if (loading()) {
+    <div class="state-box">
+      <i class="bi bi-arrow-repeat spin"></i>
+      Loading trial balance...
+    </div>
+  } @else if (report()) {
+    <section class="report-title">
+      <div>
+        <h2>Trial Balance</h2>
+        <p>As of {{ report()!.asOfDate }}</p>
+      </div>
+
+      <span class="balance-badge" [class.balanced]="report()!.isBalanced" [class.unbalanced]="!report()!.isBalanced">
+        {{ report()!.isBalanced ? 'Balanced' : 'Unbalanced' }}
+      </span>
+    </section>
+
+    <section class="summary-grid">
+      <div class="summary-card debit">
+        <span>Total Debit</span>
+        <strong>{{ report()!.totalDebit | number:'1.2-2' }}</strong>
+      </div>
+
+      <div class="summary-card credit">
+        <span>Total Credit</span>
+        <strong>{{ report()!.totalCredit | number:'1.2-2' }}</strong>
+      </div>
+
+      <div class="summary-card difference">
+        <span>Difference</span>
+        <strong>
+          {{ (report()!.totalDebit - report()!.totalCredit) | number:'1.2-2' }}
+        </strong>
+      </div>
+
+      <div class="summary-card status">
+        <span>Status</span>
+        <strong>{{ report()!.isBalanced ? 'OK' : 'Review' }}</strong>
+      </div>
+    </section>
+
+    <section class="trial-table-card">
+      <div class="table-header">
+        <h2>Account Balances</h2>
+        <span>{{ report()!.rows.length }} accounts</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Account Code</th>
+              <th>Account Name</th>
+              <th>Type</th>
+              <th class="text-end">Debit</th>
+              <th class="text-end">Credit</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (row of report()!.rows; track row.accountId) {
+              <tr>
+                <td>
+                  <strong>{{ row.accountCode }}</strong>
+                </td>
+
+                <td>{{ row.accountName }}</td>
+
+                <td>
+                  <span class="type-pill">{{ row.accountType }}</span>
+                </td>
+
+                <td class="text-end debit-text">
+                  {{ row.debitBalance | number:'1.2-2' }}
+                </td>
+
+                <td class="text-end credit-text">
+                  {{ row.creditBalance | number:'1.2-2' }}
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5">
+                  <div class="empty-box">No account balances found</div>
+                </td>
+              </tr>
+            }
+
+            <tr class="total-row">
+              <td colspan="3">Total</td>
+              <td class="text-end">{{ report()!.totalDebit | number:'1.2-2' }}</td>
+              <td class="text-end">{{ report()!.totalCredit | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  } @else {
+    <section class="empty-report">
+      <div class="empty-icon">
+        <i class="bi bi-bar-chart-line"></i>
+      </div>
+      <h2>Generate Trial Balance</h2>
+      <p>Select an as-of date to review debit and credit balances.</p>
+    </section>
+  }
+</div>

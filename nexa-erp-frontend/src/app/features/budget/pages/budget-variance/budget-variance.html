@@ -1,0 +1,104 @@
+<div class="variance-page">
+  @if (loading()) {
+  <div class="loading-box">Loading...</div>
+  } @else if (variance(); as v) {
+
+  <section class="variance-hero">
+    <div>
+      <span class="eyebrow">Budget vs Actual</span>
+      <h1>{{ v.budgetName }}</h1>
+      <p>{{ v.fiscalYearName }} · {{ v.fromDate | date }} – {{ v.toDate | date }}</p>
+    </div>
+
+    <a [routerLink]="['/budget', budgetId]" class="btn-back">Back to Budget</a>
+  </section>
+
+  <section class="filter-panel">
+    <select [(ngModel)]="selectedPeriodId" (ngModelChange)="onPeriodChange()">
+      <option [ngValue]="null">Full Fiscal Year</option>
+      @for (p of periods(); track p.id) {
+      <option [ngValue]="p.id">{{ p.name }}</option>
+      }
+    </select>
+
+    <input type="date" [(ngModel)]="fromDate" placeholder="From date" />
+    <input type="date" [(ngModel)]="toDate" placeholder="To date" />
+    <button class="btn-apply" type="button" (click)="applyDateRange()">Apply Range</button>
+    <button class="btn-clear" type="button" (click)="clearFilters()">Clear</button>
+  </section>
+
+  <section class="summary-grid">
+    <div class="summary-card expense-budget">
+      <span>Expense — Budgeted</span>
+      <strong>{{ v.totalExpenseBudget | number:'1.2-2' }}</strong>
+    </div>
+    <div class="summary-card expense-actual">
+      <span>Expense — Actual</span>
+      <strong>{{ v.totalExpenseActual | number:'1.2-2' }}</strong>
+    </div>
+    <div class="summary-card revenue-budget">
+      <span>Revenue — Target</span>
+      <strong>{{ v.totalRevenueBudget | number:'1.2-2' }}</strong>
+    </div>
+    <div class="summary-card revenue-actual">
+      <span>Revenue — Actual</span>
+      <strong>{{ v.totalRevenueActual | number:'1.2-2' }}</strong>
+    </div>
+  </section>
+
+  <section class="table-card">
+    <div class="table-header">
+      <h2>Account-wise Variance</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Account</th>
+            <th>Type</th>
+            <th class="text-end">Budget</th>
+            <th class="text-end">Actual</th>
+            <th class="text-end">Variance</th>
+            <th class="text-end">Variance %</th>
+            <th class="text-end">Utilization</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (line of v.lines; track line.accountId) {
+          <tr>
+            <td>{{ line.accountCode }} — {{ line.accountName }}</td>
+            <td>
+              <span class="type-badge" [class]="line.accountType.toLowerCase()">{{ line.accountType }}</span>
+            </td>
+            <td class="text-end">{{ line.budgetAmount | number:'1.2-2' }}</td>
+            <td class="text-end">{{ line.actualAmount | number:'1.2-2' }}</td>
+            <td class="text-end" [class.positive]="line.varianceAmount >= 0" [class.negative]="line.varianceAmount < 0">
+              {{ line.varianceAmount | number:'1.2-2' }}
+            </td>
+            <td class="text-end">{{ line.variancePercent | number:'1.1-1' }}%</td>
+            <td class="text-end">{{ line.utilizationPercent | number:'1.1-1' }}%</td>
+            <td>
+              <span class="status-badge" [class]="getStatusClass(line.varianceStatus)">
+                {{ line.varianceStatus }}
+              </span>
+            </td>
+          </tr>
+          } @empty {
+          <tr>
+            <td colspan="8">
+              <div class="empty-box">No budget lines to compare</div>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  } @else {
+  <div class="empty-box">Variance data not found</div>
+  }
+</div>

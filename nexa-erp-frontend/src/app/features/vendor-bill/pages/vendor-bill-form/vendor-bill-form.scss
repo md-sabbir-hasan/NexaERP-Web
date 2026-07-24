@@ -1,0 +1,367 @@
+.vendor-bill-form-page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.vendor-bill-hero {
+  background: linear-gradient(135deg, #0f172a, #1e3a8a);
+  color: #fff;
+  border-radius: 22px;
+  padding: 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+
+  .eyebrow {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .15em;
+    color: #bfdbfe;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 34px;
+    font-weight: 900;
+  }
+
+  p {
+    margin-top: 8px;
+    color: #dbeafe;
+  }
+}
+
+.back-btn {
+  text-decoration: none;
+  background: rgba(255,255,255,.15);
+  color: white;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-weight: 700;
+  transition: .2s;
+
+  &:hover {
+    background: rgba(255,255,255,.22);
+  }
+}
+
+.bill-card {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.header-section,
+.items-section,
+.bottom-section {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  h2 {
+    margin: 0;
+    font-size: 22px;
+    color: #0f172a;
+  }
+
+  p {
+    margin-top: 4px;
+    color: #64748b;
+  }
+}
+
+.add-line-btn {
+  border: 0;
+  background: #2563eb;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+
+  &:hover {
+    background: #1d4ed8;
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  &.vendor {
+    grid-column: span 2;
+  }
+
+  &.full {
+    grid-column: 1/-1;
+  }
+
+  label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+  }
+
+  input,
+  select,
+  textarea {
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    padding: 12px;
+    outline: none;
+    font-size: 14px;
+    transition: .2s;
+
+    &:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
+  }
+
+  textarea {
+    resize: vertical;
+  }
+}
+
+.items-table {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.item-head,
+.item-row {
+  display: grid;
+  grid-template-columns:
+    2fr
+    2fr
+    .8fr
+    1fr
+    .8fr
+    .8fr
+    .8fr
+    1fr
+    50px;
+  gap: 10px;
+  align-items: center;
+}
+
+.item-head {
+  font-size: 12px;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.item-row {
+  input,
+  select {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 10px;
+  }
+}
+
+.line-total {
+  text-align: right;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.remove-btn {
+  border: 0;
+  background: #fee2e2;
+  color: #b91c1c;
+  border-radius: 10px;
+  height: 40px;
+  cursor: pointer;
+
+  &:hover {
+    background: #fecaca;
+  }
+}
+
+.bottom-section {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.bill-hint {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+
+  i {
+    font-size: 22px;
+    color: #2563eb;
+  }
+
+  strong {
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  span {
+    color: #64748b;
+  }
+}
+
+.summary-card {
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  div {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  span {
+    color: #64748b;
+  }
+
+  strong {
+    color: #0f172a;
+    font-weight: 800;
+  }
+
+  .grand-total {
+    margin-top: 10px;
+    padding-top: 12px;
+    border-top: 2px dashed #cbd5e1;
+
+    strong {
+      font-size: 22px;
+      color: #16a34a;
+    }
+  }
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.cancel-btn,
+.save-btn {
+  border: 0;
+  text-decoration: none;
+  border-radius: 12px;
+  padding: 13px 22px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.cancel-btn {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.save-btn {
+  background: #16a34a;
+  color: white;
+
+  &:disabled {
+    opacity: .7;
+    cursor: not-allowed;
+  }
+}
+
+.state-box {
+  background: white;
+  border-radius: 18px;
+  padding: 50px;
+  text-align: center;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.spin {
+  animation: spin .9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width:1200px) {
+
+  .form-grid {
+    grid-template-columns: repeat(2,1fr);
+  }
+
+  .item-head,
+.item-row {
+  display: grid;
+  grid-template-columns:
+    minmax(180px, 1.6fr)
+    minmax(180px, 1.5fr)
+    90px
+    120px
+    90px
+    90px
+    90px
+    120px
+    46px;
+  gap: 10px;
+  align-items: center;
+}
+
+.items-table {
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.item-head,
+.item-row {
+  min-width: 1050px;
+}
+}
+
+@media (max-width:768px) {
+
+  .vendor-bill-hero,
+  .bottom-section {
+    flex-direction: column;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-group.vendor,
+  .form-group.full {
+    grid-column: auto;
+  }
+
+  .summary-card {
+    width: 100%;
+  }
+}

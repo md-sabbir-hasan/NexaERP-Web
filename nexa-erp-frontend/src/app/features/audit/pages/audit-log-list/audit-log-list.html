@@ -1,0 +1,133 @@
+<div class="audit-page">
+  <div class="page-header">
+    <div>
+      <h1>Audit Logs</h1>
+      <p>Track every create, update and status change across the system</p>
+    </div>
+  </div>
+
+  <div class="filter-card">
+    <select [(ngModel)]="entityType" (ngModelChange)="onFilterChange()">
+      @for (type of entityTypes; track type) {
+        <option [value]="type">{{ type.replace('_', ' ') }}</option>
+      }
+    </select>
+
+    <input
+      type="number"
+      [(ngModel)]="entityId"
+      placeholder="Entity ID (optional)"
+      (keyup.enter)="onFilterChange()"
+    />
+
+    <input
+      type="number"
+      [(ngModel)]="userId"
+      placeholder="User ID (optional)"
+      (keyup.enter)="onFilterChange()"
+    />
+
+    <select [(ngModel)]="actionFilter">
+      <option value="">All actions</option>
+      <option value="CREATED">Created</option>
+      <option value="UPDATED">Updated</option>
+      <option value="POSTED">Posted</option>
+      <option value="APPROVED">Approved</option>
+      <option value="CANCELLED">Cancelled</option>
+      <option value="REVERSED">Reversed</option>
+      <option value="ACTIVATED">Activated</option>
+      <option value="DEACTIVATED">Deactivated</option>
+      <option value="DELETED">Deleted</option>
+      <option value="LOGIN">Login</option>
+      <option value="UPLOADED">Uploaded</option>
+    </select>
+
+    <button class="search-btn" type="button" (click)="onFilterChange()">Filter</button>
+    <button class="clear-btn" type="button" (click)="clearFilters()">Clear</button>
+  </div>
+
+  <div class="table-card">
+    @if (loading()) {
+      <div class="state-box">
+        <i class="bi bi-arrow-repeat spin"></i>
+        Loading audit logs...
+      </div>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Date / time</th>
+              <th>User</th>
+              <th>Action</th>
+              <th>Entity</th>
+              <th>IP address</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (log of visibleLogs; track log.id) {
+              <tr class="log-row" (click)="toggleExpand(log)">
+                <td class="expand-cell">
+                  <i class="bi" [class.bi-chevron-down]="expandedId() === log.id" [class.bi-chevron-right]="expandedId() !== log.id"></i>
+                </td>
+                <td>{{ log.createdAt | date: 'medium' }}</td>
+                <td>{{ log.userName }}</td>
+                <td>
+                  <span class="action-pill" [class]="actionClass(log.action)">{{ log.action }}</span>
+                </td>
+                <td>{{ log.entityName }}{{ log.entityId ? ' #' + log.entityId : '' }}</td>
+                <td>{{ log.ipAddress }}</td>
+              </tr>
+
+              @if (expandedId() === log.id) {
+                <tr class="diff-row">
+                  <td [attr.colspan]="6">
+                    @if (diffRows(log).length) {
+                      <table class="diff-table">
+                        <thead>
+                          <tr>
+                            <th>Field</th>
+                            <th>Old value</th>
+                            <th>New value</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (row of diffRows(log); track row.field) {
+                            <tr>
+                              <td>{{ row.field }}</td>
+                              <td class="old-val">{{ row.oldVal }}</td>
+                              <td class="new-val">{{ row.newVal }}</td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    } @else {
+                      <div class="no-diff">No field-level changes recorded for this entry</div>
+                    }
+                  </td>
+                </tr>
+              }
+            } @empty {
+              <tr>
+                <td [attr.colspan]="6">
+                  <div class="state-box">No audit logs found for this filter</div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <div class="pagination">
+      <span>Page {{ page + 1 }} of {{ totalPages || 1 }} · Total {{ totalElements }}</span>
+
+      <div>
+        <button type="button" (click)="previousPage()" [disabled]="page === 0">Prev</button>
+        <button type="button" (click)="nextPage()" [disabled]="page + 1 >= totalPages">Next</button>
+      </div>
+    </div>
+  </div>
+</div>

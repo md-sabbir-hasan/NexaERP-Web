@@ -1,0 +1,85 @@
+<div class="reports-dashboard-page">
+  <section class="reports-hero">
+    <div>
+      <span class="eyebrow">Finance Analytics</span>
+      <h1>Reports</h1>
+      <p>
+        Review account activity, financial position, party balances and aging
+        information.
+      </p>
+    </div>
+
+    <div class="hero-icon">
+      <i class="bi bi-bar-chart-line"></i>
+    </div>
+  </section>
+
+  <section class="reports-section">
+    <div class="section-header">
+      <div>
+        <h2>Financial Reports</h2>
+        <p>Select a report to review or export financial information.</p>
+      </div>
+
+      <span class="report-count">{{ reports.length }} Reports</span>
+    </div>
+
+    <div class="reports-grid">
+      @for (report of reports; track report.title) {
+        @if (report.status === 'READY') {
+          <a [routerLink]="report.route" class="report-card ready">
+            <div class="icon-box">
+              <i [class]="report.icon"></i>
+            </div>
+
+            <div class="report-content">
+              <div class="report-title-row">
+                <h3>{{ report.title }}</h3>
+                <span class="status-badge ready-badge">Ready</span>
+              </div>
+
+              <p>{{ report.description }}</p>
+
+              <span class="open-link">
+                Open Report
+                <i class="bi bi-arrow-right"></i>
+              </span>
+            </div>
+          </a>
+        } @else {
+          <div class="report-card coming-soon">
+            <div class="icon-box">
+              <i [class]="report.icon"></i>
+            </div>
+
+            <div class="report-content">
+              <div class="report-title-row">
+                <h3>{{ report.title }}</h3>
+                <span class="status-badge coming-badge">Coming Soon</span>
+              </div>
+
+              <p>{{ report.description }}</p>
+
+              <span class="disabled-link">
+                Not Available Yet
+              </span>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </section>
+
+  <section class="report-note">
+    <i class="bi bi-info-circle"></i>
+
+    <div>
+      <strong>Report Availability</strong>
+      <p>
+        Some reports may not be available for all accounts or may require
+        additional configuration. Please contact support if you need assistance
+        accessing a specific report.
+      </p>
+    </div>
+  </section>
+</div>

@@ -1,0 +1,312 @@
+<div class="coa-page">
+  <section class="finance-hero">
+    <div class="hero-actions">
+      <a
+      *appHasPermission="'VIEW_BANKING'"
+       class="secondary-btn" routerLink="/banking/transactions">
+        <i class="bi bi-arrow-left-right"></i>
+        View Transactions
+      </a>
+
+      <button
+      *appHasPermission="'CREATE_BANKING'"
+       class="hero-btn" type="button" (click)="openCreateModal()">
+        <i class="bi bi-plus-circle"></i>
+        New Bank Account
+      </button>
+    </div>
+  </section>
+
+  <section class="metric-grid">
+    <div class="metric-card">
+      <span>Total Accounts</span>
+      <strong>{{ totalAccounts }}</strong>
+      <small>Cash, bank &amp; wallets</small>
+    </div>
+
+    <div class="metric-card">
+      <span>Active Accounts</span>
+      <strong>{{ activeAccounts }}</strong>
+      <small>Available for transactions</small>
+    </div>
+
+    <div class="metric-card">
+      <span>Mobile Wallets</span>
+      <strong>{{ mobileWalletCount }}</strong>
+      <small>bKash / Nagad / Rocket</small>
+    </div>
+
+    <div class="metric-card">
+      <span>Total Balance</span>
+      <strong>{{ totalBalance | number: '1.2-2' }}</strong>
+      <small>Across all accounts</small>
+    </div>
+  </section>
+
+  <section class="control-panel">
+    <div class="search-box">
+      <i class="bi bi-search"></i>
+      <input
+        type="text"
+        [(ngModel)]="search"
+        placeholder="Search by name, account number, bank or wallet number"
+      />
+    </div>
+
+    <select [(ngModel)]="typeFilter">
+      <option value="">All Types</option>
+      @for (type of accountTypes; track type) {
+        <option [value]="type">{{ type.replace('_', ' ') }}</option>
+      }
+    </select>
+
+    <select [(ngModel)]="statusFilter">
+      <option value="">All Status</option>
+      <option [ngValue]="true">Active</option>
+      <option [ngValue]="false">Inactive</option>
+    </select>
+
+    <button class="clear-btn" type="button" (click)="clearFilter()">Clear</button>
+  </section>
+
+  <section class="accounts-panel">
+    <div class="panel-header">
+      <h2>Bank &amp; Cash Accounts</h2>
+      <span>{{ filteredAccounts().length }} items</span>
+    </div>
+
+    @if (loading()) {
+      <div class="state-box">
+        <i class="bi bi-arrow-repeat spin"></i>
+        Loading bank accounts...
+      </div>
+    } @else if (filteredAccounts().length === 0) {
+      <div class="state-box">No bank accounts found. Create one to get started.</div>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Account</th>
+              <th>Type</th>
+              <th>Bank / Provider</th>
+              <th>Currency</th>
+              <th>Balance</th>
+              <th>Status</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (account of filteredAccounts(); track account.id) {
+              <tr>
+                <td>
+                  <strong>{{ account.accountName }}</strong>
+                  <span>{{ account.accountNumber || account.mobileNumber || '—' }}</span>
+                </td>
+                <td>
+                  <span class="type-badge" [class]="getTypeClass(account.accountType)">
+                    <i class="bi" [class]="getTypeIcon(account.accountType)"></i>
+                    {{ account.accountType.replace('_', ' ') }}
+                  </span>
+                </td>
+                <td>
+                  {{
+                    account.accountType === 'MOBILE_WALLET'
+                      ? getWalletLabel(account.walletProvider)
+                      : account.bankName || '—'
+                  }}
+                  @if (account.branchName) {
+                    <span>{{ account.branchName }}</span>
+                  }
+                </td>
+                <td>{{ account.currency }}</td>
+                <td>{{ account.currentBalance | number: '1.2-2' }}</td>
+                <td>
+                  <span
+                    class="status"
+                    [class.active]="account.isActive"
+                    [class.inactive]="!account.isActive"
+                  >
+                    {{ account.isActive ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td class="text-end">
+                  <a
+                  *appHasPermission="'VIEW_BANKING'"
+                   class="icon-action" [routerLink]="['/banking/transactions']" [queryParams]="{ bankAccountId: account.id }">
+                    <i class="bi bi-arrow-left-right"></i>
+                  </a>
+                  <button
+                  *appHasPermission="'EDIT_BANKING'"
+
+                   class="icon-action edit" type="button" (click)="openEditModal(account)">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  @if (account.isActive) {
+                    <button
+                    *appHasPermission="'EDIT_BANKING'"
+                      class="icon-action danger"
+                      type="button"
+                      (click)="deactivateAccount(account)"
+                    >
+                      <i class="bi bi-slash-circle"></i>
+                    </button>
+                  } @else {
+                    <button
+                    *appHasPermission="'EDIT_BANKING'"
+                      class="icon-action success"
+                      type="button"
+                      (click)="activateAccount(account)"
+                    >
+                      <i class="bi bi-check-circle"></i>
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>
+
+@if (showModal()) {
+  <div class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2>{{ editingAccount ? 'Edit Bank Account' : 'New Bank Account' }}</h2>
+          <p>
+            {{
+              editingAccount
+                ? 'Update account information'
+                : 'Add a cash, bank or mobile wallet account'
+            }}
+          </p>
+        </div>
+
+        <button class="close-btn" type="button" (click)="closeModal()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <form [formGroup]="bankAccountForm" (ngSubmit)="submitBankAccount()" class="modal-body">
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Account Name</label>
+            <input
+              type="text"
+              formControlName="accountName"
+              placeholder="Example: Main Business A/C"
+            />
+            @if (
+              bankAccountForm.controls.accountName.touched &&
+              bankAccountForm.controls.accountName.invalid
+            ) {
+              <small>Account name is required</small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label>Account Type</label>
+            <select formControlName="accountType">
+              @for (type of accountTypes; track type) {
+                <option [value]="type">{{ type.replace('_', ' ') }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Currency</label>
+            <input type="text" formControlName="currency" placeholder="BDT" />
+          </div>
+
+          @if (!isCash() && !isMobileWallet()) {
+            <div class="form-group">
+              <label>Bank Name</label>
+              <input type="text" formControlName="bankName" placeholder="Example: City Bank" />
+            </div>
+
+            <div class="form-group">
+              <label>Branch Name</label>
+              <input
+                type="text"
+                formControlName="branchName"
+                placeholder="Example: Gulshan Branch"
+              />
+            </div>
+
+            <div class="form-group full">
+              <label>Account Number</label>
+              <input
+                type="text"
+                formControlName="accountNumber"
+                placeholder="Bank account number"
+              />
+            </div>
+          }
+
+          @if (isMobileWallet()) {
+            <div class="form-group">
+              <label>Wallet Provider</label>
+              <select formControlName="walletProvider">
+                <option [ngValue]="null">Select Provider</option>
+                @for (provider of walletProviders; track provider) {
+                  <option [value]="provider">{{ getWalletLabel(provider) }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Mobile Number</label>
+              <input type="text" formControlName="mobileNumber" placeholder="01XXXXXXXXX" />
+            </div>
+          }
+
+          <div class="form-group">
+            <label>Opening Balance</label>
+            <input type="number" step="0.01" min="0" formControlName="openingBalance" />
+          </div>
+
+          <div class="form-group">
+            <label>Linked COA Account</label>
+            <select formControlName="coaAccountId">
+              <option [ngValue]="null">Select ledger account</option>
+              @for (coa of coaAccounts(); track coa.id) {
+                <option [ngValue]="coa.id">{{ coa.code }} - {{ coa.name }}</option>
+              }
+            </select>
+            @if (
+              bankAccountForm.controls.coaAccountId.touched &&
+              bankAccountForm.controls.coaAccountId.invalid
+            ) {
+              <small>Linked ledger (asset) account is required</small>
+            }
+          </div>
+
+          <div class="form-group full">
+            <label>Notes</label>
+            <textarea formControlName="notes" rows="2" placeholder="Optional notes"></textarea>
+          </div>
+        </div>
+
+        @if (editingAccount) {
+          <p class="hint-note">
+            <i class="bi bi-info-circle"></i>
+            Account type, opening balance and linked ledger account cannot be changed after
+            creation.
+          </p>
+        }
+
+        <div class="modal-actions">
+          <button class="clear-btn" type="button" (click)="closeModal()">Cancel</button>
+          <button class="hero-btn" type="submit" [disabled]="submitting()">
+            {{ submitting() ? 'Saving...' : editingAccount ? 'Update Account' : 'Create Account' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

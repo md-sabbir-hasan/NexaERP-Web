@@ -1,0 +1,40 @@
+<div class="budget-page">
+  <section class="budget-hero">
+    <div>
+      <span class="eyebrow">Finance Operations</span>
+      <h1>New Budget</h1>
+      <p>Create a budget header for a fiscal year — you'll add account lines next.</p>
+    </div>
+  </section>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="form-card">
+
+    <div class="form-group">
+      <label>Fiscal Year</label>
+      <select formControlName="fiscalYearId">
+        <option [ngValue]="null">Select fiscal year</option>
+        @for (fy of fiscalYears(); track fy.id) {
+        <option [ngValue]="fy.id">{{ fy.name }} ({{ fy.startDate | date }} – {{ fy.endDate | date }})</option>
+        }
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Budget Name</label>
+      <input type="text" formControlName="name" placeholder="e.g. FY2026 Operating Budget" />
+    </div>
+
+    <div class="form-group">
+      <label>Description (optional)</label>
+      <textarea formControlName="description" rows="3"></textarea>
+    </div>
+
+    <div class="form-actions">
+      <a routerLink="/budget" class="btn-cancel-link">Cancel</a>
+      <button type="submit" class="btn-submit" [disabled]="submitting()">
+        {{ submitting() ? 'Creating...' : 'Create Budget' }}
+      </button>
+    </div>
+
+  </form>
+</div>

@@ -1,0 +1,396 @@
+<div class="expense-page">
+
+  <section class="expense-hero">
+    <div class="hero-content">
+      <div class="hero-icon">
+        <i class="bi bi-receipt"></i>
+      </div>
+
+      <div>
+        <span class="eyebrow">Finance Operations</span>
+        <h1>New Expense</h1>
+        <p>
+          Record a small bill — mobile bill, utility, office supplies etc.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <div class="form-layout">
+
+    <form
+      [formGroup]="form"
+      (ngSubmit)="submit()"
+      class="form-card"
+    >
+
+      <!-- Expense Information -->
+      <section class="form-section">
+        <div class="section-header">
+          <div class="section-icon">
+            <i class="bi bi-file-earmark-text"></i>
+          </div>
+
+          <div>
+            <h2>Expense Information</h2>
+            <p>Enter the basic information of this expense.</p>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Expense Date</label>
+
+            <div class="input-box">
+              <i class="bi bi-calendar3"></i>
+
+              <input
+                type="date"
+                formControlName="expenseDate"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Category</label>
+
+            <div class="input-box">
+              <i class="bi bi-tags"></i>
+
+              <select formControlName="expenseAccountId">
+                <option [ngValue]="null">
+                  Select category
+                </option>
+
+                @for (acc of expenseAccounts(); track acc.id) {
+                  <option [ngValue]="acc.id">
+                    {{ acc.name }}
+                  </option>
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Amount</label>
+
+            <div class="input-box amount-input">
+              <span class="currency-symbol">৳</span>
+
+              <input
+                type="number"
+                step="0.01"
+                formControlName="amount"
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>
+              Reference No
+              <span class="optional">(optional)</span>
+            </label>
+
+            <div class="input-box">
+              <i class="bi bi-hash"></i>
+
+              <input
+                type="text"
+                formControlName="referenceNumber"
+                placeholder="Operator bill ref, etc."
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Payment Information -->
+      <section class="form-section">
+        <div class="section-header">
+          <div class="section-icon payment-icon">
+            <i class="bi bi-wallet2"></i>
+          </div>
+
+          <div>
+            <h2>Payment Information</h2>
+            <p>Choose how this expense will be paid.</p>
+          </div>
+        </div>
+
+        <div class="payment-options">
+
+          <label
+            class="payment-option"
+            [class.active]="paidImmediately"
+          >
+            <input
+              type="radio"
+              formControlName="paidImmediately"
+              [value]="true"
+            />
+
+            <span class="custom-radio"></span>
+
+            <span class="payment-option-icon pay-now-icon">
+              <i class="bi bi-lightning-charge-fill"></i>
+            </span>
+
+            <span class="payment-option-text">
+              <strong>Pay Now</strong>
+              <small>Pay immediately from cash, bank or wallet.</small>
+            </span>
+          </label>
+
+          <label
+            class="payment-option"
+            [class.active]="!paidImmediately"
+          >
+            <input
+              type="radio"
+              formControlName="paidImmediately"
+              [value]="false"
+            />
+
+            <span class="custom-radio"></span>
+
+            <span class="payment-option-icon pay-later-icon">
+              <i class="bi bi-clock-history"></i>
+            </span>
+
+            <span class="payment-option-text">
+              <strong>Pay Later</strong>
+              <small>Record the expense as vendor payable.</small>
+            </span>
+          </label>
+        </div>
+
+        @if (paidImmediately) {
+          <div class="conditional-box">
+            <div class="form-group">
+              <label>Pay From (Cash / Bank / Wallet)</label>
+
+              <div class="input-box">
+                <i class="bi bi-bank"></i>
+
+                <select formControlName="paymentAccountId">
+                  <option [ngValue]="null">
+                    Select account
+                  </option>
+
+                  @for (acc of paymentAccounts(); track acc.id) {
+                    <option [ngValue]="acc.id">
+                      {{ acc.name }}
+                    </option>
+                  }
+                </select>
+              </div>
+
+              <span class="field-note">
+                Selected account will be credited when the expense is saved.
+              </span>
+            </div>
+          </div>
+        } @else {
+          <div class="conditional-box">
+            <div class="form-group">
+              <label>Payee / Vendor</label>
+
+              <div class="input-box">
+                <i class="bi bi-person"></i>
+
+                <select formControlName="partyId">
+                  <option [ngValue]="null">
+                    Select vendor
+                  </option>
+
+                  @for (p of parties(); track p.id) {
+                    <option [ngValue]="p.id">
+                      {{ p.name }}
+                    </option>
+                  }
+                </select>
+              </div>
+
+              <span class="field-note">
+                This expense will be recorded as Accounts Payable.
+              </span>
+            </div>
+          </div>
+        }
+      </section>
+
+      <!-- Additional Information -->
+      <section class="form-section">
+        <div class="section-header">
+          <div class="section-icon attachment-icon">
+            <i class="bi bi-paperclip"></i>
+          </div>
+
+          <div>
+            <h2>Additional Information</h2>
+            <p>Add notes and attach a bill or receipt.</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>
+            Notes
+            <span class="optional">(optional)</span>
+          </label>
+
+          <textarea
+            formControlName="notes"
+            rows="4"
+            placeholder="Write additional information about this expense..."
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>
+            Receipt / Bill Photo
+            <span class="optional">(optional)</span>
+          </label>
+
+          <label class="file-upload">
+            <input
+              type="file"
+              accept="image/*,.pdf"
+              (change)="onFileSelected($event)"
+            />
+
+            <span class="upload-icon">
+              <i class="bi bi-cloud-arrow-up"></i>
+            </span>
+
+            <span class="upload-text">
+              <strong>Choose receipt or bill</strong>
+              <small>Image or PDF file</small>
+            </span>
+
+            <span class="browse-button">
+              Browse
+            </span>
+          </label>
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <a
+          routerLink="/expense"
+          class="btn-cancel-link"
+        >
+          Cancel
+        </a>
+
+        <button
+          type="submit"
+          class="btn-submit"
+          [disabled]="submitting()"
+        >
+          @if (submitting()) {
+            <span class="button-spinner"></span>
+            Saving...
+          } @else {
+            <i class="bi bi-check2-circle"></i>
+            Save Expense
+          }
+        </button>
+      </div>
+
+    </form>
+
+    <!-- Journal Preview -->
+    <aside class="preview-card">
+
+      <div class="preview-header">
+        <div>
+          <span class="preview-eyebrow">Automatic Posting</span>
+          <h3>Journal Preview</h3>
+        </div>
+
+        <span class="balance-badge">
+          <i class="bi bi-check-circle-fill"></i>
+          Balanced
+        </span>
+      </div>
+
+      <p class="preview-sub">
+        This entry will be posted automatically when you save.
+      </p>
+
+      <div class="journal-container">
+
+        <div class="journal-line debit">
+          <span class="tag">Dr</span>
+
+          <div class="line-info">
+            <span class="acc">
+              {{ previewExpenseAccountName }}
+            </span>
+
+            <span class="account-type">
+              Expense Account
+            </span>
+          </div>
+
+          <span class="amt">
+            ৳{{ previewAmount | number:'1.2-2' }}
+          </span>
+        </div>
+
+        <div class="journal-divider">
+          <span></span>
+        </div>
+
+        <div class="journal-line credit">
+          <span class="tag">Cr</span>
+
+          <div class="line-info">
+            <span class="acc">
+              {{ previewCreditAccountName }}
+            </span>
+
+            <span class="account-type">
+              {{ paidImmediately ? 'Payment Account' : 'Accounts Payable' }}
+            </span>
+          </div>
+
+          <span class="amt">
+            ৳{{ previewAmount | number:'1.2-2' }}
+          </span>
+        </div>
+
+      </div>
+
+      <div class="preview-total">
+        <span>Total Amount</span>
+
+        <strong>
+          ৳{{ previewAmount | number:'1.2-2' }}
+        </strong>
+      </div>
+
+      <div class="preview-note">
+        <i class="bi bi-info-circle"></i>
+
+        @if (paidImmediately) {
+          <p>
+            The expense account will be debited and the selected payment
+            account will be credited immediately.
+          </p>
+        } @else {
+          <p>
+            No funds will be deducted now. This amount will be recorded as a
+            payable. Settle it later from the
+            <strong>Payments</strong> module.
+          </p>
+        }
+      </div>
+
+    </aside>
+
+  </div>
+</div>

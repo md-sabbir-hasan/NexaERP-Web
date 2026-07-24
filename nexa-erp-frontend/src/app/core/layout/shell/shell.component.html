@@ -1,0 +1,34 @@
+<div
+  class="erp-shell"
+  [class.sidebar-collapsed]="
+    sidebarCollapsed() && !isMobileViewport()
+  "
+  [class.mobile-sidebar-open]="mobileSidebarOpen()"
+>
+  <app-sidebar
+    [collapsed]="
+      isMobileViewport()
+        ? false
+        : sidebarCollapsed()
+    "
+  ></app-sidebar>
+
+  @if (isMobileViewport() && mobileSidebarOpen()) {
+    <button
+      type="button"
+      class="sidebar-backdrop"
+      aria-label="Close navigation menu"
+      (click)="closeMobileSidebar()"
+    ></button>
+  }
+
+  <main class="erp-main">
+    <app-header
+      (toggleSidebar)="toggleSidebar()"
+    ></app-header>
+
+    <section class="erp-content">
+      <router-outlet></router-outlet>
+    </section>
+  </main>
+</div>

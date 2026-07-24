@@ -1,0 +1,173 @@
+<div class="budget-detail-page">
+  @if (loading()) {
+  <div class="loading-box">Loading...</div>
+  } @else if (budget(); as b) {
+
+  <section class="detail-hero">
+    <div>
+      <span class="eyebrow">Budget</span>
+      <h1>{{ b.budgetNumber }} — {{ b.name }}</h1>
+      <p>{{ b.fiscalYearName }} · Version {{ b.versionNumber }}</p>
+    </div>
+
+    <div class="hero-actions">
+      <a routerLink="/budget" class="btn-back">Back to List</a>
+      <a [routerLink]="['/budget', b.id, 'variance']" class="btn-variance">Variance Report</a>
+
+      @if (isDraft) {
+      <button class="btn-activate" type="button" (click)="activateBudget()">Activate</button>
+      <button class="btn-delete" type="button" (click)="deleteBudget()">Delete</button>
+      }
+
+      @if (b.status === 'ACTIVE') {
+      <button class="btn-close" type="button" (click)="closeBudget()">Close Budget</button>
+      }
+    </div>
+  </section>
+
+  <section class="status-row">
+    <span class="status-badge" [class]="b.status.toLowerCase()">{{ b.status }}</span>
+    @if (b.description) {
+    <span class="description">{{ b.description }}</span>
+    }
+  </section>
+
+  <section class="summary-grid">
+    <div class="summary-card expense">
+      <span>Total Expense Budget</span>
+      <strong>{{ b.totalExpenseBudget | number:'1.2-2' }}</strong>
+    </div>
+
+    <div class="summary-card revenue">
+      <span>Total Revenue Budget</span>
+      <strong>{{ b.totalRevenueBudget | number:'1.2-2' }}</strong>
+    </div>
+
+    <div class="summary-card lines">
+      <span>Budget Lines</span>
+      <strong>{{ b.lines.length }}</strong>
+    </div>
+  </section>
+
+  <section class="lines-card">
+    <div class="lines-header">
+      <h2>Budget Lines</h2>
+      @if (isDraft) {
+      <button class="btn-add-line" type="button" (click)="openAddLine()">+ Add Line</button>
+      }
+    </div>
+
+    @if (showLineForm()) {
+    <div class="line-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Account</label>
+          <select [(ngModel)]="selectedAccountId">
+            <option [ngValue]="null">Select account</option>
+            @for (acc of budgetableAccounts(); track acc.id) {
+            <option [ngValue]="acc.id">{{ acc.code }} — {{ acc.name }} ({{ acc.type }})</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Annual Amount</label>
+          <input type="number" step="0.01" [(ngModel)]="annualAmount" (ngModelChange)="onAllocationMethodChange()" />
+        </div>
+      </div>
+
+      <div class="form-group toggle-group">
+        <label>Allocation Method</label>
+        <div class="toggle-options">
+          <label class="toggle-option">
+            <input type="radio" name="allocationMethod" [(ngModel)]="allocationMethod" value="EQUAL"
+              (ngModelChange)="onAllocationMethodChange()" />
+            Equal (auto split across periods)
+          </label>
+          <label class="toggle-option">
+            <input type="radio" name="allocationMethod" [(ngModel)]="allocationMethod" value="MANUAL" />
+            Manual (customize per period)
+          </label>
+        </div>
+      </div>
+
+      @if (allocationMethod === 'MANUAL') {
+      <div class="period-grid">
+        <div class="period-grid-header">
+          <span>Period</span>
+          <span>Amount</span>
+        </div>
+        @for (p of periods(); track p.id) {
+        <div class="period-row">
+          <span>{{ p.name }}</span>
+          <input type="number" step="0.01" [(ngModel)]="periodAmounts[p.id]" [name]="'period-' + p.id" />
+        </div>
+        }
+        <div class="period-total" [class.mismatch]="manualTotal() !== annualAmount">
+          Total: {{ manualTotal() | number:'1.2-2' }} / {{ annualAmount | number:'1.2-2' }}
+        </div>
+      </div>
+      }
+
+      <div class="form-group">
+        <label>Notes (optional)</label>
+        <input type="text" [(ngModel)]="notes" />
+      </div>
+
+      <div class="line-form-actions">
+        <button class="btn-cancel-link" type="button" (click)="cancelLineForm()">Cancel</button>
+        <button class="btn-submit" type="button" [disabled]="savingLine()" (click)="saveLine()">
+          {{ savingLine() ? 'Saving...' : 'Save Line' }}
+        </button>
+      </div>
+    </div>
+    }
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Account</th>
+            <th>Type</th>
+            <th class="text-end">Annual Amount</th>
+            <th>Allocation</th>
+            <th>Notes</th>
+            @if (isDraft) {
+            <th>Actions</th>
+            }
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (line of b.lines; track line.id) {
+          <tr>
+            <td>{{ line.accountCode }} — {{ line.accountName }}</td>
+            <td>
+              <span class="type-badge" [class]="line.accountType.toLowerCase()">{{ line.accountType }}</span>
+            </td>
+            <td class="text-end">{{ line.annualAmount | number:'1.2-2' }}</td>
+            <td>{{ line.allocationMethod }}</td>
+            <td>{{ line.notes ?? '—' }}</td>
+            @if (isDraft) {
+            <td class="actions-cell">
+              <button class="btn-edit" type="button" (click)="openEditLine(line.id)">Edit</button>
+              <button class="btn-delete-line" type="button" (click)="deleteLine(line.id)">Delete</button>
+            </td>
+            }
+          </tr>
+          } @empty {
+          <tr>
+            <td colspan="6">
+              <div class="empty-box">No budget lines yet — add one to get started</div>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  } @else {
+  <div class="empty-box">Budget not found</div>
+  }
+</div>

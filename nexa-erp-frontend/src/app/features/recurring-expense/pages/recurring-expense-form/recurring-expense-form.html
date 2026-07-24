@@ -1,0 +1,114 @@
+<div class="recurring-page">
+  <section class="recurring-hero">
+    <div>
+      <span class="eyebrow">Finance Operations</span>
+      <h1>New Recurring Template</h1>
+      <p>Bills that repeat can auto-generate a draft — you'll still review and post each one.</p>
+    </div>
+  </section>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="form-card">
+
+    <div class="form-group">
+      <label>Template Name</label>
+      <input type="text" formControlName="name" placeholder="e.g. Grameenphone Mobile Bill" />
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Category</label>
+        <select formControlName="expenseAccountId">
+          <option [ngValue]="null">Select category</option>
+          @for (acc of expenseAccounts(); track acc.id) {
+          <option [ngValue]="acc.id">{{ acc.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Amount</label>
+        <input type="number" step="0.01" formControlName="amount" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Frequency</label>
+        <select formControlName="frequency">
+          @for (f of frequencies; track f) {
+          <option [value]="f">{{ f }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Start Date</label>
+        <input type="date" formControlName="startDate" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>End Date (optional — leave blank to repeat indefinitely)</label>
+      <input type="date" formControlName="endDate" />
+    </div>
+
+    <div class="form-group toggle-group">
+      <label>Payment</label>
+      <div class="toggle-options">
+        <label class="toggle-option">
+          <input type="radio" formControlName="paidImmediately" [value]="true" />
+          Pay Now (each time it's posted)
+        </label>
+        <label class="toggle-option">
+          <input type="radio" formControlName="paidImmediately" [value]="false" />
+          Pay Later
+        </label>
+      </div>
+    </div>
+
+    @if (paidImmediately) {
+    <div class="form-group">
+      <label>Pay From (Cash / Bank / Wallet)</label>
+      <select formControlName="paymentAccountId">
+        <option [ngValue]="null">Select account</option>
+        @for (acc of paymentAccounts(); track acc.id) {
+        <option [ngValue]="acc.id">{{ acc.name }}</option>
+        }
+      </select>
+    </div>
+    } @else {
+    <div class="form-group">
+      <label>Payee / Vendor</label>
+      <select formControlName="partyId">
+        <option [ngValue]="null">Select vendor</option>
+        @for (p of parties(); track p.id) {
+        <option [ngValue]="p.id">{{ p.name }}</option>
+        }
+      </select>
+    </div>
+    }
+
+    <div class="form-group">
+      <label>Reference No (optional)</label>
+      <input type="text" formControlName="referenceNumber" />
+    </div>
+
+    <div class="form-group">
+      <label>Notes (optional)</label>
+      <textarea formControlName="notes" rows="3"></textarea>
+    </div>
+
+    <div class="info-note">
+      ℹ️ Every time this template runs, it creates a <strong>Draft</strong> expense — no money moves and no journal
+      posts until you review it on the Expenses page and click <strong>Post</strong>.
+    </div>
+
+    <div class="form-actions">
+      <a routerLink="/recurring-expense" class="btn-cancel-link">Cancel</a>
+      <button type="submit" class="btn-submit" [disabled]="submitting()">
+        {{ submitting() ? 'Creating...' : 'Create Template' }}
+      </button>
+    </div>
+
+  </form>
+</div>

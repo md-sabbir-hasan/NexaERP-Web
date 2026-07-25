@@ -174,7 +174,7 @@ export class NotificationStore {
     );
   }
 
-  markAllAsRead(): void {
+  markAllAsRead(onSuccess?: () => void): void {
     if (this.markingAllRead() || !this.hasUnread()) {
       return;
     }
@@ -195,6 +195,7 @@ export class NotificationStore {
         }
 
         this.unreadCount.set(0);
+        onSuccess?.();
         this.markingAllRead.set(false);
       },
       error: (error: unknown) => {

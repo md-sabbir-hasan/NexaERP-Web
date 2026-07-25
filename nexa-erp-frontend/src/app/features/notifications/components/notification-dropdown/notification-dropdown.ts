@@ -1,9 +1,10 @@
 ﻿import { DatePipe } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { NotificationResponse } from '../../models/notification.model';
 import { NotificationStore } from '../../services/notification.store';
+import { getSupportedNotificationRoute } from '../../utils/notification-navigation.util';
 
 @Component({
   selector: 'app-notification-dropdown',
@@ -13,6 +14,8 @@ import { NotificationStore } from '../../services/notification.store';
   styleUrl: './notification-dropdown.scss',
 })
 export class NotificationDropdown {
+  @Output() closeRequested = new EventEmitter<void>();
+
   constructor(
     readonly store: NotificationStore,
     private router: Router,
@@ -25,25 +28,30 @@ export class NotificationDropdown {
 
     if (!notification.read) {
       this.store.markAsRead(notification).subscribe((updatedNotification) => {
-        this.navigateToRoute(updatedNotification.route);
+        this.navigateToRoute(getSupportedNotificationRoute(updatedNotification));
       });
       return;
     }
 
-    this.navigateToRoute(notification.route);
+    this.navigateToRoute(getSupportedNotificationRoute(notification));
+  }
+
+  viewAll(): void {
+    this.closeRequested.emit();
+    void this.router.navigateByUrl('/notifications');
   }
 
   retry(): void {
     this.store.loadFirstPage(this.store.unreadOnly());
   }
 
+  supportedRoute(notification: NotificationResponse): string | null {
+    return getSupportedNotificationRoute(notification);
+  }
+
   private navigateToRoute(route: string | null): void {
-    const internalRoute = route?.trim();
-
-    if (!internalRoute || !internalRoute.startsWith('/') || internalRoute.startsWith('//')) {
-      return;
+    if (route) {
+      void this.router.navigateByUrl(route);
     }
-
-    void this.router.navigateByUrl(internalRoute);
   }
 }

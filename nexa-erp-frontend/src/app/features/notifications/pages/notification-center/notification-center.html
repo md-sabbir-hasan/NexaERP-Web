@@ -1,0 +1,157 @@
+<section class="notification-center" aria-labelledby="notification-center-title">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Your inbox</span>
+      <h1 id="notification-center-title">Notification Center</h1>
+      <p>Review system updates and activity that needs your attention.</p>
+    </div>
+
+    <button
+      type="button"
+      class="mark-all-button"
+      [disabled]="!notificationStore.hasUnread() || notificationStore.markingAllRead()"
+      (click)="markAllAsRead()"
+    >
+      @if (notificationStore.markingAllRead()) {
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        Marking...
+      } @else {
+        <i class="bi bi-check2-all" aria-hidden="true"></i>
+        Mark all read
+      }
+    </button>
+  </header>
+
+  <div class="toolbar">
+    <div class="filter-tabs" role="group" aria-label="Notification filters">
+      <button
+        type="button"
+        [class.active]="!unreadOnly()"
+        [attr.aria-pressed]="!unreadOnly()"
+        (click)="setFilter(false)"
+      >
+        All
+      </button>
+      <button
+        type="button"
+        [class.active]="unreadOnly()"
+        [attr.aria-pressed]="unreadOnly()"
+        (click)="setFilter(true)"
+      >
+        Unread
+        @if (notificationStore.unreadCount() > 0) {
+          <span class="count-badge">{{ notificationStore.unreadCount() }}</span>
+        }
+      </button>
+    </div>
+
+    <span class="result-count">
+      {{ totalElements() }} {{ totalElements() === 1 ? 'notification' : 'notifications' }}
+    </span>
+  </div>
+
+  <div class="content-card" [attr.aria-busy]="loading()">
+    @if (loading()) {
+      <div class="state-panel" role="status">
+        <span class="spinner-border text-primary" aria-hidden="true"></span>
+        <strong>Loading notifications</strong>
+        <p>Fetching your latest updates...</p>
+      </div>
+    } @else if (error()) {
+      <div class="state-panel error-state" role="alert">
+        <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
+        <strong>Could not load notifications</strong>
+        <p>{{ error() }}</p>
+        <button type="button" (click)="retry()">Try again</button>
+      </div>
+    } @else if (notifications().length === 0) {
+      <div class="state-panel">
+        <i class="bi bi-bell-slash" aria-hidden="true"></i>
+        @if (unreadOnly()) {
+          <strong>You're all caught up</strong>
+          <p>There are no unread notifications.</p>
+        } @else {
+          <strong>No notifications yet</strong>
+          <p>New updates will appear here.</p>
+        }
+      </div>
+    } @else {
+      <div class="notification-list">
+        @for (notification of notifications(); track notification.id) {
+          <article class="notification-row" [class.unread]="!notification.read">
+            <span class="status-indicator" aria-hidden="true"></span>
+            <div class="notification-icon" aria-hidden="true">
+              <i class="bi bi-bell"></i>
+            </div>
+
+            <div class="notification-copy">
+              <div class="title-row">
+                <h2>{{ notification.title }}</h2>
+                @if (!notification.read) {
+                  <span class="unread-label">Unread</span>
+                }
+              </div>
+              <p>{{ notification.message }}</p>
+              <time [attr.datetime]="notification.createdAt">
+                <i class="bi bi-clock" aria-hidden="true"></i>
+                {{ notification.createdAt | date: 'dd MMM yyyy, hh:mm a' }}
+              </time>
+            </div>
+
+            <button
+              type="button"
+              class="notification-action"
+              [class.read-only]="!supportedRoute(notification)"
+              [disabled]="notificationStore.markingReadIds().has(notification.id)"
+              [attr.aria-label]="
+                notification.read
+                  ? supportedRoute(notification)
+                    ? 'Open ' + notification.title
+                    : 'Notification already read'
+                  : supportedRoute(notification)
+                    ? 'Mark as read and open ' + notification.title
+                    : 'Mark ' + notification.title + ' as read'
+              "
+              (click)="selectNotification(notification)"
+            >
+              @if (notificationStore.markingReadIds().has(notification.id)) {
+                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+              } @else if (!notification.read) {
+                <i class="bi bi-check2" aria-hidden="true"></i>
+                <span>Mark read</span>
+              } @else if (supportedRoute(notification)) {
+                <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                <span>Open</span>
+              } @else {
+                <i class="bi bi-check-circle" aria-hidden="true"></i>
+                <span>Read</span>
+              }
+            </button>
+          </article>
+        }
+      </div>
+    }
+
+    @if (!loading() && !error() && totalPages() > 1) {
+      <footer class="pagination" aria-label="Notification pagination">
+        <span>
+          Page {{ page() + 1 }} of {{ totalPages() }}
+        </span>
+        <div>
+          <button type="button" (click)="previousPage()" [disabled]="page() === 0">
+            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+            Previous
+          </button>
+          <button
+            type="button"
+            (click)="nextPage()"
+            [disabled]="page() + 1 >= totalPages()"
+          >
+            Next
+            <i class="bi bi-chevron-right" aria-hidden="true"></i>
+          </button>
+        </div>
+      </footer>
+    }
+  </div>
+</section>

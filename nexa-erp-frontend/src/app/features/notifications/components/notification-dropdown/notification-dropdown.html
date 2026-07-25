@@ -100,7 +100,7 @@
               class="spinner-border spinner-border-sm row-spinner"
               aria-label="Marking notification as read"
             ></span>
-          } @else if (notification.route?.trim()) {
+          } @else if (supportedRoute(notification)) {
             <i class="bi bi-chevron-right row-arrow" aria-hidden="true"></i>
           }
         </button>
@@ -132,4 +132,11 @@
       </div>
     }
   }
+
+  <footer class="dropdown-footer">
+    <button type="button" (click)="viewAll()">
+      View all notifications
+      <i class="bi bi-arrow-right" aria-hidden="true"></i>
+    </button>
+  </footer>
 </section>

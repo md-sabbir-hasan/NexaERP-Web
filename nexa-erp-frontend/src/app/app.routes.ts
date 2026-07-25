@@ -589,6 +589,13 @@ export const routes: Routes = [
         path: 'dashboard',
         component: DashboardComponent,
       },
+      {
+        path: 'notifications',
+        loadComponent: () =>
+          import(
+            './features/notifications/pages/notification-center/notification-center'
+          ).then((m) => m.NotificationCenter),
+      },
 
       // =====================================================
       // Administration

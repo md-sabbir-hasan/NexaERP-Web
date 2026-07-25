@@ -17,6 +17,7 @@ import {
 import { CurrentUser } from '../models/current-user.model';
 import { StorageService } from '../services/storage.service';
 import { TokenService } from '../services/token.service';
+import { NotificationStore } from '../../features/notifications/services/notification.store';
 
 @Injectable({
   providedIn: 'root',
@@ -34,6 +35,7 @@ export class AuthService {
     private http: HttpClient,
     private tokenService: TokenService,
     private storage: StorageService,
+    private notificationStore: NotificationStore,
   ) {
     // পুরনো duplicate keys startup-এ clean করবে
     this.tokenService.clearLegacyTokens();
@@ -119,6 +121,7 @@ export class AuthService {
   }
 
   clearSession(): void {
+    this.notificationStore.reset();
     this.tokenService.clearTokens();
 
     this.storage.removeMany([

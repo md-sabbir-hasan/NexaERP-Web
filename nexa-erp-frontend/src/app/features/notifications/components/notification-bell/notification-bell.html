@@ -17,6 +17,6 @@
   </button>
 
   @if (open()) {
-    <app-notification-dropdown />
+    <app-notification-dropdown (closeRequested)="open.set(false)" />
   }
 </div>

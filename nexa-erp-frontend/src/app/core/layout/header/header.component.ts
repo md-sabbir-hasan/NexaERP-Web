@@ -13,6 +13,7 @@ const PAGE_TITLES: Record<string, string> = {
   budget: 'Budgets', 'recurring-expense': 'Recurring Expenses', 'fixed-assets': 'Fixed Assets', reports: 'Reports',
   audit: 'Audit Log', users: 'Users', roles: 'Roles', permissions: 'Permissions', settings: 'Settings',
   'fiscal-years': 'Fiscal Years', 'accounting-periods': 'Accounting Periods', 'credit-notes': 'Credit Notes', 'debit-notes': 'Debit Notes',
+  notifications: 'Notification Center',
 };
 
 @Component({ selector: 'app-header', standalone: true, imports: [CommonModule, NotificationBell], templateUrl: './header.component.html', styleUrl: './header.component.scss' })

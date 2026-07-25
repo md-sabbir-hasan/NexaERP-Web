@@ -11,7 +11,22 @@ export type AuditAction =
   | 'LOGIN'
   | 'LOGOUT'
   | 'PASSWORD_CHANGED'
-  | 'UPLOADED';
+  | 'UPLOADED'
+  | 'CLOSED'
+  | 'OPENED'
+  | 'LOCKED';
+
+export type AuditTimelineEntityName = 'INVOICE' | 'VENDOR_BILL';
+
+export interface AuditTimelineItem {
+  id: number;
+  entityName: AuditTimelineEntityName;
+  entityId: number;
+  action: AuditAction;
+  actorName: string;
+  description: string;
+  createdAt: string;
+}
 
 // Must match the entityName strings used by auditLogService.log(...) on the backend
 export const AUDIT_ENTITY_TYPES = [

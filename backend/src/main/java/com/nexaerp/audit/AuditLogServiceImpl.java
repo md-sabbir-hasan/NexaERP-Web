@@ -1,5 +1,7 @@
 package com.nexaerp.audit;
 
+import com.nexaerp.audit.dto.AuditTimelineItemDto;
+import com.nexaerp.common.exception.BusinessRuleException;
 import com.nexaerp.user.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -11,9 +13,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.util.Locale;
+import java.util.Set;
+
 @Service
 @RequiredArgsConstructor
 public class AuditLogServiceImpl implements AuditLogService{
+
+    private static final Set<String> TIMELINE_ENTITY_ALLOWLIST = Set.of(
+            "INVOICE",
+            "VENDOR_BILL"
+    );
 
     private final AuditLogRepository auditLogRepository;
     private final UserRepository userRepository;
@@ -72,6 +82,23 @@ public class AuditLogServiceImpl implements AuditLogService{
         return auditLogRepository.findByEntityNameOrderByCreatedAtDesc(entityName, pageable);
     }
 
+    @Override
+    public Page<AuditTimelineItemDto> getEntityTimeline(
+            String entityName,
+            Long entityId,
+            Pageable pageable
+    ) {
+        if (!TIMELINE_ENTITY_ALLOWLIST.contains(entityName)) {
+            throw new BusinessRuleException(
+                    "Activity timeline is not supported for entity: " + entityName
+            );
+        }
+
+        return auditLogRepository
+                .findByEntityNameAndEntityIdOrderByCreatedAtDesc(entityName, entityId, pageable)
+                .map(this::toTimelineItem);
+    }
+
 
 
     // ===================private helper==============
@@ -93,5 +120,36 @@ public class AuditLogServiceImpl implements AuditLogService{
             // ignore
         }
         return "unknown";
+    }
+
+    private AuditTimelineItemDto toTimelineItem(AuditLog auditLog) {
+        return AuditTimelineItemDto.builder()
+                .id(auditLog.getId())
+                .entityName(auditLog.getEntityName())
+                .entityId(auditLog.getEntityId())
+                .action(auditLog.getAction())
+                .actorName(auditLog.getUserName())
+                .description(timelineDescription(auditLog.getEntityName(), auditLog.getAction()))
+                .createdAt(auditLog.getCreatedAt())
+                .build();
+    }
+
+    private String timelineDescription(String entityName, AuditAction action) {
+        String subject = switch (entityName) {
+            case "INVOICE" -> "Invoice";
+            case "VENDOR_BILL" -> "Vendor bill";
+            default -> "Record";
+        };
+
+        return switch (action) {
+            case CREATED -> subject + " was created";
+            case UPDATED -> subject + " was updated";
+            case APPROVED -> subject + " was approved";
+            case POSTED -> subject + " was posted";
+            case CANCELLED -> subject + " was cancelled";
+            default -> subject + " was " + action.name()
+                    .toLowerCase(Locale.ROOT)
+                    .replace('_', ' ');
+        };
     }
 }

@@ -3,6 +3,7 @@ package com.nexaerp.audit;
 
 import com.nexaerp.common.response.ApiResponse;
 import com.nexaerp.common.response.PageResponseDto;
+import com.nexaerp.audit.dto.AuditTimelineItemDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +34,20 @@ public class AuditLogController {
         Pageable pageable = pageable(page, size);
         return ResponseEntity.ok(ApiResponse.success(
                 PageResponseDto.from(auditLogService.getEntityHistory(entityName, entityId, pageable))));
+    }
+
+    @PreAuthorize("hasAuthority('VIEW_AUDIT_LOGS')")
+    @GetMapping("/entity/{entityName}/{entityId}/timeline")
+    public ResponseEntity<ApiResponse<PageResponseDto<AuditTimelineItemDto>>> getEntityTimeline(
+            @PathVariable String entityName,
+            @PathVariable Long entityId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = pageable(page, size);
+        return ResponseEntity.ok(ApiResponse.success(
+                PageResponseDto.from(
+                        auditLogService.getEntityTimeline(entityName, entityId, pageable)
+                )));
     }
 
     // Get all activity of a specific user

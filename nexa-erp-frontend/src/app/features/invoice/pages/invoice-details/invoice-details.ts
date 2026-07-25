@@ -6,11 +6,19 @@ import { AlertService } from '../../../../core/services/alert.service';
 import { CancelledReason, Invoice, InvoiceStatus } from '../../models/invoice.model';
 import { InvoiceService } from '../../services/invoice.service';
 import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
+import { AuditTimeline } from '../../../audit/components/audit-timeline/audit-timeline';
 
 @Component({
   selector: 'app-invoice-details',
   standalone: true,
-  imports: [CommonModule, RouterLink, DatePipe, DecimalPipe, HasPermissionDirective],
+  imports: [
+    CommonModule,
+    RouterLink,
+    DatePipe,
+    DecimalPipe,
+    HasPermissionDirective,
+    AuditTimeline,
+  ],
   templateUrl: './invoice-details.html',
   styleUrl: './invoice-details.scss',
 })

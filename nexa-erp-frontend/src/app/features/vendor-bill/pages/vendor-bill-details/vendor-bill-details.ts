@@ -10,11 +10,19 @@ import {
 } from '../../models/vendor-bill.model';
 import { VendorBillService } from '../../services/vendor-bill.service';
 import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
+import { AuditTimeline } from '../../../audit/components/audit-timeline/audit-timeline';
 
 @Component({
   selector: 'app-vendor-bill-details',
   standalone: true,
-  imports: [CommonModule, RouterLink, DatePipe, DecimalPipe, HasPermissionDirective],
+  imports: [
+    CommonModule,
+    RouterLink,
+    DatePipe,
+    DecimalPipe,
+    HasPermissionDirective,
+    AuditTimeline,
+  ],
   templateUrl: './vendor-bill-details.html',
   styleUrl: './vendor-bill-details.scss',
 })

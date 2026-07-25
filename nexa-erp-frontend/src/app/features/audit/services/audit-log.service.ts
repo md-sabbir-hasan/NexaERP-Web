@@ -4,7 +4,11 @@ import { Observable } from 'rxjs';
 import { APP_CONFIG } from '../../../core/config/app.config';
 import { ApiResponse } from '../../../core/models/api-response.model';
 import { PageResponse } from '../../../core/models/page.model';
-import { AuditLog } from '../models/audit-log.model';
+import {
+  AuditLog,
+  AuditTimelineEntityName,
+  AuditTimelineItem,
+} from '../models/audit-log.model';
 
 @Injectable({
   providedIn: 'root',
@@ -37,6 +41,19 @@ export class AuditLogService {
     const params = new HttpParams().set('page', page).set('size', size);
     return this.http.get<ApiResponse<PageResponse<AuditLog>>>(
       `${this.baseUrl}/entity/${entityName}/${entityId}`,
+      { params },
+    );
+  }
+
+  getEntityTimeline(
+    entityName: AuditTimelineEntityName,
+    entityId: number,
+    page = 0,
+    size = 20,
+  ): Observable<ApiResponse<PageResponse<AuditTimelineItem>>> {
+    const params = new HttpParams().set('page', page).set('size', Math.min(size, 20));
+    return this.http.get<ApiResponse<PageResponse<AuditTimelineItem>>>(
+      `${this.baseUrl}/entity/${entityName}/${entityId}/timeline`,
       { params },
     );
   }

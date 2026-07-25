@@ -158,5 +158,11 @@
       <p>{{ invoice()!.notes || 'No notes provided.' }}</p>
     </div>
   </section>
+
+  <app-audit-timeline
+    *appHasPermission="'VIEW_AUDIT_LOGS'"
+    entityName="INVOICE"
+    [entityId]="invoice()!.id"
+  />
   }
 </div>

@@ -1,5 +1,6 @@
 package com.nexaerp.audit;
 
+import com.nexaerp.audit.dto.AuditTimelineItemDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -16,4 +17,11 @@ public interface AuditLogService {
 
     // Get all logs for an entity type
     Page<AuditLog> getEntityLogs(String entityName, Pageable pageable);
+
+    // Get safe timeline data for a supported transaction record
+    Page<AuditTimelineItemDto> getEntityTimeline(
+            String entityName,
+            Long entityId,
+            Pageable pageable
+    );
 }

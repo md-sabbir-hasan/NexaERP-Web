@@ -205,5 +205,11 @@
       <p>{{ bill()!.notes || 'No notes provided.' }}</p>
     </div>
   </section>
+
+  <app-audit-timeline
+    *appHasPermission="'VIEW_AUDIT_LOGS'"
+    entityName="VENDOR_BILL"
+    [entityId]="bill()!.id"
+  />
   }
 </div>

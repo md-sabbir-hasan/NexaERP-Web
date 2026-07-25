@@ -1,35 +1,68 @@
-<div class="timeline-wrap">
-  <button class="history-btn" type="button" (click)="toggle()">
-    <i class="bi bi-clock-history"></i>
-    History
-    <i class="bi" [class.bi-chevron-up]="open()" [class.bi-chevron-down]="!open()"></i>
+<section class="timeline-wrap" aria-labelledby="activity-timeline-title">
+  <button
+    class="history-btn"
+    type="button"
+    [attr.aria-expanded]="open()"
+    aria-controls="activity-timeline-panel"
+    (click)="toggle()"
+  >
+    <span>
+      <i class="bi bi-clock-history" aria-hidden="true"></i>
+      <strong id="activity-timeline-title">Activity timeline</strong>
+    </span>
+    <i
+      class="bi"
+      [class.bi-chevron-up]="open()"
+      [class.bi-chevron-down]="!open()"
+      aria-hidden="true"
+    ></i>
   </button>
 
   @if (open()) {
-    <div class="timeline-panel">
+    <div id="activity-timeline-panel" class="timeline-panel">
       @if (loading()) {
-        <div class="state-box">
-          <i class="bi bi-arrow-repeat spin"></i>
-          Loading history...
+        <div class="state-box" role="status">
+          <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+          <strong>Loading activity</strong>
+          <p>Fetching the latest record history...</p>
         </div>
-      } @else if (logs().length === 0) {
-        <div class="state-box">No history recorded yet</div>
+      } @else if (error()) {
+        <div class="state-box error-state" role="alert">
+          <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
+          <strong>Could not load activity</strong>
+          <p>{{ error() }}</p>
+          <button type="button" (click)="retry()">Try again</button>
+        </div>
+      } @else if (items().length === 0) {
+        <div class="state-box">
+          <i class="bi bi-clock" aria-hidden="true"></i>
+          <strong>No activity recorded yet</strong>
+          <p>Lifecycle events for this transaction will appear here.</p>
+        </div>
       } @else {
-        <ul class="timeline">
-          @for (log of logs(); track log.id) {
+        <ol class="timeline" aria-label="Transaction activity">
+          @for (item of items(); track item.id) {
             <li>
-              <span class="dot" [class]="actionClass(log.action)"></span>
+              <span class="dot" [class]="actionClass(item.action)" aria-hidden="true"></span>
               <div class="entry">
                 <div class="entry-head">
-                  <span class="action-pill" [class]="actionClass(log.action)">{{ log.action }}</span>
-                  <span class="entry-user">{{ log.userName }}</span>
-                  <span class="entry-time">{{ log.createdAt | date: 'medium' }}</span>
+                  <span class="action-pill" [class]="actionClass(item.action)">
+                    {{ item.action }}
+                  </span>
+                  <time class="entry-time" [attr.datetime]="item.createdAt">
+                    {{ item.createdAt | date: 'medium' }}
+                  </time>
                 </div>
+                <p class="entry-description">{{ item.description }}</p>
+                <span class="entry-user">
+                  <i class="bi bi-person" aria-hidden="true"></i>
+                  {{ item.actorName || 'System' }}
+                </span>
               </div>
             </li>
           }
-        </ul>
+        </ol>
       }
     </div>
   }
-</div>
+</section>

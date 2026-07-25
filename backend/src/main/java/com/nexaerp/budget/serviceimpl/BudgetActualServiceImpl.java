@@ -40,7 +40,7 @@ public class BudgetActualServiceImpl implements BudgetActualService {
         List<Long> accountIds = List.copyOf(typeByAccountId.keySet());
 
         List<AccountActualProjection> projections = budgetActualRepository.findAccountActuals(
-                accountIds, fromDate, toDate, JournalStatus.POSTED);
+                accountIds, fromDate, toDate, List.of(JournalStatus.POSTED, JournalStatus.REVERSED));
 
         Map<Long, BigDecimal> actuals = new HashMap<>();
 

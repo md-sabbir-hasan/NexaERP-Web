@@ -13,6 +13,9 @@ public interface BudgetPeriodAllocationRepository extends JpaRepository<BudgetPe
 
     List<BudgetPeriodAllocation> findByBudgetLineIdIn(List<Long> budgetLineIds);
 
+    List<BudgetPeriodAllocation> findByBudgetLineIdInAndAccountingPeriodIdIn(
+            List<Long> budgetLineIds, List<Long> accountingPeriodIds);
+
     Optional<BudgetPeriodAllocation> findByBudgetLineIdAndAccountingPeriodId(Long budgetLineId, Long accountingPeriodId);
 
     void deleteByBudgetLineId(Long budgetLineId);

@@ -18,7 +18,7 @@ public interface BudgetActualRepository extends Repository<JournalLine, Long> {
                    COALESCE(SUM(jl.debit), 0) AS totalDebit,
                    COALESCE(SUM(jl.credit), 0) AS totalCredit
             FROM JournalLine jl
-            WHERE jl.journalEntry.status = :status
+            WHERE jl.journalEntry.status IN :statuses
               AND jl.journalEntry.date BETWEEN :fromDate AND :toDate
               AND jl.account.id IN :accountIds
             GROUP BY jl.account.id
@@ -27,6 +27,6 @@ public interface BudgetActualRepository extends Repository<JournalLine, Long> {
             @Param("accountIds") List<Long> accountIds,
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
-            @Param("status") JournalStatus status
+            @Param("statuses") List<JournalStatus> statuses
     );
 }

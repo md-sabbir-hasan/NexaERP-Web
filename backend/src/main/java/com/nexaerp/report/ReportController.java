@@ -2,6 +2,7 @@ package com.nexaerp.report;
 
 
 import com.nexaerp.common.response.ApiResponse;
+import com.nexaerp.account.AccountType;
 import com.nexaerp.party.PartyType;
 import com.nexaerp.report.dto.*;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,24 @@ import java.time.LocalDate;
 @RequiredArgsConstructor
 public class ReportController {
     private final ReportService reportService;
+    private final BudgetVsActualReportService budgetVsActualReportService;
+
+    @GetMapping("/budget-vs-actual/options")
+    @PreAuthorize("hasAuthority('VIEW_BUDGET_REPORT')")
+    public ResponseEntity<ApiResponse<java.util.List<BudgetVsActualOptionDto>>> getBudgetVsActualOptions() {
+        return ResponseEntity.ok(ApiResponse.success(budgetVsActualReportService.getOptions()));
+    }
+
+    @GetMapping("/budget-vs-actual")
+    @PreAuthorize("hasAuthority('VIEW_BUDGET_REPORT')")
+    public ResponseEntity<ApiResponse<BudgetVsActualResponseDto>> getBudgetVsActual(
+            @RequestParam Long budgetId,
+            @RequestParam(required = false) Long fromPeriodId,
+            @RequestParam(required = false) Long toPeriodId,
+            @RequestParam(required = false) AccountType accountType) {
+        return ResponseEntity.ok(ApiResponse.success(reportService
+                .getBudgetVsActual(budgetId, fromPeriodId, toPeriodId, accountType)));
+    }
 
     @GetMapping("/cash-flow")
     @PreAuthorize("hasAuthority('VIEW_REPORT')")

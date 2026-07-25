@@ -1179,6 +1179,15 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'reports/budget-vs-actual',
+        loadComponent: () =>
+          import('./features/budget/pages/budget-variance/budget-variance').then(
+            (m) => m.BudgetVariance,
+          ),
+        canActivate: [permissionGuard],
+        data: { permission: PERMISSIONS.VIEW_BUDGET_REPORT },
+      },
+      {
         path: 'reports/cash-flow',
         loadComponent: () =>
           import('./features/reports/pages/cash-flow-report/cash-flow-report').then(

@@ -191,6 +191,12 @@ export class MenuService {
             route: APP_ROUTES.REPORTS,
             permission: PERMISSIONS.VIEW_REPORT,
           },
+          {
+            label: 'Budget vs Actual',
+            icon: 'bi-bar-chart-line',
+            route: APP_ROUTES.BUDGET_VS_ACTUAL,
+            permission: PERMISSIONS.VIEW_BUDGET_REPORT,
+          },
         ],
       },
 

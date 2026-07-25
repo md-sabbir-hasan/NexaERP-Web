@@ -12,7 +12,8 @@
 
     <div class="hero-actions">
       <a routerLink="/budget" class="btn-back">Back to List</a>
-      <a [routerLink]="['/budget', b.id, 'variance']" class="btn-variance">Variance Report</a>
+        <a *appHasPermission="'VIEW_BUDGET_REPORT'" [routerLink]="['/reports/budget-vs-actual']"
+          [queryParams]="{ budgetId: b.id }" class="btn-variance">Variance Report</a>
 
       @if (isDraft) {
       <button class="btn-activate" type="button" (click)="activateBudget()">Activate</button>

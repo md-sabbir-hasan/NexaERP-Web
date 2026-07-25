@@ -11,6 +11,11 @@ import { ProfitLossResponse } from '../models/profit-loss.model';
 import { BalanceSheetResponse } from '../models/balance-sheet.model';
 import { AgingResponse } from '../models/aging.model';
 import { CashFlowStatementResponse } from '../models/cash-flow.model';
+import {
+  BudgetReportAccountType,
+  BudgetVsActualOption,
+  BudgetVsActualResponse,
+} from '../../budget/models/budget.model';
 
 @Injectable({
   providedIn: 'root',
@@ -19,6 +24,38 @@ export class ReportService {
   private readonly baseUrl = `${APP_CONFIG.apiUrl}/reports`;
 
   constructor(private http: HttpClient) {}
+
+  getBudgetVsActualOptions(): Observable<ApiResponse<BudgetVsActualOption[]>> {
+    return this.http.get<ApiResponse<BudgetVsActualOption[]>>(`${this.baseUrl}/budget-vs-actual/options`);
+  }
+
+  getBudgetVsActual(
+    budgetId: number,
+    fromPeriodId?: number,
+    toPeriodId?: number,
+    accountType?: BudgetReportAccountType,
+  ): Observable<ApiResponse<BudgetVsActualResponse>> {
+    let params = new HttpParams().set('budgetId', budgetId);
+    if (fromPeriodId) params = params.set('fromPeriodId', fromPeriodId);
+    if (toPeriodId) params = params.set('toPeriodId', toPeriodId);
+    if (accountType) params = params.set('accountType', accountType);
+    return this.http.get<ApiResponse<BudgetVsActualResponse>>(`${this.baseUrl}/budget-vs-actual`, { params });
+  }
+
+  downloadBudgetVsActualExcel(
+    budgetId: number,
+    fromPeriodId?: number,
+    toPeriodId?: number,
+    accountType?: BudgetReportAccountType,
+  ): Observable<Blob> {
+    let params = new HttpParams().set('budgetId', budgetId);
+    if (fromPeriodId) params = params.set('fromPeriodId', fromPeriodId);
+    if (toPeriodId) params = params.set('toPeriodId', toPeriodId);
+    if (accountType) params = params.set('accountType', accountType);
+    return this.http.get(`${this.baseUrl}/budget-vs-actual/excel`, {
+      params, responseType: 'blob' as const,
+    });
+  }
 
   getCashFlow(fromDate: string, toDate: string): Observable<ApiResponse<CashFlowStatementResponse>> {
     const params = new HttpParams().set('fromDate', fromDate).set('toDate', toDate);

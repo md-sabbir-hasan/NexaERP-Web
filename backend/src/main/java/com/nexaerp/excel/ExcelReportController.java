@@ -1,6 +1,7 @@
 package com.nexaerp.excel;
 
 import com.nexaerp.party.PartyType;
+import com.nexaerp.account.AccountType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
@@ -20,6 +21,17 @@ public class ExcelReportController {
 
     private static final MediaType XLSX = MediaType.parseMediaType(
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+    @GetMapping("/budget-vs-actual/excel")
+    @PreAuthorize("hasAuthority('VIEW_BUDGET_REPORT')")
+    public ResponseEntity<byte[]> exportBudgetVsActual(
+            @RequestParam Long budgetId,
+            @RequestParam(required = false) Long fromPeriodId,
+            @RequestParam(required = false) Long toPeriodId,
+            @RequestParam(required = false) AccountType accountType) {
+        return download(excelReportService.generateBudgetVsActualExcel(
+                budgetId, fromPeriodId, toPeriodId, accountType), "budget-vs-actual.xlsx");
+    }
 
     @GetMapping("/cash-flow/excel")
     @PreAuthorize("hasAuthority('VIEW_REPORT')")

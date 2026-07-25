@@ -2,6 +2,8 @@ package com.nexaerp.excel;
 
 import com.nexaerp.party.PartyType;
 import com.nexaerp.report.ReportService;
+import com.nexaerp.report.BudgetVsActualReportService;
+import com.nexaerp.account.AccountType;
 import com.nexaerp.report.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Cell;
@@ -20,8 +22,95 @@ import java.time.format.DateTimeFormatter;
 public class ExcelReportService {
 
     private final ReportService reportService;
+    private final BudgetVsActualReportService budgetVsActualReportService;
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd MMM yyyy");
+
+    public byte[] generateBudgetVsActualExcel(
+            Long budgetId, Long fromPeriodId, Long toPeriodId, AccountType accountType) {
+        BudgetVsActualResponseDto data = budgetVsActualReportService
+                .generate(budgetId, fromPeriodId, toPeriodId, accountType);
+        try (XSSFWorkbook wb = new XSSFWorkbook()) {
+            Sheet sheet = wb.createSheet("Budget vs Actual");
+            CellStyle title = ExcelStyleHelper.titleStyle(wb);
+            CellStyle subtitle = ExcelStyleHelper.subTitleStyle(wb);
+            CellStyle header = ExcelStyleHelper.headerStyle(wb);
+            CellStyle currency = ExcelStyleHelper.currencyStyle(wb);
+            CellStyle boldCurrency = ExcelStyleHelper.boldCurrencyStyle(wb);
+            CellStyle percentage = wb.createCellStyle();
+            percentage.setDataFormat(wb.createDataFormat().getFormat("0.00%"));
+            int row = 0;
+            setCell(sheet, row++, 0, "NexaERP - Budget vs Actual Report", title);
+            setCell(sheet, row++, 0, data.getBudgetName() + " (" + data.getBudgetStatus() + ")", subtitle);
+            setCell(sheet, row++, 0, data.getFiscalYearName() + " | "
+                    + data.getFromDate().format(DATE_FMT) + " to " + data.getToDate().format(DATE_FMT), subtitle);
+            setCell(sheet, row++, 0, "Generated " + data.getGeneratedAt()
+                    + " | Currency " + data.getCurrencyCode(), subtitle);
+            row++;
+            row = writeBudgetSection(sheet, row, "Revenue", data.getRevenueLines(), header,
+                    currency, percentage, boldCurrency);
+            row++;
+            row = writeBudgetSection(sheet, row, "Expense", data.getExpenseLines(), header,
+                    currency, percentage, boldCurrency);
+            row++;
+            setCell(sheet, row++, 0, "Combined Summary", title);
+            setCell(sheet, row, 0, "Revenue Budget", null);
+            setNumeric(sheet, row++, 1, data.getTotalRevenueBudget(), boldCurrency);
+            setCell(sheet, row, 0, "Revenue Actual", null);
+            setNumeric(sheet, row++, 1, data.getTotalRevenueActual(), boldCurrency);
+            setCell(sheet, row, 0, "Expense Budget", null);
+            setNumeric(sheet, row++, 1, data.getTotalExpenseBudget(), boldCurrency);
+            setCell(sheet, row, 0, "Expense Actual", null);
+            setNumeric(sheet, row, 1, data.getTotalExpenseActual(), boldCurrency);
+            sheet.createFreezePane(0, 7);
+            ExcelStyleHelper.autoSizeColumns(sheet, 10);
+            return ExcelStyleHelper.toBytes(wb);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to generate Budget vs Actual Excel", e);
+        }
+    }
+
+    private int writeBudgetSection(Sheet sheet, int row, String label,
+                                   java.util.List<BudgetVsActualLineDto> lines,
+                                   CellStyle header, CellStyle currency,
+                                   CellStyle percentage, CellStyle total) {
+        setCell(sheet, row++, 0, label, ExcelStyleHelper.boldStyle(sheet.getWorkbook()));
+        String[] headings = {"Account Code", "Account Name", "Type", "Budget", "Actual",
+                "Variance", "Variance %", "Achievement/Utilization %", "Remaining", "Status"};
+        for (int i = 0; i < headings.length; i++) setCell(sheet, row, i, headings[i], header);
+        row++;
+        BigDecimal budget = BigDecimal.ZERO;
+        BigDecimal actual = BigDecimal.ZERO;
+        BigDecimal variance = BigDecimal.ZERO;
+        for (BudgetVsActualLineDto line : lines) {
+            setCell(sheet, row, 0, line.getAccountCode(), null);
+            setCell(sheet, row, 1, line.getAccountName(), null);
+            setCell(sheet, row, 2, line.getAccountType().name(), null);
+            setNumeric(sheet, row, 3, line.getBudgetAmount(), currency);
+            setNumeric(sheet, row, 4, line.getActualAmount(), currency);
+            setNumeric(sheet, row, 5, line.getVarianceAmount(), currency);
+            setPercent(sheet, row, 6, line.getVariancePercent(), percentage);
+            setPercent(sheet, row, 7, line.getUtilizationPercent(), percentage);
+            setNumeric(sheet, row, 8, line.getRemainingAmount(), currency);
+            setCell(sheet, row++, 9, line.getVarianceStatus().name(), null);
+            budget = budget.add(line.getBudgetAmount());
+            actual = actual.add(line.getActualAmount());
+            variance = variance.add(line.getVarianceAmount());
+        }
+        setCell(sheet, row, 0, "Total " + label, total);
+        setNumeric(sheet, row, 3, budget, total);
+        setNumeric(sheet, row, 4, actual, total);
+        setNumeric(sheet, row++, 5, variance, total);
+        return row;
+    }
+
+    private void setPercent(Sheet sheet, int row, int column, BigDecimal value, CellStyle style) {
+        if (value == null) {
+            setCell(sheet, row, column, "—", null);
+        } else {
+            setNumeric(sheet, row, column, value.divide(BigDecimal.valueOf(100)), style);
+        }
+    }
 
     public byte[] generateCashFlowExcel(LocalDate fromDate, LocalDate toDate) {
         CashFlowStatementResponseDto data = reportService.getCashFlowStatement(fromDate, toDate);
@@ -425,6 +514,12 @@ public class ExcelReportService {
         Cell cell = row.createCell(colIndex);
         cell.setCellValue(value);
         cell.setCellStyle(style);
+    }
+
+    private void setNumeric(Sheet sheet, int rowIndex, int colIndex, BigDecimal value, CellStyle style) {
+        Row row = sheet.getRow(rowIndex);
+        if (row == null) row = sheet.createRow(rowIndex);
+        setCurrencyCell(row, colIndex, value, style);
     }
 
     private void setCurrencyCell(Row row, int colIndex, BigDecimal value, CellStyle style) {

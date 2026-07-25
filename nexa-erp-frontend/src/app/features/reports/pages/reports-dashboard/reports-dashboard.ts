@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TokenService } from '../../../../core/services/token.service';
+import { PERMISSIONS } from '../../../../core/constants/permission.constants';
 
 interface ReportCard {
   title: string;
@@ -8,6 +10,7 @@ interface ReportCard {
   icon: string;
   route: string;
   status: 'READY' | 'COMING_SOON';
+  permission?: string;
 }
 
 @Component({
@@ -18,7 +21,7 @@ interface ReportCard {
   styleUrl: './reports-dashboard.scss',
 })
 export class ReportsDashboard {
-  readonly reports: ReportCard[] = [
+  private readonly allReports: ReportCard[] = [
     {
       title: 'Ledger',
       description: 'Account-wise debit, credit and running balance.',
@@ -55,6 +58,14 @@ export class ReportsDashboard {
       status: 'READY',
     },
     {
+      title: 'Budget vs Actual',
+      description: 'Compare period budget allocations with posted Revenue and Expense activity.',
+      icon: 'bi bi-bar-chart-line',
+      route: '/reports/budget-vs-actual',
+      status: 'READY',
+      permission: PERMISSIONS.VIEW_BUDGET_REPORT,
+    },
+    {
       title: 'Party Statement',
       description: 'Customer/vendor transaction statement.',
       icon: 'bi bi-people',
@@ -69,4 +80,12 @@ export class ReportsDashboard {
       status: 'READY',
     },
   ];
+
+  readonly reports: ReportCard[];
+
+  constructor(tokenService: TokenService) {
+    this.reports = this.allReports.filter(
+      (report) => !report.permission || tokenService.hasPermission(report.permission),
+    );
+  }
 }

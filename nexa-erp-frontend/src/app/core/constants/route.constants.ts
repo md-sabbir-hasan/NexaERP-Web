@@ -23,6 +23,7 @@ export const APP_ROUTES = {
   REPORTS: '/reports',
   LEDGER: '/reports/ledger',
   TRIAL_BALANCE: '/reports/trial-balance',
+  BUDGET_VS_ACTUAL: '/reports/budget-vs-actual',
 
   AUDIT: '/audit',
 

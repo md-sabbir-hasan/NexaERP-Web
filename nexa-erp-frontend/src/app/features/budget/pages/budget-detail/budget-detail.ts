@@ -15,11 +15,12 @@ import {
   BudgetResponse,
 } from '../../models/budget.model';
 import { BudgetService } from '../../services/budget.service';
+import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
 
 @Component({
   selector: 'app-budget-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, HasPermissionDirective],
   templateUrl: './budget-detail.html',
   styleUrl: './budget-detail.scss',
 })

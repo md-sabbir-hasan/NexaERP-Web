@@ -1,12 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-
-import { AlertService } from '../../../../core/services/alert.service';
-import { AccountingPeriod } from '../../../accounting-period/models/accounting-period.model';
-import { AccountingPeriodService } from '../../../accounting-period/services/accounting-period.service';
-import { BudgetVarianceResponse } from '../../models/budget.model';
+import { EXCEL_MIME_TYPE, triggerBlobDownload } from '../../../../core/utils/file-download.util';
+import {
+  BudgetReportAccountType,
+  BudgetVsActualOption,
+  BudgetVsActualResponse,
+} from '../../models/budget.model';
+import { ReportService } from '../../../reports/services/report.service';
 import { BudgetService } from '../../services/budget.service';
 
 @Component({
@@ -17,81 +20,178 @@ import { BudgetService } from '../../services/budget.service';
   styleUrl: './budget-variance.scss',
 })
 export class BudgetVariance implements OnInit {
+  readonly loadingOptions = signal(true);
   readonly loading = signal(false);
-  readonly variance = signal<BudgetVarianceResponse | null>(null);
-  readonly periods = signal<AccountingPeriod[]>([]);
+  readonly exporting = signal(false);
+  readonly options = signal<BudgetVsActualOption[]>([]);
+  readonly report = signal<BudgetVsActualResponse | null>(null);
+  readonly errorMessage = signal<string | null>(null);
+  readonly forbidden = signal(false);
+  readonly attempted = signal(false);
 
-  budgetId!: number;
-  selectedPeriodId: number | null = null;
-  fromDate = '';
-  toDate = '';
+  selectedBudgetId: number | null = null;
+  fromPeriodId: number | null = null;
+  toPeriodId: number | null = null;
+  accountType: BudgetReportAccountType | '' = '';
+
+  readonly selectedBudget = computed(() =>
+    this.options().find((item) => item.budgetId === this.selectedBudgetId) ?? null,
+  );
+  readonly availableBudgets = computed(() =>
+    this.options().filter((item) => item.budgetStatus === 'ACTIVE' || item.budgetStatus === 'CLOSED'),
+  );
+  readonly noActualActivity = computed(() => {
+    const value = this.report();
+    return !!value && value.totalRevenueActual === 0 && value.totalExpenseActual === 0;
+  });
+  readonly emptyLines = computed(() => {
+    const value = this.report();
+    return !!value && value.revenueLines.length === 0 && value.expenseLines.length === 0;
+  });
 
   constructor(
     private route: ActivatedRoute,
+    private reportService: ReportService,
     private budgetService: BudgetService,
-    private accountingPeriodService: AccountingPeriodService,
-    private alert: AlertService,
   ) {}
 
   ngOnInit(): void {
-    this.budgetId = Number(this.route.snapshot.paramMap.get('id'));
-    if (this.budgetId) {
-      this.loadVariance();
-    }
+    const routeBudgetId = Number(this.route.snapshot.paramMap.get('id')) || null;
+    const queryBudgetId = Number(this.route.snapshot.queryParamMap.get('budgetId')) || null;
+    this.selectedBudgetId = routeBudgetId ?? queryBudgetId;
+    this.loadOptions();
   }
 
-  loadVariance(): void {
-    this.loading.set(true);
-
-    this.budgetService
-      .getVariance(this.budgetId, {
-        periodId: this.selectedPeriodId ?? undefined,
-        fromDate: this.selectedPeriodId ? undefined : this.fromDate || undefined,
-        toDate: this.selectedPeriodId ? undefined : this.toDate || undefined,
-      })
-      .subscribe({
-        next: (res) => {
-          this.variance.set(res.data);
-          this.loading.set(false);
-
-          if (this.periods().length === 0) {
-            this.accountingPeriodService.getAll(res.data.fiscalYearId).subscribe({
-              next: (periodRes) => {
-                this.periods.set([...periodRes.data].sort((a, b) => a.periodNumber - b.periodNumber));
-              },
-            });
+  loadOptions(): void {
+    this.loadingOptions.set(true);
+    this.errorMessage.set(null);
+    this.reportService.getBudgetVsActualOptions().subscribe({
+      next: ({ data }) => {
+        this.options.set(data);
+        this.loadingOptions.set(false);
+        if (this.selectedBudgetId) {
+          const selected = data.find((item) => item.budgetId === this.selectedBudgetId);
+          if (selected) {
+            this.setFullRange(selected);
+            if (selected.budgetStatus === 'DRAFT') this.loadLegacyDraftPreview(selected);
+            else this.generate();
           }
-        },
-        error: () => {
-          this.loading.set(false);
-          this.alert.error('Failed to load variance report');
-        },
-      });
+        }
+      },
+      error: (error: HttpErrorResponse) => this.handleError(error, true),
+    });
   }
 
-  onPeriodChange(): void {
-    this.fromDate = '';
-    this.toDate = '';
-    this.loadVariance();
+  onBudgetChange(): void {
+    this.report.set(null);
+    this.attempted.set(false);
+    const selected = this.selectedBudget();
+    if (selected) this.setFullRange(selected);
   }
 
-  applyDateRange(): void {
-    if (this.fromDate && this.toDate) {
-      this.selectedPeriodId = null;
-      this.loadVariance();
-    } else {
-      this.alert.warning('Select both from and to dates');
-    }
+  generate(): void {
+    if (!this.validate()) return;
+    this.loading.set(true);
+    this.attempted.set(true);
+    this.errorMessage.set(null);
+    this.forbidden.set(false);
+    this.reportService.getBudgetVsActual(
+      this.selectedBudgetId!, this.fromPeriodId!, this.toPeriodId!, this.accountType || undefined,
+    ).subscribe({
+      next: ({ data }) => { this.report.set(data); this.loading.set(false); },
+      error: (error: HttpErrorResponse) => this.handleError(error, false),
+    });
   }
 
-  clearFilters(): void {
-    this.selectedPeriodId = null;
-    this.fromDate = '';
-    this.toDate = '';
-    this.loadVariance();
+  reset(): void {
+    this.selectedBudgetId = null;
+    this.fromPeriodId = null;
+    this.toPeriodId = null;
+    this.accountType = '';
+    this.report.set(null);
+    this.errorMessage.set(null);
+    this.attempted.set(false);
+    this.forbidden.set(false);
   }
 
-  getStatusClass(status: string): string {
-    return status.toLowerCase().replace('_', '-');
+  exportExcel(): void {
+    if (!this.validate()) return;
+    this.exporting.set(true);
+    this.reportService.downloadBudgetVsActualExcel(
+      this.selectedBudgetId!, this.fromPeriodId!, this.toPeriodId!, this.accountType || undefined,
+    ).subscribe({
+      next: (blob) => {
+        triggerBlobDownload(blob, `budget-vs-actual-${this.report()?.fromDate ?? 'report'}.xlsx`, EXCEL_MIME_TYPE);
+        this.exporting.set(false);
+      },
+      error: (error: HttpErrorResponse) => { this.exporting.set(false); this.handleError(error, false); },
+    });
+  }
+
+  printReport(): void { window.print(); }
+  retry(): void { this.selectedBudgetId ? this.generate() : this.loadOptions(); }
+
+  private setFullRange(option: BudgetVsActualOption): void {
+    this.fromPeriodId = option.periods[0]?.id ?? null;
+    this.toPeriodId = option.periods[option.periods.length - 1]?.id ?? null;
+  }
+
+  private validate(): boolean {
+    const budget = this.selectedBudget();
+    if (!budget) return this.fail('Select a budget before generating the report.');
+    if (budget.budgetStatus === 'DRAFT') return this.fail(
+      'Draft budgets remain available from the legacy budget preview; select an ACTIVE or CLOSED budget here.');
+    if (!this.fromPeriodId || !this.toPeriodId) return this.fail('Select both From Period and To Period.');
+    const from = budget.periods.findIndex((period) => period.id === this.fromPeriodId);
+    const to = budget.periods.findIndex((period) => period.id === this.toPeriodId);
+    if (from < 0 || to < 0 || from > to) return this.fail('Select a valid chronological period range.');
+    this.errorMessage.set(null);
+    return true;
+  }
+
+  private fail(message: string): false { this.errorMessage.set(message); return false; }
+
+  private loadLegacyDraftPreview(option: BudgetVsActualOption): void {
+    this.loading.set(true);
+    this.attempted.set(true);
+    this.budgetService.getVariance(option.budgetId).subscribe({
+      next: ({ data }) => {
+        const revenueLines = data.lines.filter((line) => line.accountType === 'REVENUE').map((line) => ({
+          ...line, budgetLineId: line.accountId, accountType: 'REVENUE' as const,
+          remainingAmount: line.remainingAmount,
+        }));
+        const expenseLines = data.lines.filter((line) => line.accountType === 'EXPENSE').map((line) => ({
+          ...line, budgetLineId: line.accountId, accountType: 'EXPENSE' as const,
+          remainingAmount: line.remainingAmount,
+        }));
+        this.report.set({
+          budgetId: option.budgetId, budgetNumber: option.budgetNumber, budgetName: option.budgetName,
+          budgetStatus: option.budgetStatus, fiscalYearId: option.fiscalYearId,
+          fiscalYearName: option.fiscalYearName, currencyCode: 'BDT',
+          fromPeriodId: option.periods[0]?.id ?? null,
+          toPeriodId: option.periods[option.periods.length - 1]?.id ?? null,
+          selectedPeriodIds: option.periods.map((period) => period.id),
+          fromDate: data.fromDate, toDate: data.toDate,
+          totalRevenueBudget: data.totalRevenueBudget, totalRevenueActual: data.totalRevenueActual,
+          totalRevenueVariance: data.totalRevenueVariance,
+          revenueAchievementPercent: data.revenueAchievementPercent,
+          totalExpenseBudget: data.totalExpenseBudget, totalExpenseActual: data.totalExpenseActual,
+          totalExpenseVariance: data.totalExpenseVariance,
+          expenseUtilizationPercent: data.expenseUtilizationPercent,
+          revenueLines, expenseLines, generatedAt: data.generatedAt,
+        });
+        this.loading.set(false);
+      },
+      error: (error: HttpErrorResponse) => this.handleError(error, false),
+    });
+  }
+
+  private handleError(error: HttpErrorResponse, options: boolean): void {
+    this.loading.set(false);
+    this.loadingOptions.set(false);
+    this.forbidden.set(error.status === 403);
+    const payload = error.error as { message?: string } | null;
+    this.errorMessage.set(error.status === 403 ? 'You do not have permission to view this report.'
+      : payload?.message ?? (options ? 'Unable to load report options.' : 'Unable to generate the report.'));
   }
 }

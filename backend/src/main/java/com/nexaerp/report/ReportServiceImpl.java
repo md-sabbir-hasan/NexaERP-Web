@@ -44,6 +44,7 @@ public class ReportServiceImpl implements ReportService{
     private final PaymentRepository paymentRepository;
     private final PartyRepository partyRepository;
     private final CashFlowStatementService cashFlowStatementService;
+    private final BudgetVsActualReportService budgetVsActualReportService;
 
 
 
@@ -678,5 +679,11 @@ public class ReportServiceImpl implements ReportService{
     @Override
     public CashFlowStatementResponseDto getCashFlowStatement(LocalDate fromDate, LocalDate toDate) {
         return cashFlowStatementService.generate(fromDate, toDate);
+    }
+
+    @Override
+    public BudgetVsActualResponseDto getBudgetVsActual(
+            Long budgetId, Long fromPeriodId, Long toPeriodId, AccountType accountType) {
+        return budgetVsActualReportService.generate(budgetId, fromPeriodId, toPeriodId, accountType);
     }
 }

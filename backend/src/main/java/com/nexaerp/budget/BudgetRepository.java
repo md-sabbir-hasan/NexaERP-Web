@@ -20,4 +20,6 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
     boolean existsByFiscalYearIdAndStatusAndDeletedAtIsNull(Long fiscalYearId, BudgetStatus status);
 
     Optional<Budget> findTopByOrderByIdDesc(); // for budgetNumber generation
+
+    List<Budget> findByStatusInAndDeletedAtIsNullOrderByCreatedAtDesc(List<BudgetStatus> statuses);
 }

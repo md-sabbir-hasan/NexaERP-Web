@@ -1,6 +1,7 @@
 package com.nexaerp.report;
 
 import com.nexaerp.party.PartyType;
+import com.nexaerp.account.AccountType;
 import com.nexaerp.report.dto.*;
 
 import java.time.LocalDate;
@@ -20,4 +21,6 @@ public interface ReportService {
 
     AgingResponseDto getAgingReport(PartyType partyType, LocalDate asOfDate);
     CashFlowStatementResponseDto getCashFlowStatement(LocalDate fromDate, LocalDate toDate);
+    BudgetVsActualResponseDto getBudgetVsActual(
+            Long budgetId, Long fromPeriodId, Long toPeriodId, AccountType accountType);
 }

@@ -1,104 +1,48 @@
-<div class="variance-page">
-  @if (loading()) {
-  <div class="loading-box">Loading...</div>
-  } @else if (variance(); as v) {
+<div class="budget-report-page">
+  <header class="report-hero no-print">
+    <div><span class="eyebrow">Financial Reports</span><h1>Budget vs Actual</h1>
+      <p>Compare approved budget allocations with posted accounting activity.</p></div>
+    <a routerLink="/reports" class="back-link">Back to Reports</a>
+  </header>
 
-  <section class="variance-hero">
-    <div>
-      <span class="eyebrow">Budget vs Actual</span>
-      <h1>{{ v.budgetName }}</h1>
-      <p>{{ v.fiscalYearName }} · {{ v.fromDate | date }} – {{ v.toDate | date }}</p>
-    </div>
-
-    <a [routerLink]="['/budget', budgetId]" class="btn-back">Back to Budget</a>
-  </section>
-
-  <section class="filter-panel">
-    <select [(ngModel)]="selectedPeriodId" (ngModelChange)="onPeriodChange()">
-      <option [ngValue]="null">Full Fiscal Year</option>
-      @for (p of periods(); track p.id) {
-      <option [ngValue]="p.id">{{ p.name }}</option>
+  <section class="filter-card no-print" aria-label="Report filters">
+    <label>Budget<select [(ngModel)]="selectedBudgetId" (ngModelChange)="onBudgetChange()" [disabled]="loadingOptions()">
+      <option [ngValue]="null">Select budget</option>
+      @for (option of availableBudgets(); track option.budgetId) {
+        <option [ngValue]="option.budgetId">{{ option.budgetNumber }} — {{ option.budgetName }} ({{ option.budgetStatus }})</option>
       }
-    </select>
-
-    <input type="date" [(ngModel)]="fromDate" placeholder="From date" />
-    <input type="date" [(ngModel)]="toDate" placeholder="To date" />
-    <button class="btn-apply" type="button" (click)="applyDateRange()">Apply Range</button>
-    <button class="btn-clear" type="button" (click)="clearFilters()">Clear</button>
+    </select></label>
+    <label>From Period<select [(ngModel)]="fromPeriodId" [disabled]="!selectedBudget()">
+      @for (period of selectedBudget()?.periods ?? []; track period.id) { <option [ngValue]="period.id">{{ period.name }}</option> }
+    </select></label>
+    <label>To Period<select [(ngModel)]="toPeriodId" [disabled]="!selectedBudget()">
+      @for (period of selectedBudget()?.periods ?? []; track period.id) { <option [ngValue]="period.id">{{ period.name }}</option> }
+    </select></label>
+    <label>Account Type<select [(ngModel)]="accountType"><option value="">All</option><option value="REVENUE">Revenue</option><option value="EXPENSE">Expense</option></select></label>
+    <div class="filter-actions"><button type="button" class="primary" (click)="generate()" [disabled]="loading()">Generate</button>
+      <button type="button" (click)="reset()">Reset</button></div>
   </section>
 
-  <section class="summary-grid">
-    <div class="summary-card expense-budget">
-      <span>Expense — Budgeted</span>
-      <strong>{{ v.totalExpenseBudget | number:'1.2-2' }}</strong>
-    </div>
-    <div class="summary-card expense-actual">
-      <span>Expense — Actual</span>
-      <strong>{{ v.totalExpenseActual | number:'1.2-2' }}</strong>
-    </div>
-    <div class="summary-card revenue-budget">
-      <span>Revenue — Target</span>
-      <strong>{{ v.totalRevenueBudget | number:'1.2-2' }}</strong>
-    </div>
-    <div class="summary-card revenue-actual">
-      <span>Revenue — Actual</span>
-      <strong>{{ v.totalRevenueActual | number:'1.2-2' }}</strong>
-    </div>
-  </section>
+  @if (loadingOptions() || loading()) { <div class="state-card" role="status"><span class="spinner-border spinner-border-sm"></span> Loading Budget vs Actual report…</div> }
+  @else if (errorMessage()) { <div class="state-card error" role="alert"><h2>{{ forbidden() ? 'Access denied' : 'Report unavailable' }}</h2><p>{{ errorMessage() }}</p><button type="button" class="no-print" (click)="retry()">Retry</button></div> }
+  @else if (!selectedBudgetId) { <div class="state-card"><i class="bi bi-bar-chart-line"></i><h2>Select a budget</h2><p>Choose an ACTIVE or CLOSED budget and a period range to begin.</p></div> }
+  @else if (report(); as r) {
+    <article class="print-report">
+      <div class="statement-header"><div><h1>Budget vs Actual Report</h1><p>NexaERP</p></div><div class="report-meta"><strong>{{ r.budgetName }}</strong><span>{{ r.budgetStatus }} · {{ r.fiscalYearName }}</span><span>{{ r.fromDate | date:'mediumDate' }} – {{ r.toDate | date:'mediumDate' }}</span><span>{{ r.currencyCode }} · Generated {{ r.generatedAt | date:'medium' }}</span></div></div>
+      <div class="report-actions no-print">@if (r.budgetStatus !== 'DRAFT') { <button type="button" (click)="exportExcel()" [disabled]="exporting()"><i class="bi bi-file-earmark-excel"></i> {{ exporting() ? 'Exporting…' : 'Export Excel' }}</button> }<button type="button" (click)="printReport()"><i class="bi bi-printer"></i> Print</button></div>
+      <section class="summary-grid">
+        <div><span>Revenue Budget</span><strong>{{ r.totalRevenueBudget | number:'1.2-2' }}</strong></div><div><span>Revenue Actual</span><strong>{{ r.totalRevenueActual | number:'1.2-2' }}</strong></div><div><span>Revenue Achievement</span><strong>{{ r.revenueAchievementPercent === null ? '—' : (r.revenueAchievementPercent | number:'1.1-2') + '%' }}</strong></div><div><span>Revenue Variance</span><strong>{{ r.totalRevenueVariance | number:'1.2-2' }}</strong></div>
+        <div><span>Expense Budget</span><strong>{{ r.totalExpenseBudget | number:'1.2-2' }}</strong></div><div><span>Expense Actual</span><strong>{{ r.totalExpenseActual | number:'1.2-2' }}</strong></div><div><span>Expense Utilization</span><strong>{{ r.expenseUtilizationPercent === null ? '—' : (r.expenseUtilizationPercent | number:'1.1-2') + '%' }}</strong></div><div><span>Expense Variance</span><strong>{{ r.totalExpenseVariance | number:'1.2-2' }}</strong></div>
+      </section>
+      @if (emptyLines()) { <div class="notice">This budget has no reportable Revenue or Expense lines for the selected filter.</div> }
+      @else if (noActualActivity()) { <div class="notice">No net Actual activity exists in this period. This can also occur when posted entries were fully reversed.</div> }
 
-  <section class="table-card">
-    <div class="table-header">
-      <h2>Account-wise Variance</h2>
-    </div>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Account</th>
-            <th>Type</th>
-            <th class="text-end">Budget</th>
-            <th class="text-end">Actual</th>
-            <th class="text-end">Variance</th>
-            <th class="text-end">Variance %</th>
-            <th class="text-end">Utilization</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          @for (line of v.lines; track line.accountId) {
-          <tr>
-            <td>{{ line.accountCode }} — {{ line.accountName }}</td>
-            <td>
-              <span class="type-badge" [class]="line.accountType.toLowerCase()">{{ line.accountType }}</span>
-            </td>
-            <td class="text-end">{{ line.budgetAmount | number:'1.2-2' }}</td>
-            <td class="text-end">{{ line.actualAmount | number:'1.2-2' }}</td>
-            <td class="text-end" [class.positive]="line.varianceAmount >= 0" [class.negative]="line.varianceAmount < 0">
-              {{ line.varianceAmount | number:'1.2-2' }}
-            </td>
-            <td class="text-end">{{ line.variancePercent | number:'1.1-1' }}%</td>
-            <td class="text-end">{{ line.utilizationPercent | number:'1.1-1' }}%</td>
-            <td>
-              <span class="status-badge" [class]="getStatusClass(line.varianceStatus)">
-                {{ line.varianceStatus }}
-              </span>
-            </td>
-          </tr>
-          } @empty {
-          <tr>
-            <td colspan="8">
-              <div class="empty-box">No budget lines to compare</div>
-            </td>
-          </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  } @else {
-  <div class="empty-box">Variance data not found</div>
+      @if (r.revenueLines.length) { <section class="table-card"><h2>Revenue</h2><div class="table-responsive"><table><thead><tr><th>Account</th><th>Budget</th><th>Actual</th><th>Variance</th><th>Variance %</th><th>Achievement %</th><th>Remaining Target</th><th>Status</th></tr></thead><tbody>
+        @for (line of r.revenueLines; track line.budgetLineId) { <tr><td><strong>{{ line.accountCode }}</strong><span>{{ line.accountName }}</span></td><td>{{ line.budgetAmount | number:'1.2-2' }}</td><td>{{ line.actualAmount | number:'1.2-2' }}</td><td>{{ line.varianceAmount | number:'1.2-2' }}</td><td>{{ line.variancePercent === null ? '—' : (line.variancePercent | number:'1.1-2') + '%' }}</td><td>{{ line.utilizationPercent === null ? '—' : (line.utilizationPercent | number:'1.1-2') + '%' }}</td><td>{{ line.remainingAmount | number:'1.2-2' }}</td><td><span class="status" [class]="line.varianceStatus.toLowerCase()">{{ line.varianceStatus }}</span></td></tr> }
+      </tbody><tfoot><tr><th>Total Revenue</th><th>{{ r.totalRevenueBudget | number:'1.2-2' }}</th><th>{{ r.totalRevenueActual | number:'1.2-2' }}</th><th>{{ r.totalRevenueVariance | number:'1.2-2' }}</th><th colspan="4"></th></tr></tfoot></table></div></section> }
+      @if (r.expenseLines.length) { <section class="table-card"><h2>Expense</h2><div class="table-responsive"><table><thead><tr><th>Account</th><th>Budget</th><th>Actual</th><th>Variance</th><th>Variance %</th><th>Utilization %</th><th>Remaining Budget</th><th>Status</th></tr></thead><tbody>
+        @for (line of r.expenseLines; track line.budgetLineId) { <tr><td><strong>{{ line.accountCode }}</strong><span>{{ line.accountName }}</span></td><td>{{ line.budgetAmount | number:'1.2-2' }}</td><td>{{ line.actualAmount | number:'1.2-2' }}</td><td>{{ line.varianceAmount | number:'1.2-2' }}</td><td>{{ line.variancePercent === null ? '—' : (line.variancePercent | number:'1.1-2') + '%' }}</td><td>{{ line.utilizationPercent === null ? '—' : (line.utilizationPercent | number:'1.1-2') + '%' }}</td><td>{{ line.remainingAmount | number:'1.2-2' }}</td><td><span class="status" [class]="line.varianceStatus.toLowerCase()">{{ line.varianceStatus }}</span></td></tr> }
+      </tbody><tfoot><tr><th>Total Expense</th><th>{{ r.totalExpenseBudget | number:'1.2-2' }}</th><th>{{ r.totalExpenseActual | number:'1.2-2' }}</th><th>{{ r.totalExpenseVariance | number:'1.2-2' }}</th><th colspan="4"></th></tr></tfoot></table></div></section> }
+    </article>
   }
 </div>

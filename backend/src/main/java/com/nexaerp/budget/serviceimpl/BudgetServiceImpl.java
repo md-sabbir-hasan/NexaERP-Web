@@ -15,6 +15,8 @@ import com.nexaerp.fiscalyear.FiscalYear;
 import com.nexaerp.fiscalyear.FiscalYearRepository;
 import com.nexaerp.fiscalyear.FiscalYearStatus;
 import com.nexaerp.security.CurrentUserService;
+import com.nexaerp.report.BudgetVsActualReportService;
+import com.nexaerp.report.dto.BudgetVsActualResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +42,7 @@ public class BudgetServiceImpl implements BudgetService {
     private final AccountingPeriodRepository accountingPeriodRepository;
     private final AuditLogService auditLogService;
     private final CurrentUserService currentUserService;
-    private final BudgetActualService budgetActualService;
+    private final BudgetVsActualReportService budgetVsActualReportService;
 
     @Override
     @Transactional
@@ -285,115 +287,34 @@ public class BudgetServiceImpl implements BudgetService {
 
     @Override
     public BudgetVarianceResponseDto getVariance(Long budgetId, Long periodId, LocalDate fromDate, LocalDate toDate) {
-        Budget budget = findOrThrow(budgetId);
-        List<BudgetLine> lines = budgetLineRepository.findByBudgetId(budget.getId());
-
-        LocalDate rangeFrom;
-        LocalDate rangeTo;
-
-        if (periodId != null) {
-            AccountingPeriod period = accountingPeriodRepository.findById(periodId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Accounting period not found"));
-            rangeFrom = period.getStartDate();
-            rangeTo = period.getEndDate();
-        } else if (fromDate != null && toDate != null) {
-            rangeFrom = fromDate;
-            rangeTo = toDate;
-        } else {
-            rangeFrom = budget.getFiscalYear().getStartDate();
-            rangeTo = budget.getFiscalYear().getEndDate();
-        }
-
-        List<Account> accounts = lines.stream().map(BudgetLine::getAccount).collect(Collectors.toList());
-        Map<Long, BigDecimal> actuals = budgetActualService.getActualByAccounts(accounts, rangeFrom, rangeTo);
-
-        List<BudgetVarianceLineDto> varianceLines = new ArrayList<>();
-
-        BigDecimal totalRevenueBudget = BigDecimal.ZERO;
-        BigDecimal totalRevenueActual = BigDecimal.ZERO;
-        BigDecimal totalExpenseBudget = BigDecimal.ZERO;
-        BigDecimal totalExpenseActual = BigDecimal.ZERO;
-
-        for (BudgetLine line : lines) {
-            BigDecimal budgetAmount = resolveBudgetAmount(line, periodId, rangeFrom, rangeTo);
-            BigDecimal actualAmount = actuals.getOrDefault(line.getAccount().getId(), BigDecimal.ZERO);
-
-            boolean isRevenue = line.getAccount().getType() == AccountType.REVENUE;
-
-            // Expense: Budget - Actual (spending less is favorable)
-            // Revenue: Actual - Budget (earning more is favorable)
-            BigDecimal variance = isRevenue
-                    ? actualAmount.subtract(budgetAmount)
-                    : budgetAmount.subtract(actualAmount);
-
-            BigDecimal variancePercent = budgetAmount.compareTo(BigDecimal.ZERO) == 0
-                    ? BigDecimal.ZERO
-                    : variance.divide(budgetAmount, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
-
-            BigDecimal utilizationPercent = budgetAmount.compareTo(BigDecimal.ZERO) == 0
-                    ? BigDecimal.ZERO
-                    : actualAmount.divide(budgetAmount, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
-
-            VarianceStatus status = variance.compareTo(BigDecimal.ZERO) > 0
-                    ? VarianceStatus.FAVORABLE
-                    : variance.compareTo(BigDecimal.ZERO) < 0
-                      ? VarianceStatus.UNFAVORABLE
-                      : VarianceStatus.ON_TARGET;
-
-            varianceLines.add(BudgetVarianceLineDto.builder()
-                    .accountId(line.getAccount().getId())
-                    .accountCode(line.getAccount().getCode())
-                    .accountName(line.getAccount().getName())
-                    .accountType(line.getAccount().getType().name())
-                    .budgetAmount(budgetAmount)
-                    .actualAmount(actualAmount)
-                    .varianceAmount(variance)
-                    .variancePercent(variancePercent)
-                    .varianceStatus(status)
-                    .utilizationPercent(utilizationPercent)
-                    .build());
-
-            if (isRevenue) {
-                totalRevenueBudget = totalRevenueBudget.add(budgetAmount);
-                totalRevenueActual = totalRevenueActual.add(actualAmount);
-            } else {
-                totalExpenseBudget = totalExpenseBudget.add(budgetAmount);
-                totalExpenseActual = totalExpenseActual.add(actualAmount);
-            }
-        }
-
+        BudgetVsActualResponseDto report = budgetVsActualReportService
+                .generateLegacy(budgetId, periodId, fromDate, toDate);
+        List<BudgetVarianceLineDto> lines = java.util.stream.Stream
+                .concat(report.getRevenueLines().stream(), report.getExpenseLines().stream())
+                .map(line -> BudgetVarianceLineDto.builder()
+                        .accountId(line.getAccountId()).accountCode(line.getAccountCode())
+                        .accountName(line.getAccountName()).accountType(line.getAccountType().name())
+                        .budgetAmount(line.getBudgetAmount()).actualAmount(line.getActualAmount())
+                        .varianceAmount(line.getVarianceAmount()).variancePercent(line.getVariancePercent())
+                        .varianceStatus(line.getVarianceStatus())
+                        .utilizationPercent(line.getUtilizationPercent())
+                        .remainingAmount(line.getRemainingAmount()).build())
+                .toList();
         return BudgetVarianceResponseDto.builder()
-                .budgetId(budget.getId())
-                .budgetName(budget.getName())
-                .fiscalYearId(budget.getFiscalYear().getId())
-                .fiscalYearName(budget.getFiscalYear().getName())
-                .fromDate(rangeFrom)
-                .toDate(rangeTo)
-                .totalRevenueBudget(totalRevenueBudget)
-                .totalRevenueActual(totalRevenueActual)
-                .totalExpenseBudget(totalExpenseBudget)
-                .totalExpenseActual(totalExpenseActual)
-                .lines(varianceLines)
-                .build();
-    }
-
-    private BigDecimal resolveBudgetAmount(BudgetLine line, Long periodId, LocalDate rangeFrom, LocalDate rangeTo) {
-        List<BudgetPeriodAllocation> allocations = budgetPeriodAllocationRepository.findByBudgetLineId(line.getId());
-
-        if (periodId != null) {
-            return allocations.stream()
-                    .filter(a -> a.getAccountingPeriod().getId().equals(periodId))
-                    .map(BudgetPeriodAllocation::getBudgetAmount)
-                    .findFirst()
-                    .orElse(BigDecimal.ZERO);
-        }
-
-        // sum allocations whose period falls fully within [rangeFrom, rangeTo]
-        return allocations.stream()
-                .filter(a -> !a.getAccountingPeriod().getStartDate().isBefore(rangeFrom)
-                        && !a.getAccountingPeriod().getEndDate().isAfter(rangeTo))
-                .map(BudgetPeriodAllocation::getBudgetAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .budgetId(report.getBudgetId()).budgetName(report.getBudgetName())
+                .budgetNumber(report.getBudgetNumber()).budgetStatus(report.getBudgetStatus())
+                .currencyCode(report.getCurrencyCode())
+                .fiscalYearId(report.getFiscalYearId()).fiscalYearName(report.getFiscalYearName())
+                .fromDate(report.getFromDate()).toDate(report.getToDate())
+                .totalRevenueBudget(report.getTotalRevenueBudget())
+                .totalRevenueActual(report.getTotalRevenueActual())
+                .totalRevenueVariance(report.getTotalRevenueVariance())
+                .revenueAchievementPercent(report.getRevenueAchievementPercent())
+                .totalExpenseBudget(report.getTotalExpenseBudget())
+                .totalExpenseActual(report.getTotalExpenseActual())
+                .totalExpenseVariance(report.getTotalExpenseVariance())
+                .expenseUtilizationPercent(report.getExpenseUtilizationPercent())
+                .generatedAt(report.getGeneratedAt()).lines(lines).build();
     }
 
     // _______ Private helpers __________

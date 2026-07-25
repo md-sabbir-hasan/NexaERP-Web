@@ -10,6 +10,7 @@ import { AlertService } from '../../../../core/services/alert.service';
 import { Account, AccountRequest, AccountType } from '../../models/account.model';
 import { AccountService } from '../../services/account.service';
 import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
+import { ActivatedRoute } from '@angular/router';
 
 type ViewMode = 'TREE' | 'TABLE';
 
@@ -44,6 +45,7 @@ export class AccountList implements OnInit {
     private accountService: AccountService,
     private alert: AlertService,
     private fb: NonNullableFormBuilder,
+    private route: ActivatedRoute,
   ) {
     this.accountForm = this.fb.group({
       code: ['', [Validators.required, Validators.pattern(/^\d+$/)]],
@@ -55,6 +57,11 @@ export class AccountList implements OnInit {
   }
 
   ngOnInit(): void {
+    const routeQuery = this.route.snapshot.queryParamMap.get('q')?.trim().slice(0, 100);
+    if (routeQuery) {
+      this.search = routeQuery;
+      this.viewMode = 'TABLE';
+    }
     this.loadAccounts();
     this.loadTree();
   }

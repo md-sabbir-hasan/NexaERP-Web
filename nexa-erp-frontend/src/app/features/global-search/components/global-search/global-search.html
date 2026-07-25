@@ -1,0 +1,107 @@
+@if (isOpen()) {
+  <div class="search-backdrop" (mousedown)="close()">
+    <section
+      class="search-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="global-search-title"
+      (mousedown)="$event.stopPropagation()"
+    >
+      <h2 id="global-search-title" class="visually-hidden">Global search</h2>
+      <div class="search-input-row">
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <input
+          #searchInput
+          type="search"
+          role="combobox"
+          aria-label="Search NexaERP"
+          aria-autocomplete="list"
+          aria-controls="global-search-results"
+          [attr.aria-expanded]="flatResults().length > 0"
+          [attr.aria-activedescendant]="activeIndex() >= 0 ? resultId(flatResults()[activeIndex()]) : null"
+          [value]="query()"
+          (input)="onInput($any($event.target).value)"
+          (keydown)="onInputKeydown($event)"
+          placeholder="Search documents, parties, accounts..."
+          autocomplete="off"
+        />
+        <kbd>ESC</kbd>
+      </div>
+
+      <div id="global-search-results" class="search-content" role="listbox">
+        @if (loading()) {
+          <div class="search-state" role="status">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            <span>Searching NexaERP...</span>
+          </div>
+        } @else if (errorMessage()) {
+          <div class="search-state error-state" role="alert">
+            <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
+            <span>{{ errorMessage() }}</span>
+            <button type="button" class="btn btn-sm btn-outline-primary" (click)="retry()">
+              Retry
+            </button>
+          </div>
+        } @else if (groups().length) {
+          @for (group of groups(); track group.type) {
+            <section class="result-group" [attr.aria-label]="groupLabel(group.type)">
+              <h3>{{ groupLabel(group.type) }}</h3>
+              @for (result of group.results; track result.type + '-' + result.id) {
+                <button
+                  type="button"
+                  class="result-item"
+                  role="option"
+                  [id]="resultId(result)"
+                  [class.active]="flatResults()[activeIndex()] === result"
+                  [attr.aria-selected]="flatResults()[activeIndex()] === result"
+                  (mouseenter)="setActive(result)"
+                  (click)="navigate(result)"
+                >
+                  <span class="result-icon">
+                    <i [class]="'bi ' + icon(result.type)" aria-hidden="true"></i>
+                  </span>
+                  <span class="result-copy">
+                    <strong>{{ result.title }}</strong>
+                    <small>{{ result.subtitle }}</small>
+                  </span>
+                  <span class="status-badge" [class]="statusClass(result.status)">
+                    {{ result.status }}
+                  </span>
+                  <i class="bi bi-arrow-return-left open-icon" aria-hidden="true"></i>
+                </button>
+              }
+            </section>
+          }
+        } @else if (searched() && query().trim().length >= 2) {
+          <div class="search-state">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <strong>No matches found</strong>
+            <span>Try another document number, party, or account.</span>
+          </div>
+        } @else if (recentQueries().length) {
+          <section class="recent-searches" aria-label="Recent searches">
+            <h3>Recent searches</h3>
+            @for (recent of recentQueries(); track recent) {
+              <button type="button" (click)="selectRecent(recent)">
+                <i class="bi bi-clock-history" aria-hidden="true"></i>
+                <span>{{ recent }}</span>
+                <i class="bi bi-arrow-up-left" aria-hidden="true"></i>
+              </button>
+            }
+          </section>
+        } @else {
+          <div class="search-state search-hint">
+            <i class="bi bi-command" aria-hidden="true"></i>
+            <span>Enter at least two characters to search.</span>
+          </div>
+        }
+      </div>
+
+      <footer>
+        <span><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>
+        <span><kbd>Enter</kbd> Open</span>
+        <span><kbd>Esc</kbd> Close</span>
+      </footer>
+    </section>
+  </div>
+}

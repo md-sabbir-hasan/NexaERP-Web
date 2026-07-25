@@ -1,11 +1,12 @@
 ﻿import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, ElementRef, EventEmitter, HostListener, Output, Signal, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, EventEmitter, HostListener, Output, Signal, ViewChild, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 import { AuthService } from '../../auth/auth.service';
 import { CurrentUser } from '../../models/current-user.model';
 import { NotificationBell } from '../../../features/notifications/components/notification-bell/notification-bell';
+import { GlobalSearch } from '../../../features/global-search/components/global-search/global-search';
 
 const PAGE_TITLES: Record<string, string> = {
   dashboard: 'Financial Overview', accounts: 'Chart of Accounts', journals: 'Journal Entries', invoice: 'Invoices',
@@ -16,8 +17,9 @@ const PAGE_TITLES: Record<string, string> = {
   notifications: 'Notification Center',
 };
 
-@Component({ selector: 'app-header', standalone: true, imports: [CommonModule, NotificationBell], templateUrl: './header.component.html', styleUrl: './header.component.scss' })
+@Component({ selector: 'app-header', standalone: true, imports: [CommonModule, NotificationBell, GlobalSearch], templateUrl: './header.component.html', styleUrl: './header.component.scss' })
 export class HeaderComponent {
+  @ViewChild(GlobalSearch) private globalSearch?: GlobalSearch;
   @Output() toggleSidebar = new EventEmitter<void>();
   private readonly destroyRef = inject(DestroyRef);
   private readonly elementRef = inject(ElementRef<HTMLElement>);
@@ -28,7 +30,6 @@ export class HeaderComponent {
   readonly pageTitle = signal('Financial Overview');
   readonly breadcrumb = signal<string[]>(['NexaERP', 'Financial Overview']);
   readonly profileOpen = signal(false);
-  readonly mobileSearchOpen = signal(false);
 
   constructor(private authService: AuthService, private router: Router) {
     this.currentUser = this.authService.currentUser;
@@ -44,8 +45,11 @@ export class HeaderComponent {
       .subscribe((event) => { this.updateRouteContext(event.urlAfterRedirects); this.closeOverlays(); });
   }
 
-  toggleProfile(): void { this.mobileSearchOpen.set(false); this.profileOpen.update((open) => !open); }
-  toggleMobileSearch(): void { this.profileOpen.set(false); this.mobileSearchOpen.update((open) => !open); }
+  toggleProfile(): void { this.globalSearch?.close(); this.profileOpen.update((open) => !open); }
+  openGlobalSearch(trigger: HTMLElement): void {
+    this.profileOpen.set(false);
+    this.globalSearch?.open(trigger);
+  }
 
   @HostListener('document:click', ['$event'])
   closeOnOutsideClick(event: MouseEvent): void {
@@ -72,6 +76,6 @@ export class HeaderComponent {
     return segment.split('-').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   }
 
-  private closeOverlays(): void { this.profileOpen.set(false); this.mobileSearchOpen.set(false); }
+  private closeOverlays(): void { this.profileOpen.set(false); this.globalSearch?.close(); }
 }
 

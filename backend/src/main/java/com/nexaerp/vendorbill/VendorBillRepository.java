@@ -1,6 +1,8 @@
 package com.nexaerp.vendorbill;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -16,6 +18,7 @@ public interface VendorBillRepository extends JpaRepository<VendorBill, Long> {
     List<VendorBill> findByPartyId(Long partyId);
     List<VendorBill> findByStatus(VendorBillStatus status);
     List<VendorBill> findByBillType(VendorBillType billType);
+    Page<VendorBill> findByBillNumberContainingIgnoreCase(String billNumber, Pageable pageable);
     // Used for auto (FIFO) payment allocation
 // Returns bills with remaining due amount, oldest due date first
     List<VendorBill> findByPartyIdAndDueAmountGreaterThanAndStatusNotOrderByDueDateAsc(

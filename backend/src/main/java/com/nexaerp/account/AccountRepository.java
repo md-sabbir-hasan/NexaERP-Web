@@ -1,6 +1,8 @@
 package com.nexaerp.account;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -25,6 +27,12 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     List<Account> findByNameContainingIgnoreCaseOrCodeContainingIgnoreCase(
             String name,
             String code
+    );
+
+    Page<Account> findByCodeContainingIgnoreCaseOrNameContainingIgnoreCase(
+            String code,
+            String name,
+            Pageable pageable
     );
 
     List<Account> findByTypeAndNameContainingIgnoreCaseOrTypeAndCodeContainingIgnoreCase(

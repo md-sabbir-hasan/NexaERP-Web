@@ -1,7 +1,7 @@
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AlertService } from '../../../../core/services/alert.service';
 import { JournalEntry, JournalEntryType, JournalStatus } from '../../models/journal.model';
 import { JournalService } from '../../services/journal.service';
@@ -57,9 +57,12 @@ readonly type = signal<JournalEntryType | ''>('');
   constructor(
     private journalService: JournalService,
     private alert: AlertService,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
+    const routeQuery = this.route.snapshot.queryParamMap.get('q')?.trim().slice(0, 100);
+    if (routeQuery) this.search.set(routeQuery);
     this.loadJournals();
   }
 

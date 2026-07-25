@@ -13,8 +13,8 @@
     </div>
 
     <div class="command-area">
-      <label class="global-search" aria-label="Global search"><i class="bi bi-search" aria-hidden="true"></i><input type="search" placeholder="Search transactions, contacts, reports..." disabled /><span class="search-shortcut">Ctrl K</span></label>
-      <button type="button" class="mobile-search-trigger" aria-label="Open global search" [attr.aria-expanded]="mobileSearchOpen()" (click)="toggleMobileSearch()"><i class="bi bi-search" aria-hidden="true"></i></button>
+      <button #desktopSearchTrigger type="button" class="global-search" aria-label="Open global search" (click)="openGlobalSearch(desktopSearchTrigger)"><i class="bi bi-search" aria-hidden="true"></i><span class="search-placeholder">Search documents, parties, accounts...</span><span class="search-shortcut">Ctrl K</span></button>
+      <button #mobileSearchTrigger type="button" class="mobile-search-trigger" aria-label="Open global search" (click)="openGlobalSearch(mobileSearchTrigger)"><i class="bi bi-search" aria-hidden="true"></i></button>
       <button type="button" class="quick-action" title="Quick create placeholder"><i class="bi bi-plus-lg" aria-hidden="true"></i><span>Quick create</span><i class="bi bi-chevron-down action-chevron" aria-hidden="true"></i></button>
       <div class="utility-cluster">
         <button type="button" class="utility-button" title="Theme controls coming soon"><i class="bi bi-brightness-high" aria-hidden="true"></i><span class="visually-hidden">Theme settings</span></button>
@@ -38,6 +38,6 @@
       </div>
     </div>
   </div>
-  @if (mobileSearchOpen()) { <div class="mobile-search-panel"><i class="bi bi-search"></i><input type="search" placeholder="Search transactions, contacts, reports..." disabled /><span>Search coming soon</span></div> }
+  <app-global-search />
 </header>
 

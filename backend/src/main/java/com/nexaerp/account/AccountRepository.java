@@ -24,6 +24,8 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
     List<Account> findByTypeAndIsActive(AccountType type, Boolean isActive);
 
+    List<Account> findByIsCashEquivalentTrue();
+
     List<Account> findByNameContainingIgnoreCaseOrCodeContainingIgnoreCase(
             String name,
             String code

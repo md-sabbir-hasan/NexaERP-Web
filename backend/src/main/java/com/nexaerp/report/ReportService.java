@@ -19,4 +19,5 @@ public interface ReportService {
     PartyStatementResponseDto getPartyStatement(Long partyId, LocalDate fromDate, LocalDate toDate);
 
     AgingResponseDto getAgingReport(PartyType partyType, LocalDate asOfDate);
+    CashFlowStatementResponseDto getCashFlowStatement(LocalDate fromDate, LocalDate toDate);
 }

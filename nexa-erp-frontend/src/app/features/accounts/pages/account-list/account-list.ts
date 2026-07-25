@@ -53,6 +53,7 @@ export class AccountList implements OnInit {
       description: [''],
       type: ['ASSET' as AccountType, [Validators.required]],
       parentId: [null as number | null],
+      isCashEquivalent: [false],
     });
   }
 
@@ -120,6 +121,7 @@ export class AccountList implements OnInit {
       description: '',
       type: 'ASSET',
       parentId: null,
+      isCashEquivalent: false,
     });
 
     this.showModal.set(true);
@@ -134,6 +136,7 @@ export class AccountList implements OnInit {
       description: account.description ?? '',
       type: account.type,
       parentId: account.parentId,
+      isCashEquivalent: account.isCashEquivalent,
     });
 
     this.accountForm.controls.code.disable();
@@ -154,6 +157,11 @@ export class AccountList implements OnInit {
       return;
     }
 
+    if (this.accountForm.controls.isCashEquivalent.value && !this.canMarkCashEquivalent()) {
+      this.alert.error('Only leaf ASSET accounts with a parent can be marked as cash equivalents');
+      return;
+    }
+
     this.submitting.set(true);
 
     const raw = this.accountForm.getRawValue();
@@ -164,6 +172,7 @@ export class AccountList implements OnInit {
       description: raw.description,
       type: raw.type,
       parentId: raw.parentId,
+      isCashEquivalent: raw.isCashEquivalent,
     };
 
     const apiCall = this.editingAccount
@@ -226,6 +235,12 @@ export class AccountList implements OnInit {
         account.id !== editingId &&
         account.type === this.accountForm.controls.type.getRawValue(),
     );
+  }
+
+  canMarkCashEquivalent(): boolean {
+    return this.accountForm.controls.type.getRawValue() === 'ASSET'
+      && this.accountForm.controls.parentId.getRawValue() !== null
+      && (!this.editingAccount || !this.editingAccount.hasChildren);
   }
 
   get totalAccounts(): number {

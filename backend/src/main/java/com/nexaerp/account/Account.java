@@ -38,6 +38,9 @@ public class Account {
     @Column(nullable = false)
     private Boolean isDefault = false;
 
+    @Column(nullable = false)
+    private Boolean isCashEquivalent = false;
+
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal currentBalance = BigDecimal.ZERO;
 

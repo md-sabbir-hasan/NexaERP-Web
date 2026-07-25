@@ -21,6 +21,14 @@ public class ExcelReportController {
     private static final MediaType XLSX = MediaType.parseMediaType(
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
+    @GetMapping("/cash-flow/excel")
+    @PreAuthorize("hasAuthority('VIEW_REPORT')")
+    public ResponseEntity<byte[]> exportCashFlow(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+        return download(excelReportService.generateCashFlowExcel(fromDate, toDate), "cash-flow-statement.xlsx");
+    }
+
     @GetMapping("/ledger/excel")
     @PreAuthorize("hasAuthority('VIEW_LEDGER')")
     public ResponseEntity<byte[]> exportLedger(

@@ -1,0 +1,36 @@
+:host { display: block; }
+.cash-flow-page { padding: 1.5rem; color: #172033; background: #f5f7fb; min-height: 100%; }
+.report-hero, .statement-header, .filter-card, .activity-card, .reconciliation-card, .warning-panel, .state, .notice {
+  background: #fff; border: 1px solid #e3e8f0; border-radius: 16px; box-shadow: 0 8px 24px rgba(25, 42, 70, .06);
+}
+.report-hero, .statement-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.5rem; margin-bottom: 1rem; }
+.eyebrow, .statement-header span { color: #24705f; text-transform: uppercase; letter-spacing: .08em; font-size: .75rem; font-weight: 700; }
+h1, h2, h3, p { margin-top: 0; } h1 { margin-bottom: .35rem; } p { color: #667085; margin-bottom: 0; }
+.back-btn { color: #24705f; text-decoration: none; font-weight: 700; }
+.filter-card { display: grid; grid-template-columns: 1fr 1fr auto; align-items: end; gap: 1rem; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+.field { display: grid; gap: .4rem; } label { font-weight: 700; font-size: .85rem; }
+input { border: 1px solid #ccd4df; border-radius: 9px; padding: .7rem .8rem; }
+.actions { display: flex; gap: .65rem; align-items: center; }
+button { border: 0; border-radius: 9px; padding: .72rem 1rem; font-weight: 700; cursor: pointer; }
+button:disabled { opacity: .6; cursor: not-allowed; }.primary { color: #fff; background: #24705f; }.secondary { color: #344054; background: #eef1f5; }.excel { color: #fff; background: #26734f; }
+.state { min-height: 180px; display: grid; place-content: center; justify-items: center; gap: .75rem; padding: 2rem; }.state.error { color: #a53b35; }
+.summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1rem 0; }
+.summary-grid article { background: #fff; border: 1px solid #e3e8f0; border-left: 4px solid #24705f; border-radius: 12px; padding: 1rem; }
+.summary-grid span { display: block; color: #667085; font-size: .82rem; margin-bottom: .45rem; }.summary-grid strong { font-size: 1.25rem; }.summary-grid .warning { border-left-color: #c77a18; }
+.notice { padding: .9rem 1rem; margin: 1rem 0; color: #46505f; }
+.warning-panel { border-color: #efc77c; background: #fffaf0; padding: 1rem 1.25rem; margin: 1rem 0; }.warning-panel h3 { color: #8a5914; }
+.warning-row { display: grid; grid-template-columns: 1fr auto; gap: .25rem 1rem; border-top: 1px solid #edd8ae; padding: .75rem 0; }.warning-row small { grid-column: 1 / -1; color: #6d5a3a; }
+.activity-card, .reconciliation-card { padding: 1.25rem; margin: 1rem 0; }.activity-card h3, .reconciliation-card h3 { margin-bottom: 1rem; }
+.table-wrap { overflow-x: auto; } table { width: 100%; border-collapse: collapse; } th, td { padding: .72rem .8rem; border-bottom: 1px solid #e7ebf1; text-align: right; white-space: nowrap; } th:first-child, td:first-child { text-align: left; } thead th { color: #475467; background: #f7f9fc; font-size: .8rem; text-transform: uppercase; } tfoot th { background: #eef7f4; }.empty { text-align: center !important; color: #77808e; }
+.negative { color: #b33a32; }.reconciliation-card > div { display: flex; justify-content: space-between; padding: .7rem 0; border-bottom: 1px solid #e7ebf1; }.reconciliation-card .total { border-top: 2px solid #344054; border-bottom: 0; margin-top: .35rem; }
+.spin { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }
+@media (max-width: 900px) { .summary-grid { grid-template-columns: repeat(2, 1fr); }.filter-card { grid-template-columns: 1fr 1fr; }.filter-card .actions { grid-column: 1 / -1; } }
+@media (max-width: 600px) { .cash-flow-page { padding: .75rem; }.report-hero, .statement-header { align-items: flex-start; flex-direction: column; }.summary-grid, .filter-card { grid-template-columns: 1fr; }.filter-card .actions { grid-column: auto; }.actions { flex-wrap: wrap; } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+@media print {
+  @page { size: A4; margin: 12mm; }
+  .cash-flow-page { padding: 0; background: #fff; font-size: 10pt; }
+  .no-print { display: none !important; }
+  .statement-header, .activity-card, .reconciliation-card, .warning-panel { box-shadow: none; border-radius: 0; break-inside: avoid; }
+  .summary-grid { grid-template-columns: repeat(4, 1fr); }.table-wrap { overflow: visible; } th, td { padding: .35rem; }
+}

@@ -23,6 +23,64 @@ public class ExcelReportService {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd MMM yyyy");
 
+    public byte[] generateCashFlowExcel(LocalDate fromDate, LocalDate toDate) {
+        CashFlowStatementResponseDto data = reportService.getCashFlowStatement(fromDate, toDate);
+        try (XSSFWorkbook wb = new XSSFWorkbook()) {
+            Sheet sheet = wb.createSheet("Cash Flow");
+            CellStyle title = ExcelStyleHelper.titleStyle(wb);
+            CellStyle subTitle = ExcelStyleHelper.subTitleStyle(wb);
+            CellStyle header = ExcelStyleHelper.headerStyle(wb);
+            CellStyle currency = ExcelStyleHelper.currencyStyle(wb);
+            CellStyle boldCurrency = ExcelStyleHelper.boldCurrencyStyle(wb);
+            CellStyle bold = ExcelStyleHelper.boldStyle(wb);
+            int r = 0;
+            setCell(sheet, r++, 0, "Cash Flow Statement", title);
+            setCell(sheet, r++, 0, data.getFromDate().format(DATE_FMT) + " to " + data.getToDate().format(DATE_FMT), subTitle);
+            setCell(sheet, r++, 0, "Generated " + data.getGeneratedAt() + " | Currency " + data.getCurrencyCode(), subTitle);
+            r++;
+            r = writeCashFlowSection(sheet, r, data.getOperatingActivities(), header, currency, bold, boldCurrency);
+            r = writeCashFlowSection(sheet, r, data.getInvestingActivities(), header, currency, bold, boldCurrency);
+            r = writeCashFlowSection(sheet, r, data.getFinancingActivities(), header, currency, bold, boldCurrency);
+            Row opening = sheet.createRow(r++); setCellStyled(opening, 0, "Opening Cash", bold); setCurrencyCell(opening, 3, data.getOpeningCashBalance(), boldCurrency);
+            Row change = sheet.createRow(r++); setCellStyled(change, 0, "Net Change in Cash", bold); setCurrencyCell(change, 3, data.getNetChangeInCash(), boldCurrency);
+            Row calculated = sheet.createRow(r++); setCellStyled(calculated, 0, "Calculated Closing Cash", bold); setCurrencyCell(calculated, 3, data.getCalculatedClosingCashBalance(), boldCurrency);
+            Row ledger = sheet.createRow(r++); setCellStyled(ledger, 0, "Ledger Closing Cash", bold); setCurrencyCell(ledger, 3, data.getLedgerClosingCashBalance(), boldCurrency);
+            Row reconciliation = sheet.createRow(r++); setCellStyled(reconciliation, 0, "Reconciliation", bold);
+            setCellStyled(reconciliation, 2, Boolean.TRUE.equals(data.getIsReconciled()) ? "Reconciled" : "Difference", bold);
+            setCurrencyCell(reconciliation, 3, data.getReconciliationDifference(), boldCurrency);
+            r += 2;
+            setCellStyled(sheet.createRow(r++), 0, "Cash Account Breakdown", bold);
+            writeHeaderRow(sheet, r++, new String[]{"Code", "Account", "Opening", "Period Movement", "Closing"}, header);
+            for (CashFlowAccountBalanceDto account : data.getCashAccounts()) {
+                Row row = sheet.createRow(r++); row.createCell(0).setCellValue(account.getAccountCode()); row.createCell(1).setCellValue(account.getAccountName());
+                setCurrencyCell(row, 2, account.getOpeningBalance(), currency); setCurrencyCell(row, 3, account.getPeriodMovement(), currency); setCurrencyCell(row, 4, account.getClosingBalance(), currency);
+            }
+            if (!data.getUnclassifiedMovements().isEmpty()) {
+                r += 2; setCellStyled(sheet.createRow(r++), 0, "Unclassified Movement Warnings", bold);
+                writeHeaderRow(sheet, r++, new String[]{"Date", "Journal", "Description", "Amount", "Reason"}, header);
+                for (UnclassifiedCashMovementDto warning : data.getUnclassifiedMovements()) {
+                    Row row = sheet.createRow(r++); row.createCell(0).setCellValue(warning.getDate().format(DATE_FMT)); row.createCell(1).setCellValue(warning.getEntryNumber());
+                    row.createCell(2).setCellValue(nvl(warning.getDescription())); setCurrencyCell(row, 3, warning.getAmount(), currency); row.createCell(4).setCellValue(warning.getReason());
+                }
+            }
+            ExcelStyleHelper.autoSizeColumns(sheet, 5);
+            return ExcelStyleHelper.toBytes(wb);
+        } catch (Exception e) { throw new RuntimeException("Failed to generate cash flow Excel", e); }
+    }
+
+    private int writeCashFlowSection(Sheet sheet, int r, CashFlowActivitySectionDto section,
+                                     CellStyle header, CellStyle currency, CellStyle bold, CellStyle boldCurrency) {
+        setCellStyled(sheet.createRow(r++), 0, section.getActivity().name() + " ACTIVITIES", bold);
+        writeHeaderRow(sheet, r++, new String[]{"Description", "Inflow", "Outflow", "Net"}, header);
+        for (CashFlowLineItemDto item : section.getItems()) {
+            Row row = sheet.createRow(r++); row.createCell(0).setCellValue(item.getLabel());
+            setCurrencyCell(row, 1, item.getInflow(), currency); setCurrencyCell(row, 2, item.getOutflow(), currency); setCurrencyCell(row, 3, item.getNetAmount(), currency);
+        }
+        Row total = sheet.createRow(r++); setCellStyled(total, 0, "Net " + section.getActivity().name().toLowerCase() + " cash flow", bold);
+        setCurrencyCell(total, 1, section.getTotalInflows(), boldCurrency); setCurrencyCell(total, 2, section.getTotalOutflows(), boldCurrency); setCurrencyCell(total, 3, section.getNetCashFlow(), boldCurrency);
+        return r + 1;
+    }
+
     // ==================== Ledger ====================
 
     public byte[] generateLedgerExcel(Long accountId, LocalDate fromDate, LocalDate toDate) {

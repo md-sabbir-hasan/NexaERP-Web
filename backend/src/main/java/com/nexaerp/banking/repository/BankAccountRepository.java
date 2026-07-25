@@ -30,4 +30,8 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
     BigDecimal sumActiveBalances();
 
     List<BankAccount> findByIsActiveTrueAndCurrentBalanceLessThan(BigDecimal amount);
+
+    @Query("SELECT DISTINCT a.coaAccountId FROM BankAccount a " +
+            "WHERE a.isActive = true AND a.coaAccountId IS NOT NULL")
+    List<Long> findActiveLinkedCoaAccountIds();
 }

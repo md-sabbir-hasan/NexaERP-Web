@@ -1179,6 +1179,15 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'reports/cash-flow',
+        loadComponent: () =>
+          import('./features/reports/pages/cash-flow-report/cash-flow-report').then(
+            (m) => m.CashFlowReport,
+          ),
+        canActivate: [permissionGuard],
+        data: { permission: PERMISSIONS.VIEW_REPORT },
+      },
+      {
         path: 'reports/aging',
         loadComponent: () =>
           import(

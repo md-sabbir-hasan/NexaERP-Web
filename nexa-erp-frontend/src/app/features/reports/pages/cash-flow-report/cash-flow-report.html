@@ -1,0 +1,68 @@
+<div class="cash-flow-page">
+  <section class="report-hero no-print">
+    <div><span class="eyebrow">Financial Reports</span><h1>Cash Flow Statement</h1>
+      <p>Direct-method cash movements from posted journal activity.</p></div>
+    <a routerLink="/reports" class="back-btn"><i class="bi bi-arrow-left"></i> Back to Reports</a>
+  </section>
+
+  <section class="filter-card no-print">
+    <div class="field"><label for="cashFromDate">From Date</label><input id="cashFromDate" type="date" [ngModel]="fromDate()" (ngModelChange)="fromDate.set($event)" /></div>
+    <div class="field"><label for="cashToDate">To Date</label><input id="cashToDate" type="date" [ngModel]="toDate()" (ngModelChange)="toDate.set($event)" /></div>
+    <div class="actions"><button type="button" class="secondary" (click)="reset()">Reset</button>
+      <button type="button" class="primary" [disabled]="loading()" (click)="generateReport()">{{ loading() ? 'Generating...' : 'Generate' }}</button></div>
+  </section>
+
+  @if (loading()) {
+    <div class="state"><i class="bi bi-arrow-repeat spin"></i><strong>Generating Cash Flow Statement...</strong></div>
+  } @else if (errorMessage()) {
+    <div class="state error" role="alert"><i class="bi bi-exclamation-triangle"></i><strong>{{ errorMessage() }}</strong>
+      <button type="button" class="secondary no-print" (click)="retry()">Retry</button></div>
+  } @else if (report(); as data) {
+    <header class="statement-header"><div><span>Cash Flow Statement</span><h2>{{ data.fromDate | date:'dd MMM yyyy' }} – {{ data.toDate | date:'dd MMM yyyy' }}</h2>
+      <p>Currency: {{ data.currencyCode }} · Generated {{ data.generatedAt | date:'medium' }}</p></div>
+      <div class="actions no-print"><button type="button" class="secondary" (click)="printReport()"><i class="bi bi-printer"></i> Print</button>
+        <button type="button" class="excel" [disabled]="exporting()" (click)="exportExcel()"><i class="bi bi-file-earmark-excel"></i> {{ exporting() ? 'Exporting...' : 'Export Excel' }}</button></div>
+    </header>
+
+    <section class="summary-grid">
+      <article><span>Opening Cash</span><strong>{{ data.openingCashBalance | number:'1.2-2' }}</strong></article>
+      <article><span>Net Cash Change</span><strong [class.negative]="data.netChangeInCash < 0">{{ data.netChangeInCash | number:'1.2-2' }}</strong></article>
+      <article><span>Closing Cash</span><strong>{{ data.calculatedClosingCashBalance | number:'1.2-2' }}</strong></article>
+      <article [class.warning]="!data.isReconciled"><span>Reconciliation</span><strong>{{ data.isReconciled ? 'Reconciled' : 'Difference ' + (data.reconciliationDifference | number:'1.2-2') }}</strong></article>
+    </section>
+
+    @if (!hasPeriodMovement() && data.openingCashBalance !== 0) { <div class="notice">No classified cash movement occurred in this period; opening cash is carried forward.</div> }
+    @if (!hasAnyBalance() && !hasPeriodMovement()) { <div class="notice">No cash activity or cash balance exists for this date range.</div> }
+    @if (transferOnly()) { <div class="notice">Only internal cash-account movement was detected; transfers are excluded from cash-flow activities.</div> }
+    @if (data.unclassifiedMovements.length) {
+      <section class="warning-panel" role="alert"><h3><i class="bi bi-exclamation-triangle"></i> Unclassified cash movements</h3>
+        <p>These movements remain outside activity totals and may cause a reconciliation difference.</p>
+        @for (warning of data.unclassifiedMovements; track warning.journalEntryId + '-' + warning.amount) {
+          <div class="warning-row"><strong>{{ warning.entryNumber }} · {{ warning.date | date:'dd MMM yyyy' }}</strong><span>{{ warning.amount | number:'1.2-2' }}</span><small>{{ warning.reason }}</small></div>
+        }
+      </section>
+    }
+
+    @for (section of [data.operatingActivities, data.investingActivities, data.financingActivities]; track trackSection(section)) {
+      <section class="activity-card"><h3>{{ section.activity | titlecase }} Activities</h3><div class="table-wrap"><table>
+        <thead><tr><th>Description</th><th>Inflow</th><th>Outflow</th><th>Net</th></tr></thead><tbody>
+          @for (item of section.items; track item.lineItem) { <tr><td>{{ item.label }}</td><td>{{ item.inflow | number:'1.2-2' }}</td><td>{{ item.outflow | number:'1.2-2' }}</td><td [class.negative]="item.netAmount < 0">{{ item.netAmount | number:'1.2-2' }}</td></tr> }
+          @empty { <tr><td colspan="4" class="empty">No {{ section.activity | lowercase }} cash movement</td></tr> }
+        </tbody><tfoot><tr><th>Net {{ section.activity | titlecase }} Cash Flow</th><th>{{ section.totalInflows | number:'1.2-2' }}</th><th>{{ section.totalOutflows | number:'1.2-2' }}</th><th>{{ section.netCashFlow | number:'1.2-2' }}</th></tr></tfoot>
+      </table></div></section>
+    }
+
+    <section class="reconciliation-card"><h3>Opening and Closing Reconciliation</h3>
+      <div><span>Opening cash balance</span><strong>{{ data.openingCashBalance | number:'1.2-2' }}</strong></div>
+      <div><span>Net increase / (decrease) in cash</span><strong>{{ data.netChangeInCash | number:'1.2-2' }}</strong></div>
+      <div><span>Calculated closing cash</span><strong>{{ data.calculatedClosingCashBalance | number:'1.2-2' }}</strong></div>
+      <div><span>Ledger closing cash</span><strong>{{ data.ledgerClosingCashBalance | number:'1.2-2' }}</strong></div>
+      <div class="total"><span>Reconciliation difference</span><strong>{{ data.reconciliationDifference | number:'1.2-2' }}</strong></div>
+    </section>
+
+    <section class="activity-card"><h3>Cash Account Breakdown</h3><div class="table-wrap"><table>
+      <thead><tr><th>Account</th><th>Opening</th><th>Period Movement</th><th>Closing</th></tr></thead><tbody>
+        @for (account of data.cashAccounts; track account.accountId) { <tr><td><strong>{{ account.accountCode }}</strong> · {{ account.accountName }}</td><td>{{ account.openingBalance | number:'1.2-2' }}</td><td>{{ account.periodMovement | number:'1.2-2' }}</td><td>{{ account.closingBalance | number:'1.2-2' }}</td></tr> }
+      </tbody></table></div></section>
+  }
+</div>

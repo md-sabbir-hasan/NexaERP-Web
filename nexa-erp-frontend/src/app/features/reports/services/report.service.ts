@@ -10,6 +10,7 @@ import { PartyStatementResponse } from '../models/party-statement.model';
 import { ProfitLossResponse } from '../models/profit-loss.model';
 import { BalanceSheetResponse } from '../models/balance-sheet.model';
 import { AgingResponse } from '../models/aging.model';
+import { CashFlowStatementResponse } from '../models/cash-flow.model';
 
 @Injectable({
   providedIn: 'root',
@@ -18,6 +19,16 @@ export class ReportService {
   private readonly baseUrl = `${APP_CONFIG.apiUrl}/reports`;
 
   constructor(private http: HttpClient) {}
+
+  getCashFlow(fromDate: string, toDate: string): Observable<ApiResponse<CashFlowStatementResponse>> {
+    const params = new HttpParams().set('fromDate', fromDate).set('toDate', toDate);
+    return this.http.get<ApiResponse<CashFlowStatementResponse>>(`${this.baseUrl}/cash-flow`, { params });
+  }
+
+  downloadCashFlowExcel(fromDate: string, toDate: string): Observable<Blob> {
+    const params = new HttpParams().set('fromDate', fromDate).set('toDate', toDate);
+    return this.http.get(`${this.baseUrl}/cash-flow/excel`, { params, responseType: 'blob' as const });
+  }
 
   // Ledger Report
   getLedger(

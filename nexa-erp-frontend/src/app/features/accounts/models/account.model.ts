@@ -8,6 +8,7 @@ export interface Account {
   type: AccountType;
   isActive: boolean;
   isDefault: boolean;
+  isCashEquivalent: boolean;
   parentId: number | null;
   parentName: string | null;
   currentBalance: number;
@@ -21,4 +22,5 @@ export interface AccountRequest {
   description: string;
   type: AccountType;
   parentId: number | null;
+  isCashEquivalent: boolean;
 }

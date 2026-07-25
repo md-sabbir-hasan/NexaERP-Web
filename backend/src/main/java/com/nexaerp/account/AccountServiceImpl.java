@@ -36,6 +36,7 @@ public class AccountServiceImpl implements AccountService{
         account.setType(request.getType());
         account.setIsActive(true);
         account.setIsDefault(false);
+        account.setIsCashEquivalent(Boolean.TRUE.equals(request.getIsCashEquivalent()));
 
         // Parent set
         if (request.getParentId() != null) {
@@ -50,9 +51,14 @@ public class AccountServiceImpl implements AccountService{
                 throw new BusinessRuleException("Child account type must match parent account type");
             }
 
+            if (Boolean.TRUE.equals(parent.getIsCashEquivalent())) {
+                throw new BusinessRuleException("Cannot create a child under a cash-equivalent account");
+            }
+
             account.setParent(parent);
         }
 
+        validateCashEquivalent(account, request.getIsCashEquivalent());
         Account saved = accountRepository.save(account);
         auditLogService.log(
                 AuditAction.CREATED,
@@ -92,6 +98,8 @@ public class AccountServiceImpl implements AccountService{
 
         account.setName(request.getName());
         account.setDescription(request.getDescription());
+        validateCashEquivalent(account, request.getIsCashEquivalent());
+        account.setIsCashEquivalent(Boolean.TRUE.equals(request.getIsCashEquivalent()));
 
         Account saved = accountRepository.save(account);
 
@@ -271,6 +279,19 @@ public class AccountServiceImpl implements AccountService{
         }
     }
 
+    private void validateCashEquivalent(Account account, Boolean cashEquivalent) {
+        if (!Boolean.TRUE.equals(cashEquivalent)) return;
+        if (account.getType() != AccountType.ASSET) {
+            throw new BusinessRuleException("Only ASSET accounts can be marked as cash equivalents");
+        }
+        if (account.getParent() == null) {
+            throw new BusinessRuleException("Parent accounts cannot be marked as cash equivalents");
+        }
+        if (account.getId() != null && accountRepository.existsByParentId(account.getId())) {
+            throw new BusinessRuleException("Accounts with child accounts cannot be marked as cash equivalents");
+        }
+    }
+
                                   // -- Mapper --
 
     private AccountResponseDto toResponse(Account account) {
@@ -282,6 +303,7 @@ public class AccountServiceImpl implements AccountService{
         dto.setType(account.getType());
         dto.setIsActive(account.getIsActive());
         dto.setIsDefault(account.getIsDefault());
+        dto.setIsCashEquivalent(Boolean.TRUE.equals(account.getIsCashEquivalent()));
         dto.setCurrentBalance(account.getCurrentBalance());
         dto.setHasChildren(account.getChildren() != null && !account.getChildren().isEmpty());
 

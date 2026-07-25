@@ -19,6 +19,7 @@ public class AccountResponseDto {
     private AccountType type;
     private Boolean isActive;
     private Boolean isDefault;
+    private Boolean isCashEquivalent;
     private Long parentId;
     private String parentName;
     private BigDecimal currentBalance;

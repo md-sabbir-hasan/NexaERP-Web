@@ -48,6 +48,13 @@ export class ReportsDashboard {
       status: 'READY',
     },
     {
+      title: 'Cash Flow Statement',
+      description: 'Direct-method operating, investing and financing cash movements.',
+      icon: 'bi bi-cash-stack',
+      route: '/reports/cash-flow',
+      status: 'READY',
+    },
+    {
       title: 'Party Statement',
       description: 'Customer/vendor transaction statement.',
       icon: 'bi bi-people',

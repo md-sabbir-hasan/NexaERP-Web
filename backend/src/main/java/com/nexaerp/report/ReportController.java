@@ -18,6 +18,14 @@ import java.time.LocalDate;
 public class ReportController {
     private final ReportService reportService;
 
+    @GetMapping("/cash-flow")
+    @PreAuthorize("hasAuthority('VIEW_REPORT')")
+    public ResponseEntity<ApiResponse<CashFlowStatementResponseDto>> getCashFlowStatement(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+        return ResponseEntity.ok(ApiResponse.success(reportService.getCashFlowStatement(fromDate, toDate)));
+    }
+
     @GetMapping("/ledger/{accountId}")
     @PreAuthorize("hasAuthority('VIEW_LEDGER')")
     public ResponseEntity<ApiResponse<LedgerResponseDto>> getLedger(

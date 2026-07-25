@@ -29,4 +29,6 @@ public class AccountRequestDto {
 
     private Long parentId;
 
+    private Boolean isCashEquivalent = false;
+
 }

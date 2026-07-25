@@ -43,6 +43,7 @@ public class ReportServiceImpl implements ReportService{
     private final VendorBillRepository vendorBillRepository;
     private final PaymentRepository paymentRepository;
     private final PartyRepository partyRepository;
+    private final CashFlowStatementService cashFlowStatementService;
 
 
 
@@ -672,5 +673,10 @@ public class ReportServiceImpl implements ReportService{
     private boolean isLeafAccount(Account account) {
         return account.getChildren() == null
                 || account.getChildren().isEmpty();
+    }
+
+    @Override
+    public CashFlowStatementResponseDto getCashFlowStatement(LocalDate fromDate, LocalDate toDate) {
+        return cashFlowStatementService.generate(fromDate, toDate);
     }
 }

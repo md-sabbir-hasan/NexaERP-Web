@@ -194,6 +194,10 @@
             <span>System</span>
             <strong>{{ selectedAccount()!.isDefault ? 'Default' : 'Custom' }}</strong>
           </div>
+          <div>
+            <span>Cash Equivalent</span>
+            <strong>{{ selectedAccount()!.isCashEquivalent ? 'Yes' : 'No' }}</strong>
+          </div>
         </div>
 
         <p class="description">{{ selectedAccount()!.description || 'No description provided.' }}</p>
@@ -313,6 +317,19 @@
           <div class="form-group full">
             <label>Description</label>
             <textarea formControlName="description" rows="3" placeholder="Short description"></textarea>
+          </div>
+
+          <div class="form-group full">
+            <label class="form-check-label">
+              <input type="checkbox" formControlName="isCashEquivalent" [attr.aria-describedby]="'cash-equivalent-help'" />
+              Cash or Cash Equivalent
+            </label>
+            <small id="cash-equivalent-help">
+              Available only for leaf ASSET accounts. Active bank-linked accounts are detected automatically.
+            </small>
+            @if (accountForm.controls.isCashEquivalent.value && !canMarkCashEquivalent()) {
+              <small>Choose a parent and use a leaf ASSET account before enabling this option.</small>
+            }
           </div>
         </div>
 

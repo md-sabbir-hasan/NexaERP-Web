@@ -5,6 +5,9 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.math.BigDecimal;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 @Repository
 public interface JournalLineRepository extends JpaRepository<JournalLine, Long> {
@@ -35,6 +38,44 @@ public interface JournalLineRepository extends JpaRepository<JournalLine, Long> 
             List<JournalStatus> statuses,
             LocalDate fromDate
     );
+
+    @Query("SELECT COALESCE(SUM(l.debit - l.credit), 0) FROM JournalLine l " +
+            "WHERE l.account.id IN :accountIds AND l.journalEntry.status IN :statuses " +
+            "AND l.journalEntry.date < :date")
+    BigDecimal sumCashEffectBefore(@Param("accountIds") List<Long> accountIds,
+                                   @Param("statuses") List<JournalStatus> statuses,
+                                   @Param("date") LocalDate date);
+
+    @Query("SELECT COALESCE(SUM(l.debit - l.credit), 0) FROM JournalLine l " +
+            "WHERE l.account.id IN :accountIds AND l.journalEntry.status IN :statuses " +
+            "AND l.journalEntry.date <= :date")
+    BigDecimal sumCashEffectThrough(@Param("accountIds") List<Long> accountIds,
+                                    @Param("statuses") List<JournalStatus> statuses,
+                                    @Param("date") LocalDate date);
+
+    @Query("SELECT DISTINCT l.journalEntry.id FROM JournalLine l " +
+            "WHERE l.account.id IN :accountIds AND l.journalEntry.status IN :statuses " +
+            "AND l.journalEntry.date BETWEEN :fromDate AND :toDate")
+    List<Long> findJournalIdsContainingCash(@Param("accountIds") List<Long> accountIds,
+                                            @Param("statuses") List<JournalStatus> statuses,
+                                            @Param("fromDate") LocalDate fromDate,
+                                            @Param("toDate") LocalDate toDate);
+
+    @Query("SELECT l FROM JournalLine l JOIN FETCH l.account JOIN FETCH l.journalEntry " +
+            "WHERE l.journalEntry.id IN :journalIds " +
+            "ORDER BY l.journalEntry.date, l.journalEntry.id, l.id")
+    List<JournalLine> findAllForJournalIds(@Param("journalIds") List<Long> journalIds);
+
+    @Query("SELECT l.account.id, " +
+            "COALESCE(SUM(CASE WHEN l.journalEntry.date < :fromDate THEN l.debit - l.credit ELSE 0 END), 0), " +
+            "COALESCE(SUM(CASE WHEN l.journalEntry.date BETWEEN :fromDate AND :toDate THEN l.debit - l.credit ELSE 0 END), 0), " +
+            "COALESCE(SUM(CASE WHEN l.journalEntry.date <= :toDate THEN l.debit - l.credit ELSE 0 END), 0) " +
+            "FROM JournalLine l WHERE l.account.id IN :accountIds " +
+            "AND l.journalEntry.status IN :statuses AND l.journalEntry.date <= :toDate GROUP BY l.account.id")
+    List<Object[]> aggregateCashAccountBalances(@Param("accountIds") List<Long> accountIds,
+                                                @Param("statuses") List<JournalStatus> statuses,
+                                                @Param("fromDate") LocalDate fromDate,
+                                                @Param("toDate") LocalDate toDate);
 
 
 }

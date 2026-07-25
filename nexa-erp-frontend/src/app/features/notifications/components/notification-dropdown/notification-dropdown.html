@@ -1,0 +1,135 @@
+﻿<section id="notification-dropdown" class="notification-dropdown" aria-label="Notifications">
+  <header class="dropdown-header">
+    <div>
+      <span class="eyebrow">Updates</span>
+      <h3>Notifications</h3>
+    </div>
+
+    <button
+      type="button"
+      class="mark-all-button"
+      [disabled]="!store.hasUnread() || store.markingAllRead()"
+      (click)="store.markAllAsRead()"
+    >
+      @if (store.markingAllRead()) {
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        Marking...
+      } @else {
+        <i class="bi bi-check2-all" aria-hidden="true"></i>
+        Mark all read
+      }
+    </button>
+  </header>
+
+  <div class="filter-tabs" aria-label="Notification filters">
+    <button
+      type="button"
+      [class.active]="!store.unreadOnly()"
+      [attr.aria-pressed]="!store.unreadOnly()"
+      (click)="store.setFilter(false)"
+    >
+      All
+    </button>
+    <button
+      type="button"
+      [class.active]="store.unreadOnly()"
+      [attr.aria-pressed]="store.unreadOnly()"
+      (click)="store.setFilter(true)"
+    >
+      Unread
+      @if (store.unreadCount() > 0) {
+        <span>{{ store.unreadCount() }}</span>
+      }
+    </button>
+  </div>
+
+  @if (store.loading() && !store.loaded()) {
+    <div class="state-panel" role="status">
+      <span class="spinner-border text-primary" aria-hidden="true"></span>
+      <strong>Loading notifications</strong>
+      <p>Fetching your latest updates...</p>
+    </div>
+  } @else if (store.error() && !store.loaded()) {
+    <div class="state-panel error-state" role="alert">
+      <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
+      <strong>Could not load notifications</strong>
+      <p>{{ store.error() }}</p>
+      <button type="button" (click)="retry()">Try again</button>
+    </div>
+  } @else if (store.isEmpty()) {
+    <div class="state-panel">
+      <i class="bi bi-bell-slash" aria-hidden="true"></i>
+      @if (store.unreadOnly()) {
+        <strong>You're all caught up</strong>
+        <p>There are no unread notifications.</p>
+      } @else {
+        <strong>No notifications yet</strong>
+        <p>New updates will appear here.</p>
+      }
+    </div>
+  } @else {
+    <div class="notification-list">
+      @for (notification of store.notifications(); track notification.id) {
+        <button
+          type="button"
+          class="notification-item"
+          [class.unread]="!notification.read"
+          [disabled]="store.markingReadIds().has(notification.id)"
+          (click)="selectNotification(notification)"
+        >
+          <span class="status-indicator" aria-hidden="true"></span>
+
+          <span class="notification-content">
+            <span class="notification-title-row">
+              <strong>{{ notification.title }}</strong>
+              @if (!notification.read) {
+                <span class="visually-hidden">Unread notification</span>
+              }
+            </span>
+
+            <span class="notification-message">{{ notification.message }}</span>
+
+            <span class="notification-time">
+              <i class="bi bi-clock" aria-hidden="true"></i>
+              {{ notification.createdAt | date: 'dd MMM, hh:mm a' }}
+            </span>
+          </span>
+
+          @if (store.markingReadIds().has(notification.id)) {
+            <span
+              class="spinner-border spinner-border-sm row-spinner"
+              aria-label="Marking notification as read"
+            ></span>
+          } @else if (notification.route?.trim()) {
+            <i class="bi bi-chevron-right row-arrow" aria-hidden="true"></i>
+          }
+        </button>
+      }
+    </div>
+
+    @if (store.error()) {
+      <div class="inline-error" role="alert">
+        <span>{{ store.error() }}</span>
+        <button type="button" (click)="retry()">Retry</button>
+      </div>
+    }
+
+    @if (store.canLoadMore() || store.loadingMore()) {
+      <div class="load-more-wrap">
+        <button
+          type="button"
+          class="load-more-button"
+          [disabled]="store.loadingMore()"
+          (click)="store.loadMore()"
+        >
+          @if (store.loadingMore()) {
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Loading...
+          } @else {
+            Load more
+          }
+        </button>
+      </div>
+    }
+  }
+</section>

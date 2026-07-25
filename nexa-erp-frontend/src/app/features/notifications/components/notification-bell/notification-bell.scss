@@ -1,0 +1,67 @@
+:host {
+  display: block;
+}
+
+.notification-bell {
+  position: relative;
+}
+
+.bell-button {
+  position: relative;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 15px;
+  background: #f8fafc;
+  color: #334155;
+  cursor: pointer;
+  font-size: 18px;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+
+  &:hover,
+  &[aria-expanded='true'] {
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.3);
+    outline-offset: 2px;
+  }
+}
+
+.unread-badge {
+  position: absolute;
+  top: -4px;
+  right: -5px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.28);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bell-button {
+    transition: none;
+  }
+}

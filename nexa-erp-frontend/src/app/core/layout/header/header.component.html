@@ -1,79 +1,43 @@
-<header class="erp-header">
-  <div class="header-left">
-    <button class="menu-btn" type="button" (click)="toggleSidebar.emit()">
-      <i class="bi bi-list"></i>
-    </button>
-
-    <div class="title-block">
-      <span class="page-kicker">
-        <i class="bi bi-circle-fill"></i>
-        Workspace
-      </span>
-      <h2>{{ pageTitle() }}</h2>
-    </div>
-  </div>
-
-  <div class="header-center">
-    <i class="bi bi-search"></i>
-    <input type="text" placeholder="Search modules, reports..." disabled />
-    <kbd>⌘K</kbd>
-  </div>
-
-  <div class="header-right">
-    <button class="header-icon" type="button" title="Notifications">
-      <i class="bi bi-bell"></i>
-      <span class="notify-dot"></span>
-    </button>
-
-    <div class="header-divider"></div>
-
-    <div class="profile-wrap">
-      <button class="profile-chip" type="button" (click)="toggleMenu()" [class.active]="menuOpen()">
-        <div class="avatar">
-          @if (initials()) {
-            <span>{{ initials() }}</span>
-          } @else {
-            <i class="bi bi-person"></i>
+﻿<header class="erp-header">
+  <div class="header-primary">
+    <div class="context-area">
+      <button type="button" class="sidebar-trigger" aria-label="Toggle navigation menu" (click)="toggleSidebar.emit()"><i class="bi bi-layout-sidebar-inset" aria-hidden="true"></i></button>
+      <div class="page-context">
+        <nav class="breadcrumb-trail" aria-label="Breadcrumb">
+          @for (item of breadcrumb(); track $index; let last = $last) {
+            <span [class.current]="last">{{ item }}</span>@if (!last) { <i class="bi bi-chevron-right" aria-hidden="true"></i> }
           }
-        </div>
+        </nav>
+        <div class="title-line"><h1>{{ pageTitle() }}</h1><span class="workspace-status"><span class="status-dot"></span>Live workspace</span></div>
+      </div>
+    </div>
 
-        <div class="profile-text">
-          <strong>{{ displayName() }}</strong>
-          <span>{{ displayRole() }}</span>
-        </div>
-
-        <i class="bi bi-chevron-down chevron" [class.open]="menuOpen()"></i>
-      </button>
-
-      @if (menuOpen()) {
-        <div class="profile-menu">
-          <div class="profile-menu-header">
-            <div class="avatar large">
-              @if (initials()) {
-                <span>{{ initials() }}</span>
-              } @else {
-                <i class="bi bi-person"></i>
-              }
-            </div>
-            <div>
-              <strong>{{ displayName() }}</strong>
-              <span>{{ currentUser()?.email }}</span>
-            </div>
+    <div class="command-area">
+      <label class="global-search" aria-label="Global search"><i class="bi bi-search" aria-hidden="true"></i><input type="search" placeholder="Search transactions, contacts, reports..." disabled /><span class="search-shortcut">Ctrl K</span></label>
+      <button type="button" class="mobile-search-trigger" aria-label="Open global search" [attr.aria-expanded]="mobileSearchOpen()" (click)="toggleMobileSearch()"><i class="bi bi-search" aria-hidden="true"></i></button>
+      <button type="button" class="quick-action" title="Quick create placeholder"><i class="bi bi-plus-lg" aria-hidden="true"></i><span>Quick create</span><i class="bi bi-chevron-down action-chevron" aria-hidden="true"></i></button>
+      <div class="utility-cluster">
+        <button type="button" class="utility-button" title="Theme controls coming soon"><i class="bi bi-brightness-high" aria-hidden="true"></i><span class="visually-hidden">Theme settings</span></button>
+        <app-notification-bell />
+      </div>
+      <span class="header-divider" aria-hidden="true"></span>
+      <div class="profile">
+        <button type="button" class="profile-trigger" aria-label="Open user menu" aria-controls="header-profile-menu" [attr.aria-expanded]="profileOpen()" (click)="toggleProfile()">
+          <span class="avatar">@if (initials()) { {{ initials() }} } @else { <i class="bi bi-person" aria-hidden="true"></i> }<span class="presence-dot" aria-hidden="true"></span></span>
+          <span class="profile-copy"><strong>{{ displayName() }}</strong><small>{{ displayRole() }}</small></span>
+          <i class="bi bi-chevron-down profile-chevron" [class.rotated]="profileOpen()" aria-hidden="true"></i>
+        </button>
+        @if (profileOpen()) {
+          <div id="header-profile-menu" class="profile-menu">
+            <div class="profile-summary"><span class="avatar avatar-large">{{ initials() }}</span><div><strong>{{ displayName() }}</strong><span>{{ currentUser()?.email }}</span></div></div>
+            <div class="role-chip"><i class="bi bi-shield-check" aria-hidden="true"></i>{{ displayRole() }}</div>
+            <div class="menu-section"><button type="button"><i class="bi bi-person-gear"></i>Profile settings<span>Coming soon</span></button><button type="button"><i class="bi bi-sliders"></i>Preferences<span>Coming soon</span></button></div>
+            <button type="button" class="sign-out" (click)="logout()"><i class="bi bi-box-arrow-right"></i>Sign out</button>
           </div>
-
-          <div class="profile-menu-role">
-            <i class="bi bi-shield-check"></i>
-            {{ displayRole() }}
-          </div>
-
-          <div class="profile-menu-divider"></div>
-
-          <button type="button" class="profile-menu-item danger" (click)="logout()">
-            <i class="bi bi-box-arrow-right"></i>
-            Sign out
-          </button>
-        </div>
-      }
+        }
+      </div>
     </div>
   </div>
+  @if (mobileSearchOpen()) { <div class="mobile-search-panel"><i class="bi bi-search"></i><input type="search" placeholder="Search transactions, contacts, reports..." disabled /><span>Search coming soon</span></div> }
 </header>
+

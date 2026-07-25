@@ -1,0 +1,22 @@
+<div class="notification-bell">
+  <button
+    type="button"
+    class="bell-button"
+    aria-label="Notifications"
+    aria-controls="notification-dropdown"
+    [attr.aria-expanded]="open()"
+    (click)="toggleDropdown()"
+  >
+    <i class="bi bi-bell" aria-hidden="true"></i>
+
+    @if (store.unreadCount() > 0) {
+      <span class="unread-badge" aria-label="Unread notifications">
+        {{ store.unreadCount() }}
+      </span>
+    }
+  </button>
+
+  @if (open()) {
+    <app-notification-dropdown />
+  }
+</div>

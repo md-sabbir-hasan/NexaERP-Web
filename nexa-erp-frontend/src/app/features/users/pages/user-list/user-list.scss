@@ -310,7 +310,12 @@ table {
   margin-top: 22px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767.98px) {
+  .users-page {
+    min-width: 0;
+    gap: 18px;
+    padding: 16px;
+  }
 
   .page-header,
   .filter-card,
@@ -319,10 +324,113 @@ table {
     align-items: flex-start;
   }
 
+  .page-header {
+    width: 100%;
+    gap: 18px;
+    padding: 20px;
+
+    > div {
+      min-width: 0;
+    }
+
+    h1 {
+      font-size: 28px;
+      line-height: 1.15;
+    }
+
+    p {
+      margin-bottom: 0;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+    }
+
+    .primary-btn {
+      width: 100%;
+    }
+  }
+
+  .filter-card {
+    width: 100%;
+    gap: 12px;
+    padding: 16px;
+  }
+
   .filter-card input,
   .filter-card select,
   .filter-card button {
     width: 100%;
+    min-width: 0;
+    min-height: 46px;
+  }
+
+  .table-card {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 16px;
+  }
+
+  table {
+    min-width: 1050px;
+  }
+
+  th,
+  td {
+    white-space: nowrap;
+  }
+
+  .user-cell,
+  .action-group {
+    white-space: normal;
+  }
+
+  .action-group {
+    flex-wrap: wrap;
+  }
+
+  .pagination {
+    width: 100%;
+    gap: 12px;
+
+    > div {
+      width: 100%;
+    }
+
+    button {
+      min-height: 42px;
+      flex: 1;
+    }
+  }
+
+  .state-box {
+    padding: 32px 18px;
+  }
+
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: 12px;
+  }
+
+  .modal-card {
+    max-height: calc(100dvh - 24px);
+    border-radius: 18px;
+    overflow-y: auto;
+  }
+
+  .modal-header,
+  .modal-body {
+    padding: 18px;
+  }
+
+  .modal-header {
+    align-items: flex-start;
+
+    h2 {
+      font-size: 22px;
+    }
+
+    p {
+      line-height: 1.45;
+    }
   }
 
   .modal-actions {
@@ -330,7 +438,47 @@ table {
 
     button {
       width: 100%;
+      min-height: 46px;
     }
+  }
+}
+
+@media (max-width: 575.98px) {
+  .users-page {
+    gap: 16px;
+    padding: 12px;
+  }
+
+  .page-header,
+  .filter-card {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .page-header h1 {
+    font-size: 26px;
+  }
+
+  .pagination {
+    padding: 14px;
+  }
+
+  .state-box {
+    padding: 28px 16px;
+  }
+
+  .modal-backdrop {
+    padding: 8px;
+  }
+
+  .modal-card {
+    max-height: calc(100dvh - 16px);
+    border-radius: 16px;
+  }
+
+  .modal-header,
+  .modal-body {
+    padding: 16px;
   }
 }
 .field-error {

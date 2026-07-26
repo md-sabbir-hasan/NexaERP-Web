@@ -67,16 +67,14 @@ export class BudgetVariance implements OnInit {
     this.errorMessage.set(null);
     this.reportService.getBudgetVsActualOptions().subscribe({
       next: ({ data }) => {
-        this.options.set(data);
+        const options = data.map((option) => ({
+          ...option,
+          budgetId: Number(option.budgetId),
+          periods: option.periods.map((period) => ({ ...period, id: Number(period.id) })),
+        }));
+        this.options.set(options);
         this.loadingOptions.set(false);
-        if (this.selectedBudgetId) {
-          const selected = data.find((item) => item.budgetId === this.selectedBudgetId);
-          if (selected) {
-            this.setFullRange(selected);
-            if (selected.budgetStatus === 'DRAFT') this.loadLegacyDraftPreview(selected);
-            else this.generate();
-          }
-        }
+        this.initializeBudgetSelection(this.selectedBudgetId, true);
       },
       error: (error: HttpErrorResponse) => this.handleError(error, true),
     });
@@ -85,8 +83,15 @@ export class BudgetVariance implements OnInit {
   onBudgetChange(): void {
     this.report.set(null);
     this.attempted.set(false);
+    const budgetId = Number(this.selectedBudgetId);
+    this.selectedBudgetId = Number.isFinite(budgetId) && budgetId > 0 ? budgetId : null;
     const selected = this.selectedBudget();
-    if (selected) this.setFullRange(selected);
+    if (selected) {
+      this.setFullRange(selected);
+    } else {
+      this.fromPeriodId = null;
+      this.toPeriodId = null;
+    }
   }
 
   generate(): void {
@@ -104,14 +109,12 @@ export class BudgetVariance implements OnInit {
   }
 
   reset(): void {
-    this.selectedBudgetId = null;
-    this.fromPeriodId = null;
-    this.toPeriodId = null;
     this.accountType = '';
     this.report.set(null);
     this.errorMessage.set(null);
     this.attempted.set(false);
     this.forbidden.set(false);
+    this.initializeBudgetSelection(null, false);
   }
 
   exportExcel(): void {
@@ -134,6 +137,29 @@ export class BudgetVariance implements OnInit {
   private setFullRange(option: BudgetVsActualOption): void {
     this.fromPeriodId = option.periods[0]?.id ?? null;
     this.toPeriodId = option.periods[option.periods.length - 1]?.id ?? null;
+  }
+
+  private initializeBudgetSelection(requestedBudgetId: number | null, generateReport: boolean): void {
+    const budgets = this.availableBudgets();
+    const requestedId = Number(requestedBudgetId);
+    const selected = budgets.find((option) => option.budgetId === requestedId)
+      ?? budgets.find((option) => option.budgetStatus === 'ACTIVE')
+      ?? budgets[0]
+      ?? null;
+
+    if (!selected) {
+      this.selectedBudgetId = null;
+      this.fromPeriodId = null;
+      this.toPeriodId = null;
+      return;
+    }
+
+    this.selectedBudgetId = selected.budgetId;
+    this.setFullRange(selected);
+
+    if (!generateReport) return;
+    if (selected.budgetStatus === 'DRAFT') this.loadLegacyDraftPreview(selected);
+    else this.generate();
   }
 
   private validate(): boolean {

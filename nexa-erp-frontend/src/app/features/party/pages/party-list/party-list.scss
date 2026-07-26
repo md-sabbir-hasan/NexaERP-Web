@@ -1,5 +1,6 @@
 .party-page {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: 24px;
 }
@@ -34,6 +35,10 @@
 }
 
 .new-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
   background: #16a34a;
   color: #fff;
   border-radius: 14px;
@@ -77,6 +82,10 @@
   display: grid;
   grid-template-columns: 1fr 180px 180px 120px;
   gap: 14px;
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #fff;
 
   input,
   select {
@@ -130,14 +139,14 @@
 }
 
 .table-wrap {
-  overflow-x: hidden;
+  overflow-x: auto;
 }
 
 
 table {
   width: 100%;
+  min-width: 1100px;
   border-collapse: collapse;
-  table-layout: fixed;
 }
 
 thead th {
@@ -269,6 +278,33 @@ tbody tr:hover {
 @media (max-width: 700px) {
   .summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .table-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+    padding: 18px;
+  }
+
+  .filter-panel {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .new-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .loading-box,
+  .empty-box {
+    padding: 36px 18px;
+  }
+
+  .table-header {
+    padding: 16px;
   }
 }
 

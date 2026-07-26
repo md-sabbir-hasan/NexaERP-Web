@@ -1,4 +1,4 @@
-.recurring-page { display: flex; flex-direction: column; gap: 24px; }
+.recurring-page { display: flex; min-width: 0; flex-direction: column; gap: 24px; }
 
 .recurring-hero {
   display: flex;
@@ -21,6 +21,10 @@
 }
 
 .new-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
   background: #16a34a;
   color: white;
   text-decoration: none;
@@ -52,6 +56,10 @@
   display: grid;
   grid-template-columns: 2fr 1fr 140px;
   gap: 16px;
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #fff;
 
   input, select {
     height: 50px;
@@ -136,6 +144,14 @@ small.error-note { display: block; margin-top: 4px; color: #dc2626; font-size: 1
   .summary-grid { grid-template-columns: 1fr; }
 }
 
-@media (max-width:768px) {
+@media (max-width:767.98px) {
   .recurring-hero { flex-direction: column; align-items: flex-start; }
+  .table-header { align-items: flex-start; flex-direction: column; gap: 6px; padding: 18px; }
+  .filter-panel { padding: 16px; }
+}
+
+@media (max-width:575.98px) {
+  .new-btn { width: 100%; justify-content: center; }
+  .loading-box, .empty-box { padding: 36px 18px; }
+  .table-header { padding: 16px; }
 }

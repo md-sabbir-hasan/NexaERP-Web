@@ -18,6 +18,16 @@ describe('BudgetVariance', () => {
       { id: 22, name: 'February 2026', periodNumber: 2, startDate: '2026-02-01', endDate: '2026-02-28' },
     ],
   };
+  const secondOption: BudgetVsActualOption = {
+    ...option,
+    budgetId: 2,
+    budgetNumber: 'BUD-0002',
+    budgetName: 'Second Budget',
+    periods: [
+      { id: 31, name: 'March 2026', periodNumber: 3, startDate: '2026-03-01', endDate: '2026-03-31' },
+      { id: 32, name: 'April 2026', periodNumber: 4, startDate: '2026-04-01', endDate: '2026-04-30' },
+    ],
+  };
   const report: BudgetVsActualResponse = {
     budgetId: 1, budgetNumber: 'BUD-0001', budgetName: 'Annual Budget', budgetStatus: 'ACTIVE',
     fiscalYearId: 10, fiscalYearName: 'FY 2026', currencyCode: 'BDT', fromPeriodId: 21,
@@ -34,19 +44,23 @@ describe('BudgetVariance', () => {
     generatedAt: '2026-03-01T12:00:00',
   };
   const reportService = {
-    getBudgetVsActualOptions: vi.fn(() => of({ success: true, message: '', data: [option] })),
+    getBudgetVsActualOptions: vi.fn(() => of({ success: true, message: '', data: [option, secondOption] })),
     getBudgetVsActual: vi.fn(() => of({ success: true, message: '', data: report })),
     downloadBudgetVsActualExcel: vi.fn(() => of(new Blob(['xlsx']))),
   };
   const budgetService = { getVariance: vi.fn() };
+  const routeState: { budgetId: string | null } = { budgetId: '1' };
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    routeState.budgetId = '1';
     await TestBed.configureTestingModule({
       imports: [BudgetVariance],
       providers: [provideRouter([]), { provide: ReportService, useValue: reportService },
         { provide: BudgetService, useValue: budgetService }, { provide: ActivatedRoute, useValue: {
-          snapshot: { paramMap: { get: () => null }, queryParamMap: { get: (key: string) => key === 'budgetId' ? '1' : null } },
+          snapshot: { paramMap: { get: () => null }, queryParamMap: {
+            get: (key: string) => key === 'budgetId' ? routeState.budgetId : null,
+          } },
         } }],
     }).compileComponents();
     fixture = TestBed.createComponent(BudgetVariance);
@@ -54,11 +68,73 @@ describe('BudgetVariance', () => {
     fixture.detectChanges();
   });
 
+  it('selects the first active budget and enables its full period range without a query parameter', () => {
+    fixture.destroy();
+    routeState.budgetId = null;
+    reportService.getBudgetVsActual.mockClear();
+    fixture = TestBed.createComponent(BudgetVariance);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    const selects = fixture.nativeElement.querySelectorAll('select') as NodeListOf<HTMLSelectElement>;
+    expect(component.selectedBudgetId).toBe(1);
+    expect(component.fromPeriodId).toBe(21);
+    expect(component.toPeriodId).toBe(22);
+    expect(selects[0].value).not.toBe('');
+    expect(selects[1].disabled).toBe(false);
+    expect(selects[2].disabled).toBe(false);
+    expect(reportService.getBudgetVsActual).toHaveBeenCalledWith(1, 21, 22, undefined);
+  });
+
   it('preselects the query-parameter budget and loads its full period range', () => {
     expect(component.selectedBudgetId).toBe(1);
     expect(component.fromPeriodId).toBe(21);
     expect(component.toPeriodId).toBe(22);
     expect(reportService.getBudgetVsActual).toHaveBeenCalled();
+  });
+
+  it('selects a valid numeric query-parameter budget and loads its periods', () => {
+    fixture.destroy();
+    routeState.budgetId = '2';
+    reportService.getBudgetVsActual.mockClear();
+    fixture = TestBed.createComponent(BudgetVariance);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(component.selectedBudgetId).toBe(2);
+    expect(component.fromPeriodId).toBe(31);
+    expect(component.toPeriodId).toBe(32);
+    expect(reportService.getBudgetVsActual).toHaveBeenCalledWith(2, 31, 32, undefined);
+  });
+
+  it('falls back to the first active budget for an invalid query parameter', () => {
+    fixture.destroy();
+    routeState.budgetId = '999';
+    fixture = TestBed.createComponent(BudgetVariance);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(component.selectedBudgetId).toBe(1);
+    expect(component.fromPeriodId).toBe(21);
+    expect(component.toPeriodId).toBe(22);
+  });
+
+  it('reset restores the first budget and an enabled full period range consistently', () => {
+    component.selectedBudgetId = 2;
+    component.fromPeriodId = 31;
+    component.toPeriodId = 32;
+    component.accountType = 'EXPENSE';
+    component.reset();
+    fixture.detectChanges();
+
+    const selects = fixture.nativeElement.querySelectorAll('select') as NodeListOf<HTMLSelectElement>;
+    expect(component.selectedBudgetId).toBe(1);
+    expect(component.fromPeriodId).toBe(21);
+    expect(component.toPeriodId).toBe(22);
+    expect(component.accountType).toBe('');
+    expect(component.report()).toBeNull();
+    expect(selects[1].disabled).toBe(false);
+    expect(selects[2].disabled).toBe(false);
   });
 
   it('rejects reversed period ranges before requesting the report', () => {

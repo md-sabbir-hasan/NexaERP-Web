@@ -12,6 +12,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -29,6 +30,15 @@ class CashFlowStatementServiceImplTest {
     CashFlowStatementServiceImpl service;
     Account cash;
     long journalSequence;
+
+    @Test
+    void expectedBusinessRuleFailureDoesNotPoisonAJoiningReadTransaction() {
+        Transactional transaction = CashFlowStatementServiceImpl.class.getAnnotation(Transactional.class);
+
+        assertThat(transaction).isNotNull();
+        assertThat(transaction.readOnly()).isTrue();
+        assertThat(transaction.noRollbackFor()).contains(BusinessRuleException.class);
+    }
 
     @BeforeEach void setUp() {
         MockitoAnnotations.openMocks(this);

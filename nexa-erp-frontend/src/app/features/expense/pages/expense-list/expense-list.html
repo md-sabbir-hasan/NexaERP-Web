@@ -1,5 +1,5 @@
-<div class="expense-page">
-  <section class="expense-hero">
+<div class="expense-page erp-page erp-page-inner">
+  <section class="expense-hero erp-page-section">
     <div>
       <span class="eyebrow">Finance Operations</span>
       <h1>Expenses</h1>
@@ -12,7 +12,7 @@
     </a>
   </section>
 
-  <section class="summary-grid">
+  <section class="summary-grid erp-page-section">
     <div class="summary-card total">
       <span>Total Posted</span>
       <strong>{{ totalAmount() | number:'1.2-2' }}</strong>
@@ -39,7 +39,7 @@
     </div>
   </section>
 
-  <section class="filter-panel">
+  <section class="filter-panel erp-page-section">
     <input type="text" placeholder="Search expense no, category, party..." [ngModel]="search()"
       (ngModelChange)="search.set($event)" />
 
@@ -60,7 +60,7 @@
     <button class="clear-btn" type="button" (click)="clearFilter()">Clear</button>
   </section>
 
-  <section class="table-card">
+  <section class="table-card erp-content-card erp-page-section">
     <div class="table-header">
       <h2>Expense List</h2>
       <span>{{ filteredExpenses().length }} Expenses</span>
@@ -69,7 +69,7 @@
     @if (loading()) {
     <div class="loading-box">Loading...</div>
     } @else {
-    <div class="table-wrap">
+    <div class="table-wrap erp-table-scroll">
       <table>
         <thead>
           <tr>

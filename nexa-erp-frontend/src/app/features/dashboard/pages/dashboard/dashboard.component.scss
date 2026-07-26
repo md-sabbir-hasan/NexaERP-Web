@@ -2489,3 +2489,75 @@
     min-height: auto;
   }
 }
+
+/* Restore the Dashboard's reference typography without altering its layout. */
+.dashboard-heading h1 {
+  font-size: 32px;
+}
+
+.dashboard-eyebrow,
+.section-kicker,
+.card-eyebrow {
+  font-size: 12px;
+}
+
+.dashboard-header-meta,
+.section-caption {
+  font-size: 13px;
+}
+
+.section-heading h2 {
+  font-size: 24px;
+}
+
+.card-header h3,
+.admin-card-header h3 {
+  font-size: 20px;
+}
+
+.kpi-label {
+  font-size: 14px;
+}
+
+.kpi-value {
+  font-size: clamp(30px, 2.3vw, 36px);
+}
+
+.kpi-unavailable {
+  font-size: 24px;
+}
+
+.kpi-content p {
+  font-size: 14px;
+}
+
+.quick-action strong {
+  font-size: 14px;
+}
+
+.quick-action span {
+  font-size: 12px;
+}
+
+.activity-title-row strong {
+  font-size: 13px;
+}
+
+.activity-title-row time {
+  font-size: 11px;
+}
+
+.activity-content p {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+@media (max-width: 680px) {
+  .dashboard-heading h1 {
+    font-size: 24px;
+  }
+
+  .kpi-value {
+    font-size: 30px;
+  }
+}

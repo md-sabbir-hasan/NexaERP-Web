@@ -5,6 +5,7 @@ import com.nexaerp.auth.dto.*;
 import com.nexaerp.common.exception.ResourceNotFoundException;
 import com.nexaerp.common.response.ApiResponse;
 import com.nexaerp.role.Role;
+import com.nexaerp.security.CurrentUserPrincipal;
 import com.nexaerp.user.User;
 import com.nexaerp.user.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -59,8 +60,8 @@ public class AuthController {
     // Any authenticated user can call this for themselves — no special permission required.
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<CurrentUserResponseDto>> me(
-            @AuthenticationPrincipal String email) {
-        User user = userRepository.findByEmail(email)
+            @AuthenticationPrincipal CurrentUserPrincipal principal) {
+        User user = userRepository.findByEmail(principal.email())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Set<String> roleNames = user.getRoles().stream()

@@ -1,1 +1,173 @@
-/* You can add global styles to this file, and also import other style files */
+/* Lightweight authenticated page layout primitives. */
+.erp-page {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 28px;
+}
+
+.erp-page-inner {
+  width: 100%;
+  max-width: 1600px;
+  min-width: 0;
+  margin-inline: auto;
+}
+
+.erp-page-section {
+  min-width: 0;
+}
+
+.erp-content-card {
+  min-width: 0;
+}
+
+.erp-page .filter-panel > * {
+  min-width: 0;
+}
+
+.erp-table-scroll {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 1399.98px) {
+  .erp-page {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .erp-page {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .erp-page {
+    padding: 16px;
+    gap: 18px;
+  }
+
+  .erp-page :is(
+    .expense-hero,
+    .recurring-hero,
+    .payment-hero,
+    .party-hero,
+    .budget-hero
+  ) {
+    width: 100%;
+    gap: 16px;
+  }
+
+  .erp-page :is(
+    .expense-hero,
+    .recurring-hero,
+    .payment-hero,
+    .party-hero,
+    .budget-hero
+  ) > div {
+    min-width: 0;
+  }
+
+  .erp-page :is(
+    .expense-hero,
+    .recurring-hero,
+    .payment-hero,
+    .party-hero,
+    .budget-hero
+  ) h1 {
+    font-size: 28px;
+    line-height: 1.15;
+  }
+
+  .erp-page :is(
+    .expense-hero,
+    .recurring-hero,
+    .payment-hero,
+    .party-hero,
+    .budget-hero
+  ) p {
+    margin-bottom: 0;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+  }
+
+  .erp-page .summary-grid {
+    gap: 12px;
+  }
+
+  .erp-page .summary-card {
+    min-width: 0;
+    padding: 16px;
+  }
+
+  .erp-page .summary-card strong {
+    overflow-wrap: anywhere;
+    font-size: 25px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .erp-page .filter-panel {
+    gap: 12px;
+  }
+
+  .erp-page .filter-panel > :is(input, select, button) {
+    width: 100%;
+    min-height: 46px;
+  }
+
+  .erp-page .table-card {
+    max-width: 100%;
+    border-radius: 16px;
+  }
+
+  .erp-page .table-header h2 {
+    font-size: 20px;
+  }
+
+  .erp-page .erp-table-scroll table {
+    width: max-content;
+    max-width: none;
+  }
+
+  .erp-page .erp-table-scroll :is(th, td) {
+    white-space: nowrap;
+  }
+
+  .erp-page .erp-table-scroll :is(.actions-cell, .action-group) {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+
+  .erp-page .erp-table-scroll :is(.actions-cell, .action-group) :is(a, button) {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .erp-page {
+    padding: 12px;
+    gap: 16px;
+  }
+
+  .erp-page .summary-card {
+    padding: 15px;
+  }
+
+  .erp-page .filter-panel {
+    padding: 14px;
+  }
+}
+
+@media print {
+  .erp-page {
+    max-width: none;
+    padding: 0;
+  }
+}

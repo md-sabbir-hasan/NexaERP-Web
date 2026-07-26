@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional(readOnly = true, noRollbackFor = BusinessRuleException.class)
 public class CashFlowStatementServiceImpl implements CashFlowStatementService {
     private static final int MONEY_SCALE = 2;
     private static final BigDecimal ZERO = BigDecimal.ZERO.setScale(MONEY_SCALE);

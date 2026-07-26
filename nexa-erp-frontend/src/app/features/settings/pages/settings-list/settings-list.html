@@ -1,19 +1,23 @@
-<div class="settings-page">
-  <div class="page-header">
-    <h1>Settings</h1>
-    <p>Default ledger account mappings used across invoices, bills and journal entries</p>
-  </div>
+<div class="settings-page erp-page erp-page-inner">
+  <header class="page-header erp-page-section">
+    <div>
+      <span class="eyebrow">Administration</span>
+      <h1>Settings</h1>
+      <p>Default ledger account mappings used across invoices, bills and journal entries</p>
+    </div>
+  </header>
 
   @if (loading()) {
-    <div class="state-box">
+    <div class="state-box erp-page-section">
       <i class="bi bi-arrow-repeat spin"></i>
       Loading settings...
     </div>
   } @else {
-    <div class="card">
+    <div class="card erp-content-card erp-page-section">
       <h2>Default account mappings</h2>
 
-      <table>
+      <div class="erp-table-scroll">
+        <table>
         <thead>
           <tr>
             <th>Setting</th>
@@ -56,10 +60,11 @@
             </tr>
           }
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
 
-    <div class="card coming-soon-card">
+    <div class="card coming-soon-card erp-content-card erp-page-section">
       <h2>Company &amp; feature settings</h2>
       <p class="hint">
         These keys exist on the backend but the update endpoint doesn't support editing

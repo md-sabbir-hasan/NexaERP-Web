@@ -5,6 +5,7 @@ import com.nexaerp.account.AccountType;
 import com.nexaerp.accountingperiod.AccountingPeriodRepository;
 import com.nexaerp.audit.AuditLogRepository;
 import com.nexaerp.budget.BudgetRepository;
+import com.nexaerp.common.exception.BusinessRuleException;
 import com.nexaerp.expense.ExpenseRepository;
 import com.nexaerp.fiscalyear.FiscalYearRepository;
 import com.nexaerp.invoice.InvoiceRepository;
@@ -80,6 +81,33 @@ class DashboardServiceImplTest {
         assertThat(business.getCashPosition()).isEqualByComparingTo("1250.75");
         assertThat(business.getCashConfigured()).isTrue();
         verifyNoInteractions(invoiceRepository, vendorBillRepository, dashboardFinanceRepository);
+    }
+
+    @Test
+    void missingCashConfigurationProducesUnavailableCashWithoutBlockingDashboard() {
+        authenticate("VIEW_BANKING");
+        when(cashFlowStatementService.generate(any(LocalDate.class), any(LocalDate.class)))
+                .thenThrow(new BusinessRuleException("No cash or cash-equivalent accounts are configured"));
+
+        var business = service.getSummary().getBusiness();
+
+        assertThat(business.getCashPosition()).isNull();
+        assertThat(business.getCashConfigured()).isFalse();
+    }
+
+    @Test
+    void noJournalTrendRowsProducesSixZeroMonths() {
+        authenticate("VIEW_REPORT");
+        when(dashboardFinanceRepository.aggregateMonthlyNaturalBalances(
+                anyCollection(), any(LocalDate.class), any(LocalDate.class), anyCollection()))
+                .thenReturn(List.of());
+
+        var business = service.getSummary().getBusiness();
+
+        assertThat(business.getRevenueTrend()).hasSize(6)
+                .allSatisfy(point -> assertThat(point.getAmount()).isEqualByComparingTo(BigDecimal.ZERO));
+        assertThat(business.getExpenseTrend()).hasSize(6)
+                .allSatisfy(point -> assertThat(point.getAmount()).isEqualByComparingTo(BigDecimal.ZERO));
     }
 
     @Test

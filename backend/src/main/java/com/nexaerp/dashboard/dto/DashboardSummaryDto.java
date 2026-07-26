@@ -15,7 +15,6 @@ public class DashboardSummaryDto {
     private FinanceSummaryDto finance;
     private BusinessSummaryDto business;
     private SystemSummaryDto system;
-    private HealthSummaryDto health;
     private List<RecentActivityDto> recentActivities;
     private BudgetDashboardDto budget;
     private ExpenseDashboardDto expense;

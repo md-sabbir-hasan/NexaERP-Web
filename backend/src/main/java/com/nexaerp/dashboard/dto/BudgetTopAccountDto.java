@@ -14,6 +14,8 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class BudgetTopAccountDto {
+    private Long accountId;
+    private String accountCode;
     private String accountName;
     private BigDecimal budgetAmount;
     private BigDecimal actualAmount;

@@ -2467,3 +2467,25 @@
 .donut-empty-state {
   min-height: 270px;
 }
+.dashboard-page :is(a, button):focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.55);
+  outline-offset: 3px;
+}
+
+.kpi-value,
+.kpi-unavailable,
+.metric-value,
+.amount {
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-value {
+  font-size: clamp(1.35rem, 3vw, 2.25rem);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 575.98px) {
+  .kpi-card {
+    min-height: auto;
+  }
+}

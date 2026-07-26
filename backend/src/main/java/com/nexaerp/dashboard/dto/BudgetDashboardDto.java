@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -18,6 +19,10 @@ public class BudgetDashboardDto {
     private boolean hasActiveBudget;
     private Long activeBudgetId;
     private String activeBudgetName;
+    private String unavailableReason;
+    private LocalDate fromDate;
+    private LocalDate toDate;
+    private String currencyCode;
 
     private BigDecimal totalExpenseBudget;
     private BigDecimal totalExpenseActualYtd;

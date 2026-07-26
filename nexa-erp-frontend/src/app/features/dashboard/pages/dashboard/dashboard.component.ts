@@ -110,29 +110,6 @@ interface DashboardDisplayValues {
   postedThisMonthTotal: number;
 }
 
-interface ServiceStatusItem {
-  id: string;
-  label: string;
-  icon: string;
-  status: string;
-}
-
-interface ExpenseDonutSegment {
-  accountName: string;
-  amount: number;
-  percentage: number;
-  strokeDasharray: string;
-  strokeDashoffset: number;
-  colorClass: string;
-}
-
-interface ExpenseDonutView {
-  radius: number;
-  circumference: number;
-  totalAmount: number;
-  segments: ExpenseDonutSegment[];
-}
-
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -188,17 +165,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
    * তাই dashboard analytics আপাতত VIEW_REPORT permission-এর
    * অধীনে দেখানো হচ্ছে।
    */
-  readonly canViewTrendChart = computed(() =>
-    this.hasAnyPermission(
-      PERMISSIONS.VIEW_REPORT,
-      PERMISSIONS.VIEW_LEDGER,
-      PERMISSIONS.VIEW_TRIAL_BALANCE,
-    ),
+  readonly canViewTrendChart = computed(() => this.hasPermission(PERMISSIONS.VIEW_REPORT));
+
+  readonly canViewBudget = computed(() => this.hasPermission(PERMISSIONS.VIEW_BUDGET_REPORT));
+
+  readonly canViewExpenseSummary = computed(() => this.hasPermission(PERMISSIONS.VIEW_EXPENSE));
+  readonly canViewRecurringExpense = computed(() =>
+    this.hasPermission(PERMISSIONS.VIEW_RECURRING_EXPENSE),
   );
-
-  readonly canViewBudget = computed(() => this.hasPermission(PERMISSIONS.VIEW_REPORT));
-
-  readonly canViewExpenseSummary = computed(() => this.hasPermission(PERMISSIONS.VIEW_REPORT));
 
   readonly canViewJournal = computed(() => this.hasPermission(PERMISSIONS.VIEW_JOURNAL));
 
@@ -252,9 +226,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
       return [];
     }
 
-    const revenueTrend = dashboard.business.revenueTrend ?? [];
+    const revenueTrend = dashboard.business?.revenueTrend ?? [];
 
-    const expenseTrend = dashboard.business.expenseTrend ?? [];
+    const expenseTrend = dashboard.business?.expenseTrend ?? [];
 
     const months: string[] = [];
 
@@ -501,64 +475,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   });
 
   // =========================================================
-  // Expense donut chart
-  // =========================================================
-
-  readonly expenseDonut = computed<ExpenseDonutView | null>(() => {
-    const budget = this.summary()?.budget;
-
-    if (!budget?.hasActiveBudget) {
-      return null;
-    }
-
-    const accounts = (budget.topAccounts ?? [])
-      .map((account) => ({
-        accountName: account.accountName,
-        amount: this.toSafeNumber(account.actualAmount),
-      }))
-      .filter((account) => account.amount > 0)
-      .sort((first, second) => second.amount - first.amount)
-      .slice(0, 6);
-
-    const totalAmount = accounts.reduce((total, account) => total + account.amount, 0);
-
-    if (totalAmount <= 0) {
-      return null;
-    }
-
-    const radius = 68;
-    const circumference = 2 * Math.PI * radius;
-
-    let accumulatedPercentage = 0;
-
-    const segments: ExpenseDonutSegment[] = accounts.map((account, index) => {
-      const percentage = (account.amount / totalAmount) * 100;
-
-      const segmentLength = (percentage / 100) * circumference;
-
-      const strokeDashoffset = -((accumulatedPercentage / 100) * circumference);
-
-      accumulatedPercentage += percentage;
-
-      return {
-        accountName: account.accountName,
-        amount: account.amount,
-        percentage,
-        strokeDasharray: `${segmentLength} ${circumference - segmentLength}`,
-        strokeDashoffset,
-        colorClass: `donut-segment-${index + 1}`,
-      };
-    });
-
-    return {
-      radius,
-      circumference,
-      totalAmount,
-      segments,
-    };
-  });
-
-  // =========================================================
   // Attention center
   // =========================================================
 
@@ -571,8 +487,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     const items: AttentionItem[] = [];
 
-    if (this.canViewReceivable() && dashboard.business.overdueInvoiceCount > 0) {
-      const count = dashboard.business.overdueInvoiceCount;
+    if (this.canViewReceivable() && (dashboard.business?.overdueInvoiceCount ?? 0) > 0) {
+      const count = dashboard.business?.overdueInvoiceCount ?? 0;
 
       items.push({
         id: 'overdue-invoices',
@@ -581,13 +497,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
         title: 'Overdue receivables',
         description: `${count} overdue ${count === 1 ? 'invoice' : 'invoices'}`,
         count,
-        amount: dashboard.business.overdueInvoiceAmount,
+        amount: dashboard.business?.overdueInvoiceAmount,
         route: '/invoice',
       });
     }
 
-    if (this.canViewPayable() && dashboard.business.overdueBillCount > 0) {
-      const count = dashboard.business.overdueBillCount;
+    if (this.canViewPayable() && (dashboard.business?.overdueBillCount ?? 0) > 0) {
+      const count = dashboard.business?.overdueBillCount ?? 0;
 
       items.push({
         id: 'overdue-vendor-bills',
@@ -596,13 +512,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
         title: 'Overdue vendor bills',
         description: `${count} overdue vendor ${count === 1 ? 'bill' : 'bills'}`,
         count,
-        amount: dashboard.business.overdueBillAmount,
+        amount: dashboard.business?.overdueBillAmount,
         route: '/vendor-bill',
       });
     }
 
-    if (this.canViewExpenseSummary() && dashboard.expense.draftCount > 0) {
-      const count = dashboard.expense.draftCount;
+    if (this.canViewExpenseSummary() && (dashboard.expense?.draftCount ?? 0) > 0) {
+      const count = dashboard.expense?.draftCount ?? 0;
 
       /*
        * Current app.routes.ts-এ expense route নেই।
@@ -615,13 +531,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
         title: 'Draft expenses',
         description: `${count} draft ${count === 1 ? 'expense' : 'expenses'} pending`,
         count,
-        amount: dashboard.expense.draftTotalAmount,
-        route: '/reports',
+        amount: dashboard.expense?.draftTotalAmount,
+        route: '/expense',
       });
     }
 
-    if (this.canViewJournal() && dashboard.finance.draftJournalEntries > 0) {
-      const count = dashboard.finance.draftJournalEntries;
+    if (this.canViewJournal() && (dashboard.finance?.draftJournalEntries ?? 0) > 0) {
+      const count = dashboard.finance?.draftJournalEntries ?? 0;
 
       items.push({
         id: 'draft-journals',
@@ -684,7 +600,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         label: 'Banking',
         description: 'Review bank information',
         icon: 'bi-bank',
-        route: '/reports',
+        route: '/banking',
         permission: PERMISSIONS.VIEW_BANKING,
         emphasis: 'standard',
       },
@@ -736,39 +652,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     ];
 
     return actions.filter((action) => this.hasPermission(action.permission));
-  });
-
-  // =========================================================
-  // Service status
-  // =========================================================
-
-  readonly reportedServices = computed<ServiceStatusItem[]>(() => {
-    const dashboard = this.summary();
-
-    if (!dashboard) {
-      return [];
-    }
-
-    return [
-      {
-        id: 'application',
-        label: 'Application',
-        icon: 'bi-box',
-        status: dashboard.health.application,
-      },
-      {
-        id: 'database',
-        label: 'Database',
-        icon: 'bi-database',
-        status: dashboard.health.database,
-      },
-      {
-        id: 'mail',
-        label: 'Mail service',
-        icon: 'bi-envelope',
-        status: dashboard.health.mail,
-      },
-    ];
   });
 
   // =========================================================
@@ -825,8 +708,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
           this.animateSummaryValues(response.data);
         },
 
-        error: () => {
-          this.errorMessage.set('Dashboard data could not be loaded. Please try again.');
+        error: (error: { status?: number }) => {
+          if (error.status === 401) {
+            this.errorMessage.set('Your session has expired. Please sign in again.');
+          } else if (error.status === 403) {
+            this.errorMessage.set('You are not authorized to load dashboard data.');
+          } else {
+            this.errorMessage.set('Dashboard service is unavailable. Please try again.');
+          }
         },
       });
   }
@@ -1072,13 +961,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const startValues = this.displayValues();
 
     const targetValues: DashboardDisplayValues = {
-      cashPosition: this.toSafeNumber(dashboard.business.cashPosition),
+      cashPosition: this.toSafeNumber(dashboard.business?.cashPosition),
 
-      accountsReceivable: this.toSafeNumber(dashboard.business.accountsReceivable),
+      accountsReceivable: this.toSafeNumber(dashboard.business?.accountsReceivable),
 
-      accountsPayable: this.toSafeNumber(dashboard.business.accountsPayable),
+      accountsPayable: this.toSafeNumber(dashboard.business?.accountsPayable),
 
-      postedThisMonthTotal: this.toSafeNumber(dashboard.expense.postedThisMonthTotal),
+      postedThisMonthTotal: this.toSafeNumber(dashboard.expense?.postedThisMonthTotal),
     };
 
     if (

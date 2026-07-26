@@ -19,4 +19,5 @@ public class ExpenseDashboardDto {
     private BigDecimal postedThisMonthTotal;
     private long recurringActiveCount;
     private long recurringDueSoonCount;   // nextRunDate within next 7 days
+    private BigDecimal outstandingDue;
 }

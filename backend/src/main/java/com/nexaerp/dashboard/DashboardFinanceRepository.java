@@ -9,6 +9,8 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collection;
+import java.util.List;
 
 // Marker "Repository" (not JpaRepository) - exposes only this aggregation query,
 // no CRUD duplicated on top of JournalLineRepository. Same pattern as BudgetActualRepository.
@@ -18,16 +20,18 @@ public interface DashboardFinanceRepository extends Repository<JournalLine, Long
     // For EXPENSE accounts this IS the natural-balance actual. For REVENUE accounts,
     // negate() the result to get the natural-balance actual (Credit - Debit).
     @Query("""
-            SELECT COALESCE(SUM(jl.debit), 0) - COALESCE(SUM(jl.credit), 0)
+            SELECT YEAR(jl.journalEntry.date), MONTH(jl.journalEntry.date), jl.account.type,
+                   COALESCE(SUM(jl.debit), 0), COALESCE(SUM(jl.credit), 0)
             FROM JournalLine jl
-            WHERE jl.journalEntry.status = :status
+            WHERE jl.journalEntry.status IN :statuses
               AND jl.journalEntry.date BETWEEN :fromDate AND :toDate
-              AND jl.account.type = :accountType
+              AND jl.account.type IN :accountTypes
+            GROUP BY YEAR(jl.journalEntry.date), MONTH(jl.journalEntry.date), jl.account.type
             """)
-    BigDecimal sumNetDebitBetween(
-            @Param("accountType") AccountType accountType,
+    List<Object[]> aggregateMonthlyNaturalBalances(
+            @Param("accountTypes") Collection<AccountType> accountTypes,
             @Param("fromDate") LocalDate fromDate,
             @Param("toDate") LocalDate toDate,
-            @Param("status") JournalStatus status
+            @Param("statuses") Collection<JournalStatus> statuses
     );
 }

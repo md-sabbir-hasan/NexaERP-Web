@@ -4,7 +4,8 @@
   <!-- ===================================================== -->
 
   @if (loading()) {
-    <section class="dashboard-skeleton" aria-label="Loading dashboard" aria-busy="true">
+    <section class="dashboard-skeleton" aria-label="Loading dashboard" aria-busy="true" aria-live="polite">
+      <span class="visually-hidden">Loading dashboard data.</span>
       <div class="skeleton-header">
         <div>
           <div class="skeleton skeleton-eyebrow"></div>
@@ -66,12 +67,12 @@
               <span>
                 <i class="bi bi-clock"></i>
                 Server:
-                {{ dashboard.system.serverTime | date: 'dd MMM yyyy, hh:mm a' }}
+                {{ dashboard.system?.serverTime | date: 'dd MMM yyyy, hh:mm a' }}
               </span>
 
               <span>
                 <i class="bi bi-globe2"></i>
-                {{ dashboard.system.serverTimezone }}
+                {{ dashboard.system?.serverTimezone }}
               </span>
             }
           </div>
@@ -88,6 +89,7 @@
           class="refresh-button"
           [disabled]="refreshing()"
           (click)="refreshDashboard()"
+          aria-live="polite"
         >
           <i class="bi bi-arrow-clockwise" [class.is-spinning]="refreshing()"></i>
 
@@ -133,7 +135,7 @@
               <h2 id="financial-overview-title">Financial Overview</h2>
             </div>
 
-            <span class="section-caption"> Values calculated from current posted records </span>
+            <span class="section-caption"> Balances as of today; operations use their stated scope </span>
           </div>
 
           <div class="kpi-grid">
@@ -151,13 +153,17 @@
                 </div>
 
                 <div class="kpi-content">
-                  <span class="kpi-label">Cash Position</span>
+                  <span class="kpi-label">Cash &amp; Cash Equivalents — As of Today</span>
 
-                  <strong class="kpi-value">
-                    ৳{{ displayValues().cashPosition | number: '1.2-2' }}
-                  </strong>
-
-                  <p>Current available position across cash and bank accounts.</p>
+                  @if (dashboard.business?.cashConfigured) {
+                    <strong class="kpi-value">
+                      ৳{{ displayValues().cashPosition | number: '1.2-2' }}
+                    </strong>
+                    <p>Journal-derived closing cash balance.</p>
+                  } @else {
+                    <strong class="kpi-unavailable">Unavailable</strong>
+                    <p>No cash accounts configured.</p>
+                  }
                 </div>
 
                 <a routerLink="/banking" class="kpi-link" aria-label="View banking">
@@ -174,9 +180,9 @@
                     <i class="bi bi-receipt"></i>
                   </div>
 
-                  @if (dashboard.business.overdueInvoiceCount > 0) {
+                  @if ((dashboard.business?.overdueInvoiceCount ?? 0) > 0) {
                     <span class="kpi-status kpi-status-danger">
-                      {{ dashboard.business.overdueInvoiceCount }}
+                      {{ dashboard.business?.overdueInvoiceCount }}
                       overdue
                     </span>
                   } @else {
@@ -185,7 +191,7 @@
                 </div>
 
                 <div class="kpi-content">
-                  <span class="kpi-label"> Accounts Receivable </span>
+                  <span class="kpi-label"> Outstanding Customer Invoices </span>
 
                   <strong class="kpi-value">
                     ৳{{ displayValues().accountsReceivable | number: '1.2-2' }}
@@ -198,7 +204,7 @@
                   <div>
                     <span>Overdue amount</span>
                     <strong>
-                      ৳{{ dashboard.business.overdueInvoiceAmount | number: '1.2-2' }}
+                      ৳{{ dashboard.business?.overdueInvoiceAmount | number: '1.2-2' }}
                     </strong>
                   </div>
 
@@ -217,9 +223,9 @@
                     <i class="bi bi-file-earmark-text"></i>
                   </div>
 
-                  @if (dashboard.business.overdueBillCount > 0) {
+                  @if ((dashboard.business?.overdueBillCount ?? 0) > 0) {
                     <span class="kpi-status kpi-status-warning">
-                      {{ dashboard.business.overdueBillCount }}
+                      {{ dashboard.business?.overdueBillCount }}
                       overdue
                     </span>
                   } @else {
@@ -228,19 +234,19 @@
                 </div>
 
                 <div class="kpi-content">
-                  <span class="kpi-label"> Accounts Payable </span>
+                  <span class="kpi-label"> Outstanding Vendor Bills </span>
 
                   <strong class="kpi-value">
                     ৳{{ displayValues().accountsPayable | number: '1.2-2' }}
                   </strong>
 
-                  <p>Current vendor and expense obligations.</p>
+                  <p>Outstanding vendor bill balance as of today.</p>
                 </div>
 
                 <div class="kpi-footer">
                   <div>
                     <span>Overdue bills</span>
-                    <strong> ৳{{ dashboard.business.overdueBillAmount | number: '1.2-2' }} </strong>
+                    <strong> ৳{{ dashboard.business?.overdueBillAmount | number: '1.2-2' }} </strong>
                   </div>
 
                   <a routerLink="/vendor-bill" class="kpi-link" aria-label="View vendor bills">
@@ -262,7 +268,7 @@
                 </div>
 
                 <div class="kpi-content">
-                  <span class="kpi-label"> Posted Expenses </span>
+                  <span class="kpi-label"> Posted Expense Claims — This Month </span>
 
                   <strong class="kpi-value">
                     ৳{{ displayValues().postedThisMonthTotal | number: '1.2-2' }}
@@ -274,7 +280,7 @@
                 <div class="kpi-footer">
                   <div>
                     <span>Draft amount</span>
-                    <strong> ৳{{ dashboard.expense.draftTotalAmount | number: '1.2-2' }} </strong>
+                    <strong> ৳{{ dashboard.expense?.draftTotalAmount | number: '1.2-2' }} </strong>
                   </div>
 
                   <a routerLink="/expense" class="kpi-link" aria-label="View expenses">
@@ -385,7 +391,7 @@
                         </div>
 
                         <div>
-                          <span>Net movement</span>
+                          <span>Net Result — Six Months</span>
                           <strong
                             [class.negative-value]="chart.totalRevenue - chart.totalExpense < 0"
                           >
@@ -484,6 +490,8 @@
                               [attr.cy]="point.y"
                               r="5"
                               tabindex="0"
+                              role="img"
+                              [attr.aria-label]="point.month + ', revenue, ' + (point.value | number: '1.2-2')"
                               (mouseenter)="selectTrendPoint(index)"
                               (focus)="selectTrendPoint(index)"
                               (blur)="clearTrendPoint()"
@@ -498,6 +506,8 @@
                               [attr.cy]="point.y"
                               r="5"
                               tabindex="0"
+                              role="img"
+                              [attr.aria-label]="point.month + ', expense, ' + (point.value | number: '1.2-2')"
                               (mouseenter)="selectTrendPoint(index)"
                               (focus)="selectTrendPoint(index)"
                               (blur)="clearTrendPoint()"
@@ -515,6 +525,12 @@
                             </text>
                           }
                         </svg>
+
+                        <ul class="visually-hidden" aria-label="Monthly revenue and expense summary">
+                          @for (item of trendChartItems(); track item.month) {
+                            <li>{{ item.month }}: revenue {{ item.revenue | number: '1.2-2' }}, expense {{ item.expense | number: '1.2-2' }}</li>
+                          }
+                        </ul>
 
                         @if (selectedTrend(); as selected) {
                           <div class="chart-tooltip">
@@ -615,7 +631,7 @@
                         class="progress-track"
                         role="progressbar"
                         aria-label="Expense budget utilization"
-                        [attr.aria-valuenow]="budget.expenseProgressPercent"
+                        [attr.aria-valuenow]="budget.expenseUtilizationPercent"
                         aria-valuemin="0"
                         aria-valuemax="100"
                       >
@@ -653,7 +669,7 @@
                         class="progress-track"
                         role="progressbar"
                         aria-label="Revenue target achievement"
-                        [attr.aria-valuenow]="budget.revenueProgressPercent"
+                        [attr.aria-valuenow]="budget.revenueAchievementPercent"
                         aria-valuemin="0"
                         aria-valuemax="100"
                       >
@@ -711,8 +727,8 @@
                         <i class="bi bi-pie-chart"></i>
                       </div>
 
-                      <h4>No active budget</h4>
-                      <p>Activate a budget to view utilization and revenue achievement.</p>
+                      <h4>{{ dashboard.budget?.unavailableReason || 'No active budget' }}</h4>
+                      <p>Budget Health will appear when an active budget and current period are available.</p>
 
                       <a routerLink="/budget" class="empty-state-action">
                         Open budgets
@@ -723,102 +739,6 @@
                 </article>
               }
 
-              @if (canViewBudget()) {
-                <article class="dashboard-card expense-donut-card">
-                  <header class="card-header">
-                    <div>
-                      <span class="card-eyebrow"> Account composition </span>
-                      <h3>Expense Distribution</h3>
-                    </div>
-
-                    <a routerLink="/budget" class="card-header-link">
-                      View details
-                      <i class="bi bi-arrow-up-right"></i>
-                    </a>
-                  </header>
-
-                  @if (expenseDonut(); as donut) {
-                    <div class="expense-donut-content">
-                      <div class="expense-donut-chart">
-                        <svg
-                          viewBox="0 0 180 180"
-                          role="img"
-                          aria-label="Expense distribution by account"
-                        >
-                          <circle
-                            class="donut-background"
-                            cx="90"
-                            cy="90"
-                            [attr.r]="donut.radius"
-                          ></circle>
-
-                          @for (segment of donut.segments; track segment.accountName) {
-                            <circle
-                              class="donut-segment"
-                              [class]="segment.colorClass"
-                              cx="90"
-                              cy="90"
-                              [attr.r]="donut.radius"
-                              [attr.stroke-dasharray]="segment.strokeDasharray"
-                              [attr.stroke-dashoffset]="segment.strokeDashoffset"
-                            >
-                              <title>
-                                {{ segment.accountName }}: ৳{{
-                                  segment.amount | number: '1.2-2'
-                                }}
-                                ({{ segment.percentage | number: '1.0-1' }}%)
-                              </title>
-                            </circle>
-                          }
-                        </svg>
-
-                        <div class="expense-donut-center">
-                          <span>Total actual</span>
-
-                          <strong> ৳{{ formatCompact(donut.totalAmount) }} </strong>
-
-                          <small>YTD expense</small>
-                        </div>
-                      </div>
-
-                      <div class="expense-donut-legend">
-                        @for (
-                          segment of donut.segments;
-                          track segment.accountName;
-                          let index = $index
-                        ) {
-                          <div class="donut-legend-item">
-                            <span class="donut-legend-color" [class]="segment.colorClass"></span>
-
-                            <div class="donut-legend-copy">
-                              <strong>
-                                {{ segment.accountName }}
-                              </strong>
-
-                              <span> ৳{{ segment.amount | number: '1.2-2' }} </span>
-                            </div>
-
-                            <b> {{ segment.percentage | number: '1.0-1' }}% </b>
-                          </div>
-                        }
-                      </div>
-                    </div>
-                  } @else {
-                    <div class="empty-state donut-empty-state">
-                      <div class="empty-state-icon">
-                        <i class="bi bi-pie-chart"></i>
-                      </div>
-
-                      <h4>No expense distribution</h4>
-
-                      <p>
-                        Account-wise expense distribution will appear when the active budget
-                        contains actual expense values.
-                      </p>
-                    </div>
-                  }
-                </article>
-              }
             </div>
           </section>
         }
@@ -847,7 +767,7 @@
                     <div>
                       <span>Journal Entries</span>
                       <strong>
-                        {{ dashboard.finance.totalJournalEntries }}
+                        {{ dashboard.finance?.totalJournalEntries }}
                       </strong>
                     </div>
 
@@ -861,7 +781,7 @@
                       <span class="breakdown-dot posted"></span>
                       <label>Posted</label>
                       <strong>
-                        {{ dashboard.finance.postedJournalEntries }}
+                        {{ dashboard.finance?.postedJournalEntries }}
                       </strong>
                     </div>
 
@@ -869,7 +789,7 @@
                       <span class="breakdown-dot draft"></span>
                       <label>Draft</label>
                       <strong>
-                        {{ dashboard.finance.draftJournalEntries }}
+                        {{ dashboard.finance?.draftJournalEntries }}
                       </strong>
                     </div>
 
@@ -877,7 +797,7 @@
                       <span class="breakdown-dot reversed"></span>
                       <label>Reversed</label>
                       <strong>
-                        {{ dashboard.finance.reversedJournalEntries }}
+                        {{ dashboard.finance?.reversedJournalEntries }}
                       </strong>
                     </div>
                   </div>
@@ -894,7 +814,7 @@
                     <div>
                       <span>Chart of Accounts</span>
                       <strong>
-                        {{ dashboard.finance.totalAccounts }}
+                        {{ dashboard.finance?.totalAccounts }}
                       </strong>
                     </div>
 
@@ -923,9 +843,7 @@
 
                     <div>
                       <span>Expense Workflow</span>
-                      <strong>
-                        {{ dashboard.expense.draftCount + dashboard.expense.recurringActiveCount }}
-                      </strong>
+                      <strong>{{ dashboard.expense?.draftCount }}</strong>
                     </div>
 
                     <a routerLink="/expense" aria-label="Open expenses">
@@ -941,31 +859,20 @@
                       </span>
 
                       <strong>
-                        {{ dashboard.expense.draftCount }}
+                        {{ dashboard.expense?.draftCount }}
                       </strong>
                     </div>
 
-                    <div>
-                      <span>
-                        <i class="bi bi-arrow-repeat"></i>
-                        Active recurring
-                      </span>
-
-                      <strong>
-                        {{ dashboard.expense.recurringActiveCount }}
-                      </strong>
-                    </div>
-
-                    <div>
-                      <span>
-                        <i class="bi bi-calendar-event"></i>
-                        Due soon
-                      </span>
-
-                      <strong>
-                        {{ dashboard.expense.recurringDueSoonCount }}
-                      </strong>
-                    </div>
+                    @if (canViewRecurringExpense()) {
+                      <div>
+                        <span><i class="bi bi-arrow-repeat"></i>Active recurring</span>
+                        <strong>{{ dashboard.expense?.recurringActiveCount }}</strong>
+                      </div>
+                      <div>
+                        <span><i class="bi bi-calendar-event"></i>Due soon</span>
+                        <strong>{{ dashboard.expense?.recurringDueSoonCount }}</strong>
+                      </div>
+                    }
                   </div>
                 </article>
               }
@@ -1008,7 +915,7 @@
                   </header>
 
                   <div class="admin-primary-stat">
-                    <strong>{{ dashboard.users.total }}</strong>
+                    <strong>{{ dashboard.users?.total }}</strong>
                     <span>Total users</span>
                   </div>
 
@@ -1017,23 +924,21 @@
                       <span class="user-status-dot active"></span>
                       <label>Active</label>
                       <strong>
-                        {{ dashboard.users.active }}
+                        {{ dashboard.users?.active }}
                       </strong>
                     </div>
-
                     <div>
                       <span class="user-status-dot pending"></span>
                       <label>Pending</label>
                       <strong>
-                        {{ dashboard.users.pending }}
+                        {{ dashboard.users?.pending }}
                       </strong>
                     </div>
-
                     <div>
                       <span class="user-status-dot inactive"></span>
                       <label>Inactive</label>
                       <strong>
-                        {{ dashboard.users.inactive }}
+                        {{ dashboard.users?.inactive }}
                       </strong>
                     </div>
 
@@ -1041,7 +946,7 @@
                       <span class="user-status-dot locked"></span>
                       <label>Locked</label>
                       <strong>
-                        {{ dashboard.users.locked }}
+                        {{ dashboard.users?.locked }}
                       </strong>
                     </div>
                   </div>
@@ -1062,6 +967,7 @@
                   </header>
 
                   <div class="security-metrics">
+                    @if (hasPermission(permissions.MANAGE_ROLES)) {
                     <div>
                       <div class="security-icon">
                         <i class="bi bi-person-badge"></i>
@@ -1069,10 +975,12 @@
 
                       <span>Roles</span>
                       <strong>
-                        {{ dashboard.security.totalRoles }}
+                        {{ dashboard.security?.totalRoles }}
                       </strong>
                     </div>
+                    }
 
+                    @if (hasPermission(permissions.MANAGE_PERMISSIONS)) {
                     <div>
                       <div class="security-icon">
                         <i class="bi bi-key"></i>
@@ -1080,9 +988,10 @@
 
                       <span>Permissions</span>
                       <strong>
-                        {{ dashboard.security.totalPermissions }}
+                        {{ dashboard.security?.totalPermissions }}
                       </strong>
                     </div>
+                    }
                   </div>
 
                   <p class="admin-card-note">
@@ -1096,42 +1005,25 @@
                 <article class="dashboard-card admin-card">
                   <header class="admin-card-header">
                     <div>
-                      <span class="card-eyebrow"> Reported services </span>
-                      <h3>Service Status</h3>
+                      <span class="card-eyebrow"> Genuine runtime metadata </span>
+                      <h3>Runtime Information</h3>
                     </div>
 
-                    <span class="version-badge"> v{{ dashboard.system.applicationVersion }} </span>
+                    <span class="version-badge"> v{{ dashboard.system?.applicationVersion }} </span>
                   </header>
-
-                  <div class="service-list">
-                    @for (service of reportedServices(); track service.id) {
-                      <div class="service-item">
-                        <div>
-                          <i class="bi" [class]="service.icon"></i>
-
-                          <span>{{ service.label }}</span>
-                        </div>
-
-                        <span class="service-status" [class]="healthClass(service.status)">
-                          <i class="bi bi-circle-fill"></i>
-                          {{ service.status }}
-                        </span>
-                      </div>
-                    }
-                  </div>
 
                   <div class="system-meta">
                     <span>
                       Environment
                       <strong>
-                        {{ dashboard.system.environment }}
+                        {{ dashboard.system?.environment }}
                       </strong>
                     </span>
 
                     <span>
                       Timezone
                       <strong>
-                        {{ dashboard.system.serverTimezone }}
+                        {{ dashboard.system?.serverTimezone }}
                       </strong>
                     </span>
                   </div>
@@ -1203,10 +1095,10 @@
                     </a>
                   </header>
 
-                  @if (dashboard.recentActivities.length > 0) {
+                  @if ((dashboard.recentActivities?.length ?? 0) > 0) {
                     <div class="activity-timeline">
                       @for (
-                        activity of dashboard.recentActivities;
+                        activity of dashboard.recentActivities ?? [];
                         track activityIdentity(activity, $index)
                       ) {
                         <div class="activity-item">

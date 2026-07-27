@@ -108,6 +108,13 @@
                   <span><i class="bi bi-diagram-2"></i> {{ journal.sourceType }}</span>
                   <span><i class="bi bi-list-ul"></i> {{ journal.lines.length }} lines</span>
                 </div>
+                @for (line of journal.lines; track line.id) {
+                  @if (line.costCenterName) {
+                    <div class="small text-muted mt-1">
+                      {{ line.accountCode }} · {{ line.costCenterCode }} - {{ line.costCenterName }}
+                    </div>
+                  }
+                }
               </div>
             </div>
 

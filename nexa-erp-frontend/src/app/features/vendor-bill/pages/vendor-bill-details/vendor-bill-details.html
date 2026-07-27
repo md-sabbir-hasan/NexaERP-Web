@@ -131,6 +131,9 @@
             <td>
               <strong>{{ item.expenseAccountCode }}</strong>
               <small>{{ item.expenseAccountName }}</small>
+              @if (item.costCenterName) {
+                <small>Cost Center: {{ item.costCenterCode }} - {{ item.costCenterName }}</small>
+              }
             </td>
 
             <td>{{ item.description }}</td>

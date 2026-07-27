@@ -16,6 +16,8 @@ public class JournalLineRequestDto {
     @NotNull(message = "Account is required")
     private Long accountId;
 
+    private Long costCenterId;
+
     @NotNull
     @DecimalMin(value = "0.0")
     private BigDecimal debit = BigDecimal.ZERO;

@@ -1,0 +1,66 @@
+<div class="container-fluid py-4">
+  <div class="mb-4">
+    <h1 class="h3 mb-1">Cost Center Transactions</h1>
+    <p class="text-muted mb-0">Posted accounting lines assigned to a Cost Center.</p>
+  </div>
+
+  <form class="card shadow-sm mb-4" [formGroup]="form" (ngSubmit)="load()">
+    <div class="card-body row g-3 align-items-end">
+      <div class="col-lg-5">
+        <label class="form-label" for="report-cost-center">Cost Center</label>
+        <select id="report-cost-center" class="form-select" formControlName="costCenterId">
+          <option [ngValue]="null">Select cost center</option>
+          @for (costCenter of costCenters(); track costCenter.id) {
+            <option [ngValue]="costCenter.id">{{ costCenter.code }} - {{ costCenter.name }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-lg-3">
+        <label class="form-label" for="report-from-date">From</label>
+        <input id="report-from-date" class="form-control" type="date" formControlName="fromDate">
+      </div>
+      <div class="col-lg-3">
+        <label class="form-label" for="report-to-date">To</label>
+        <input id="report-to-date" class="form-control" type="date" formControlName="toDate">
+      </div>
+      <div class="col-lg-1">
+        <button class="btn btn-primary w-100" type="submit" [disabled]="loading()">Run</button>
+      </div>
+    </div>
+  </form>
+
+  @if (loading()) {
+    <div class="text-center py-5">Loading…</div>
+  } @else if (report(); as data) {
+    <div class="row g-3 mb-4">
+      <div class="col-md-4"><div class="card card-body"><span class="text-muted">Debit</span><strong>{{ data.totalDebit | number:'1.2-2' }}</strong></div></div>
+      <div class="col-md-4"><div class="card card-body"><span class="text-muted">Credit</span><strong>{{ data.totalCredit | number:'1.2-2' }}</strong></div></div>
+      <div class="col-md-4"><div class="card card-body"><span class="text-muted">Net</span><strong>{{ data.netAmount | number:'1.2-2' }}</strong></div></div>
+    </div>
+    <div class="card shadow-sm">
+      <div class="card-header bg-white">
+        <strong>{{ data.costCenterCode }} - {{ data.costCenterName }}</strong>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead><tr><th>Date</th><th>Journal</th><th>Source</th><th>Account</th><th>Description</th><th class="text-end">Debit</th><th class="text-end">Credit</th></tr></thead>
+          <tbody>
+            @for (row of data.rows; track row.journalEntryId + '-' + $index) {
+              <tr>
+                <td>{{ row.date | date:'mediumDate' }}</td>
+                <td>{{ row.journalNumber }}</td>
+                <td>{{ row.source }}</td>
+                <td><strong>{{ row.accountCode }}</strong><br><small>{{ row.accountName }}</small></td>
+                <td>{{ row.description || '—' }}</td>
+                <td class="text-end">{{ row.debit | number:'1.2-2' }}</td>
+                <td class="text-end">{{ row.credit | number:'1.2-2' }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="7" class="text-center text-muted py-5">No assigned transactions in this period.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>

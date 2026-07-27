@@ -59,6 +59,12 @@ public class DataSeeder implements CommandLineRunner {
                 new Object[]{"DEACTIVATE_ACCOUNT", "Deactivate Account", "ACCOUNT"},
                 new Object[]{"LOOKUP_ACCOUNTS", "Lookup Accounts", "ACCOUNT"},
 
+                new Object[]{"VIEW_COST_CENTER", "View Cost Centers", "COST_CENTER"},
+                new Object[]{"CREATE_COST_CENTER", "Create Cost Center", "COST_CENTER"},
+                new Object[]{"EDIT_COST_CENTER", "Edit Cost Center", "COST_CENTER"},
+                new Object[]{"DEACTIVATE_COST_CENTER", "Deactivate Cost Center", "COST_CENTER"},
+                new Object[]{"LOOKUP_COST_CENTER", "Lookup Cost Centers", "COST_CENTER"},
+
                 new Object[]{"VIEW_JOURNAL", "View Journal", "JOURNAL"},
                 new Object[]{"CREATE_JOURNAL", "Create Journal", "JOURNAL"},
                 new Object[]{"POST_JOURNAL", "Post Journal", "JOURNAL"},

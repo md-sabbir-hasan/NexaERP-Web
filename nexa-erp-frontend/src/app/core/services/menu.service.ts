@@ -75,6 +75,12 @@ export class MenuService {
             route: APP_ROUTES.ACCOUNTS,
             permission: PERMISSIONS.VIEW_ACCOUNTS,
           },
+          {
+            label: 'Cost Centers',
+            icon: 'bi-diagram-2',
+            route: APP_ROUTES.COST_CENTERS,
+            permission: PERMISSIONS.VIEW_COST_CENTER,
+          },
 
           {
             label: 'Journal Entry',
@@ -196,6 +202,12 @@ export class MenuService {
             icon: 'bi-bar-chart-line',
             route: APP_ROUTES.BUDGET_VS_ACTUAL,
             permission: PERMISSIONS.VIEW_BUDGET_REPORT,
+          },
+          {
+            label: 'Cost Center Transactions',
+            icon: 'bi-list-columns-reverse',
+            route: APP_ROUTES.COST_CENTER_TRANSACTIONS,
+            permission: PERMISSIONS.VIEW_REPORT,
           },
         ],
       },

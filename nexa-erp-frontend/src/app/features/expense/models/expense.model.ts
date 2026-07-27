@@ -4,6 +4,7 @@ export type ExpenseStatus = 'DRAFT' | 'POSTED' | 'CANCELLED';
 export interface ExpenseRequest {
   expenseDate: string;
   expenseAccountId: number;
+  costCenterId?: number | null;
   paidImmediately: boolean;
   paymentAccountId?: number | null;
   partyId?: number | null;
@@ -20,6 +21,9 @@ export interface ExpenseResponse {
 
   expenseAccountId: number;
   expenseAccountName: string;
+  costCenterId: number | null;
+  costCenterCode: string | null;
+  costCenterName: string | null;
 
   paidImmediately: boolean;
 

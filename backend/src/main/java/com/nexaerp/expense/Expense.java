@@ -2,6 +2,7 @@ package com.nexaerp.expense;
 
 import com.nexaerp.account.Account;
 import com.nexaerp.common.BaseEntity;
+import com.nexaerp.costcenter.CostCenter;
 import com.nexaerp.party.Party;
 import jakarta.persistence.*;
 import lombok.*;
@@ -11,7 +12,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "expenses")
+@Table(name = "expenses", indexes = {
+        @Index(name = "idx_expenses_cost_center", columnList = "cost_center_id")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -33,6 +36,10 @@ public class Expense extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "expense_account_id", nullable = false)
     private Account expenseAccount;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cost_center_id")
+    private CostCenter costCenter;
 
     // true = paid immediately (cash/bank/wallet), false = pay later (goes to payable)
     @Column(nullable = false)

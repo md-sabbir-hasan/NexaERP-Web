@@ -13,6 +13,8 @@ import com.nexaerp.budget.BudgetCheckService;
 import com.nexaerp.budget.dto.BudgetWarningDto;
 import com.nexaerp.common.exception.BusinessRuleException;
 import com.nexaerp.common.exception.ResourceNotFoundException;
+import com.nexaerp.costcenter.CostCenter;
+import com.nexaerp.costcenter.CostCenterService;
 import com.nexaerp.email.BudgetAlertEmailService;
 import com.nexaerp.journal.dto.JournalEntryRequestDto;
 import com.nexaerp.journal.dto.JournalEntryResponseDto;
@@ -48,6 +50,7 @@ public class JournalEntryServiceImpl implements JournalEntryService{
     private final BudgetCheckService budgetCheckService;
     private final NotificationService notificationService;
     private final BudgetAlertEmailService budgetAlertEmailService;
+    private final CostCenterService costCenterService;
 
 
     @Override
@@ -191,6 +194,7 @@ public class JournalEntryServiceImpl implements JournalEntryService{
 
         // Validate Accounting Period
         accountingPeriodService.validatePostingDate(entry.getDate());
+        entry.getLines().forEach(line -> validateActiveCostCenter(line.getCostCenter()));
 
 
         // Balance update
@@ -264,6 +268,7 @@ public class JournalEntryServiceImpl implements JournalEntryService{
                 .map(line -> JournalLine.builder()
                         .journalEntry(savedReversal)
                         .account(line.getAccount())
+                        .costCenter(line.getCostCenter())
                         .debit(line.getCredit())
                         .credit(line.getDebit())
                         .description("Reversal: " + line.getDescription())
@@ -463,10 +468,12 @@ public class JournalEntryServiceImpl implements JournalEntryService{
         if (accountRepository.existsByParentId(account.getId())) {
             throw new BusinessRuleException("Cannot post journal to parent account: " + account.getCode());
         }
+        CostCenter costCenter = costCenterService.resolveActive(dto.getCostCenterId());
 
         return JournalLine.builder()
                 .journalEntry(entry)
                 .account(account)
+                .costCenter(costCenter)
                 .debit(dto.getDebit())
                 .credit(dto.getCredit())
                 .description(dto.getDescription())
@@ -502,9 +509,18 @@ public class JournalEntryServiceImpl implements JournalEntryService{
                 .accountId(line.getAccount().getId())
                 .accountName(line.getAccount().getName())
                 .accountCode(line.getAccount().getCode())
+                .costCenterId(line.getCostCenter() != null ? line.getCostCenter().getId() : null)
+                .costCenterCode(line.getCostCenter() != null ? line.getCostCenter().getCode() : null)
+                .costCenterName(line.getCostCenter() != null ? line.getCostCenter().getName() : null)
                 .debit(line.getDebit())
                 .credit(line.getCredit())
                 .description(line.getDescription())
                 .build();
+    }
+
+    private void validateActiveCostCenter(CostCenter costCenter) {
+        if (costCenter != null) {
+            costCenterService.resolveActive(costCenter.getId());
+        }
     }
 }

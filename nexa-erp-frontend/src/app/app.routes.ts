@@ -693,6 +693,14 @@ export const routes: Routes = [
           permission: PERMISSIONS.VIEW_ACCOUNTS,
         },
       },
+      {
+        path: 'cost-centers',
+        loadComponent: () =>
+          import('./features/cost-center/pages/cost-center-list/cost-center-list')
+            .then((m) => m.CostCenterList),
+        canActivate: [permissionGuard],
+        data: { permission: PERMISSIONS.VIEW_COST_CENTER },
+      },
 
       // =====================================================
       // Journal Entry
@@ -1186,6 +1194,14 @@ export const routes: Routes = [
           ),
         canActivate: [permissionGuard],
         data: { permission: PERMISSIONS.VIEW_BUDGET_REPORT },
+      },
+      {
+        path: 'reports/cost-center-transactions',
+        loadComponent: () =>
+          import('./features/reports/pages/cost-center-transactions/cost-center-transactions')
+            .then((m) => m.CostCenterTransactions),
+        canActivate: [permissionGuard],
+        data: { permission: PERMISSIONS.VIEW_REPORT },
       },
       {
         path: 'reports/cash-flow',

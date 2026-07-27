@@ -1,13 +1,16 @@
 package com.nexaerp.vendorbill;
 
 import com.nexaerp.account.Account;
+import com.nexaerp.costcenter.CostCenter;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "vendor_bill_items")
+@Table(name = "vendor_bill_items", indexes = {
+        @Index(name = "idx_vendor_bill_items_cost_center", columnList = "cost_center_id")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -28,7 +31,9 @@ public class VendorBillItem {
     @JoinColumn(name = "expense_account_id", nullable = false)
     private Account expenseAccount;
 
-    private Long costCenterId; // nullable, future
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cost_center_id")
+    private CostCenter costCenter;
 
     @Column(nullable = false)
     private String description;

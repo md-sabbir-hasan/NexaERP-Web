@@ -11,6 +11,7 @@ import { ProfitLossResponse } from '../models/profit-loss.model';
 import { BalanceSheetResponse } from '../models/balance-sheet.model';
 import { AgingResponse } from '../models/aging.model';
 import { CashFlowStatementResponse } from '../models/cash-flow.model';
+import { CostCenterTransactionReport } from '../models/cost-center-transaction.model';
 import {
   BudgetReportAccountType,
   BudgetVsActualOption,
@@ -60,6 +61,21 @@ export class ReportService {
   getCashFlow(fromDate: string, toDate: string): Observable<ApiResponse<CashFlowStatementResponse>> {
     const params = new HttpParams().set('fromDate', fromDate).set('toDate', toDate);
     return this.http.get<ApiResponse<CashFlowStatementResponse>>(`${this.baseUrl}/cash-flow`, { params });
+  }
+
+  getCostCenterTransactions(
+    costCenterId: number,
+    fromDate: string,
+    toDate: string,
+  ): Observable<ApiResponse<CostCenterTransactionReport>> {
+    const params = new HttpParams()
+      .set('costCenterId', String(costCenterId))
+      .set('fromDate', fromDate)
+      .set('toDate', toDate);
+    return this.http.get<ApiResponse<CostCenterTransactionReport>>(
+      `${this.baseUrl}/cost-center-transactions`,
+      { params },
+    );
   }
 
   downloadCashFlowExcel(fromDate: string, toDate: string): Observable<Blob> {

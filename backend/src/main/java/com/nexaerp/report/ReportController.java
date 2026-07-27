@@ -20,6 +20,16 @@ public class ReportController {
     private final ReportService reportService;
     private final BudgetVsActualReportService budgetVsActualReportService;
 
+    @GetMapping("/cost-center-transactions")
+    @PreAuthorize("hasAuthority('VIEW_REPORT')")
+    public ResponseEntity<ApiResponse<CostCenterTransactionReportDto>> getCostCenterTransactions(
+            @RequestParam Long costCenterId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+        return ResponseEntity.ok(ApiResponse.success(
+                reportService.getCostCenterTransactions(costCenterId, fromDate, toDate)));
+    }
+
     @GetMapping("/budget-vs-actual/options")
     @PreAuthorize("hasAuthority('VIEW_BUDGET_REPORT')")
     public ResponseEntity<ApiResponse<java.util.List<BudgetVsActualOptionDto>>> getBudgetVsActualOptions() {

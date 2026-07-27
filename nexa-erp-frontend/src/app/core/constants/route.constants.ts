@@ -8,6 +8,7 @@ export const APP_ROUTES = {
   SETTINGS: '/settings',
 
   ACCOUNTS: '/accounts',
+  COST_CENTERS: '/cost-centers',
   JOURNAL: '/journals',
   INVOICE: '/invoice',
   VENDOR_BILL: '/vendor-bill',
@@ -24,6 +25,7 @@ export const APP_ROUTES = {
   LEDGER: '/reports/ledger',
   TRIAL_BALANCE: '/reports/trial-balance',
   BUDGET_VS_ACTUAL: '/reports/budget-vs-actual',
+  COST_CENTER_TRANSACTIONS: '/reports/cost-center-transactions',
 
   AUDIT: '/audit',
 

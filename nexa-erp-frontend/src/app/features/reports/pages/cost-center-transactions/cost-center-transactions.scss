@@ -1,0 +1,9 @@
+:host {
+  display: block;
+}
+
+@media print {
+  form {
+    display: none !important;
+  }
+}

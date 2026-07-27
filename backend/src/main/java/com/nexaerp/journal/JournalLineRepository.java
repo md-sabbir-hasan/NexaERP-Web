@@ -15,6 +15,17 @@ public interface JournalLineRepository extends JpaRepository<JournalLine, Long> 
 
     List<JournalLine> findByAccountId(Long accountId); //for Ledger
 
+    @Query("SELECT l FROM JournalLine l " +
+            "JOIN FETCH l.journalEntry e JOIN FETCH l.account a JOIN FETCH l.costCenter c " +
+            "WHERE c.id = :costCenterId AND e.status IN :statuses " +
+            "AND e.date BETWEEN :fromDate AND :toDate " +
+            "ORDER BY e.date, e.id, l.id")
+    List<JournalLine> findCostCenterTransactions(
+            @Param("costCenterId") Long costCenterId,
+            @Param("statuses") List<JournalStatus> statuses,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate);
+
 
     // Used for Ledger report - all lines for an account within a date range
     List<JournalLine> findByAccountIdAndJournalEntry_DateBetweenOrderByJournalEntry_DateAsc(

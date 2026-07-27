@@ -9,6 +9,8 @@ import com.nexaerp.budget.BudgetCheckService;
 import com.nexaerp.budget.dto.BudgetWarningDto;
 import com.nexaerp.common.exception.BusinessRuleException;
 import com.nexaerp.common.exception.ResourceNotFoundException;
+import com.nexaerp.costcenter.CostCenter;
+import com.nexaerp.costcenter.CostCenterService;
 import com.nexaerp.email.BudgetAlertEmailService;
 import com.nexaerp.journal.*;
 import com.nexaerp.notification.NotificationService;
@@ -60,6 +62,7 @@ public class VendorBillServiceImpl implements VendorBillService {
     private final BudgetCheckService budgetCheckService;
     private final NotificationService notificationService;
     private final BudgetAlertEmailService budgetAlertEmailService;
+    private final CostCenterService costCenterService;
 
 
     @Override
@@ -302,6 +305,8 @@ public class VendorBillServiceImpl implements VendorBillService {
         List<BudgetWarningDto> budgetWarnings =
                 checkBudgets(items, bill.getPostingDate());
 
+        items.forEach(item -> validateActiveCostCenter(item.getCostCenter()));
+
         VendorBillStatus oldStatus = bill.getStatus();
 
         createJournalEntry(bill);
@@ -421,7 +426,7 @@ public class VendorBillServiceImpl implements VendorBillService {
                 .vendorBill(bill)
                 .productId(dto.getProductId())
                 .expenseAccount(expenseAccount)
-                .costCenterId(dto.getCostCenterId())
+                .costCenter(costCenterService.resolveActive(dto.getCostCenterId()))
                 .description(dto.getDescription())
                 .quantity(dto.getQuantity())
                 .unitPrice(dto.getUnitPrice())
@@ -510,6 +515,7 @@ public class VendorBillServiceImpl implements VendorBillService {
             JournalLine expenseLine = new JournalLine();
             expenseLine.setJournalEntry(saved);
             expenseLine.setAccount(item.getExpenseAccount());
+            expenseLine.setCostCenter(item.getCostCenter());
             expenseLine.setDebit(expenseAmount);
             expenseLine.setCredit(BigDecimal.ZERO);
             expenseLine.setDescription(item.getDescription());
@@ -608,6 +614,7 @@ public class VendorBillServiceImpl implements VendorBillService {
                         JournalLine reversalLine = new JournalLine();
                         reversalLine.setJournalEntry(savedReversal);
                         reversalLine.setAccount(line.getAccount());
+                        reversalLine.setCostCenter(line.getCostCenter());
                         reversalLine.setDebit(line.getCredit());   // swap
                         reversalLine.setCredit(line.getDebit());   // swap
                         reversalLine.setDescription("Reversal: " + line.getDescription());
@@ -731,6 +738,12 @@ private void validateVendorParty(Party party) {
     }
 }
 
+    private void validateActiveCostCenter(CostCenter costCenter) {
+        if (costCenter != null) {
+            costCenterService.resolveActive(costCenter.getId());
+        }
+    }
+
 //    helper add: calculateTotalsOnly
 
     private void calculateTotalsOnly(VendorBill bill, List<VendorBillItem> items) {
@@ -821,7 +834,9 @@ private void validateVendorParty(Party party) {
                 .expenseAccountId(item.getExpenseAccount().getId())
                 .expenseAccountName(item.getExpenseAccount().getName())
                 .expenseAccountCode(item.getExpenseAccount().getCode())
-                .costCenterId(item.getCostCenterId())
+                .costCenterId(item.getCostCenter() != null ? item.getCostCenter().getId() : null)
+                .costCenterCode(item.getCostCenter() != null ? item.getCostCenter().getCode() : null)
+                .costCenterName(item.getCostCenter() != null ? item.getCostCenter().getName() : null)
                 .description(item.getDescription())
                 .quantity(item.getQuantity())
                 .unitPrice(item.getUnitPrice())

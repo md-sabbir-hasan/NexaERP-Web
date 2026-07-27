@@ -1,13 +1,16 @@
 package com.nexaerp.journal;
 
 import com.nexaerp.account.Account;
+import com.nexaerp.costcenter.CostCenter;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "journal_lines")
+@Table(name = "journal_lines", indexes = {
+        @Index(name = "idx_journal_lines_cost_center", columnList = "cost_center_id")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,6 +29,10 @@ public class JournalLine {
     @ManyToOne
     @JoinColumn(name = "account_id", nullable = false)
     private Account account;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cost_center_id")
+    private CostCenter costCenter;
 
     @Column(precision = 19, scale = 2)
     private BigDecimal debit = BigDecimal.ZERO;

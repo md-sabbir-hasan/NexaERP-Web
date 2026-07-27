@@ -13,6 +13,8 @@ import { Account } from '../../../accounts/models/account.model';
 import { AccountService } from '../../../accounts/services/account.service';
 import { JournalEntryType, JournalEntryRequest } from '../../models/journal.model';
 import { JournalService } from '../../services/journal.service';
+import { CostCenterLookup } from '../../../cost-center/models/cost-center.model';
+import { CostCenterService } from '../../../cost-center/services/cost-center.service';
 
 @Component({
   selector: 'app-journal-form',
@@ -23,6 +25,7 @@ import { JournalService } from '../../services/journal.service';
 })
 export class JournalForm implements OnInit {
   readonly accounts = signal<Account[]>([]);
+  readonly costCenters = signal<CostCenterLookup[]>([]);
   readonly loading = signal(false);
   readonly submitting = signal(false);
 
@@ -43,6 +46,7 @@ export class JournalForm implements OnInit {
     private fb: NonNullableFormBuilder,
     private journalService: JournalService,
     private accountService: AccountService,
+    private costCenterService: CostCenterService,
     private route: ActivatedRoute,
     private router: Router,
     private alert: AlertService,
@@ -59,6 +63,7 @@ export class JournalForm implements OnInit {
     this.journalId = Number(this.route.snapshot.paramMap.get('id')) || null;
 
     this.loadAccounts();
+    this.loadCostCenters();
 
     if (this.journalId) {
       this.loadJournal(this.journalId);
@@ -81,9 +86,11 @@ export class JournalForm implements OnInit {
     debit = 0,
     credit = 0,
     description = '',
+    costCenterId: number | null = null,
   ): FormGroup {
     return this.fb.group({
       accountId: [accountId, [Validators.required]],
+      costCenterId: [costCenterId],
       debit: [debit, [Validators.min(0)]],
       credit: [credit, [Validators.min(0)]],
       description: [description],
@@ -108,6 +115,13 @@ export class JournalForm implements OnInit {
       next: (res) => {
         this.accounts.set(res.data);
       },
+    });
+  }
+
+  loadCostCenters(): void {
+    this.costCenterService.lookup().subscribe({
+      next: (res) => this.costCenters.set(res.data),
+      error: () => this.alert.error('Failed to load cost centers'),
     });
   }
 
@@ -139,6 +153,7 @@ export class JournalForm implements OnInit {
               Number(line.debit ?? 0),
               Number(line.credit ?? 0),
               line.description ?? '',
+              line.costCenterId,
             ),
           );
         });
@@ -250,6 +265,7 @@ export class JournalForm implements OnInit {
       description: raw.description,
       lines: raw.lines.map((line: any) => ({
         accountId: Number(line.accountId),
+        costCenterId: line.costCenterId ? Number(line.costCenterId) : null,
         debit: Number(line.debit || 0),
         credit: Number(line.credit || 0),
         description: line.description ?? '',

@@ -20,6 +20,8 @@ import {
   VendorBillType,
 } from '../../models/vendor-bill.model';
 import { VendorBillService } from '../../services/vendor-bill.service';
+import { CostCenterLookup } from '../../../cost-center/models/cost-center.model';
+import { CostCenterService } from '../../../cost-center/services/cost-center.service';
 
 @Component({
   selector: 'app-vendor-bill-form',
@@ -31,6 +33,7 @@ import { VendorBillService } from '../../services/vendor-bill.service';
 export class VendorBillForm implements OnInit {
   readonly vendors = signal<Party[]>([]);
   readonly expenseAccounts = signal<Account[]>([]);
+  readonly costCenters = signal<CostCenterLookup[]>([]);
   readonly loading = signal(false);
   readonly submitting = signal(false);
 
@@ -46,6 +49,7 @@ export class VendorBillForm implements OnInit {
     private vendorBillService: VendorBillService,
     private partyService: PartyService,
     private accountService: AccountService,
+    private costCenterService: CostCenterService,
     private route: ActivatedRoute,
     private router: Router,
     private alert: AlertService,
@@ -70,6 +74,7 @@ export class VendorBillForm implements OnInit {
 
     this.loadVendors();
     this.loadExpenseAccounts();
+    this.loadCostCenters();
 
     if (this.billId) {
       this.loadBill(this.billId);
@@ -145,6 +150,13 @@ export class VendorBillForm implements OnInit {
       error: () => {
         this.alert.error('Failed to load expense accounts');
       },
+    });
+  }
+
+  loadCostCenters(): void {
+    this.costCenterService.lookup().subscribe({
+      next: (res) => this.costCenters.set(res.data),
+      error: () => this.alert.error('Failed to load cost centers'),
     });
   }
 

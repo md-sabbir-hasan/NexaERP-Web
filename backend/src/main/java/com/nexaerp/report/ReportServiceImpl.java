@@ -6,6 +6,8 @@ import com.nexaerp.account.AccountRepository;
 import com.nexaerp.account.AccountType;
 import com.nexaerp.common.exception.BusinessRuleException;
 import com.nexaerp.common.exception.ResourceNotFoundException;
+import com.nexaerp.costcenter.CostCenter;
+import com.nexaerp.costcenter.CostCenterRepository;
 import com.nexaerp.invoice.Invoice;
 import com.nexaerp.invoice.InvoiceRepository;
 import com.nexaerp.invoice.InvoiceStatus;
@@ -45,6 +47,51 @@ public class ReportServiceImpl implements ReportService{
     private final PartyRepository partyRepository;
     private final CashFlowStatementService cashFlowStatementService;
     private final BudgetVsActualReportService budgetVsActualReportService;
+    private final CostCenterRepository costCenterRepository;
+
+    @Override
+    public CostCenterTransactionReportDto getCostCenterTransactions(
+            Long costCenterId, LocalDate fromDate, LocalDate toDate) {
+        if (fromDate == null || toDate == null || fromDate.isAfter(toDate)) {
+            throw new BusinessRuleException("From date must be on or before to date");
+        }
+        CostCenter costCenter = costCenterRepository.findByIdAndDeletedAtIsNull(costCenterId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cost center not found: " + costCenterId));
+        List<JournalLine> lines = journalLineRepository.findCostCenterTransactions(
+                costCenterId,
+                List.of(JournalStatus.POSTED, JournalStatus.REVERSED),
+                fromDate,
+                toDate);
+        List<CostCenterTransactionLineDto> rows = lines.stream()
+                .map(line -> CostCenterTransactionLineDto.builder()
+                        .journalEntryId(line.getJournalEntry().getId())
+                        .journalNumber(line.getJournalEntry().getEntryNumber())
+                        .date(line.getJournalEntry().getDate())
+                        .source(line.getJournalEntry().getSourceType())
+                        .sourceId(line.getJournalEntry().getSourceId())
+                        .accountCode(line.getAccount().getCode())
+                        .accountName(line.getAccount().getName())
+                        .debit(line.getDebit())
+                        .credit(line.getCredit())
+                        .description(line.getDescription())
+                        .build())
+                .toList();
+        BigDecimal totalDebit = rows.stream().map(CostCenterTransactionLineDto::getDebit)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalCredit = rows.stream().map(CostCenterTransactionLineDto::getCredit)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return CostCenterTransactionReportDto.builder()
+                .costCenterId(costCenter.getId())
+                .costCenterCode(costCenter.getCode())
+                .costCenterName(costCenter.getName())
+                .fromDate(fromDate)
+                .toDate(toDate)
+                .rows(rows)
+                .totalDebit(totalDebit)
+                .totalCredit(totalCredit)
+                .netAmount(totalDebit.subtract(totalCredit))
+                .build();
+    }
 
 
 

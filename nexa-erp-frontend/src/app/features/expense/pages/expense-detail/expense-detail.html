@@ -8,6 +8,9 @@
       <span class="eyebrow">Expense</span>
       <h1>{{ e.expenseNumber }}</h1>
       <p>{{ e.expenseAccountName }} — {{ e.expenseDate | date }}</p>
+      @if (e.costCenterName) {
+        <p class="mb-0">Cost Center: {{ e.costCenterCode }} - {{ e.costCenterName }}</p>
+      }
     </div>
 
     <div class="hero-actions">

@@ -21,6 +21,8 @@ public interface ReportService {
 
     AgingResponseDto getAgingReport(PartyType partyType, LocalDate asOfDate);
     CashFlowStatementResponseDto getCashFlowStatement(LocalDate fromDate, LocalDate toDate);
+    CostCenterTransactionReportDto getCostCenterTransactions(
+            Long costCenterId, LocalDate fromDate, LocalDate toDate);
     BudgetVsActualResponseDto getBudgetVsActual(
             Long budgetId, Long fromPeriodId, Long toPeriodId, AccountType accountType);
 }

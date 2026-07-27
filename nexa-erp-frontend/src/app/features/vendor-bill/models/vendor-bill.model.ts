@@ -40,6 +40,8 @@ export interface VendorBillItem {
   expenseAccountName: string;
   expenseAccountCode: string;
   costCenterId: number | null;
+  costCenterCode: string | null;
+  costCenterName: string | null;
   description: string;
   quantity: number;
   unitPrice: number;

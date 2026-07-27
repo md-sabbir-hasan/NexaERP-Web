@@ -19,6 +19,8 @@ public class VendorBillItemResponseDto {
     private String expenseAccountCode;
 
     private Long costCenterId;
+    private String costCenterCode;
+    private String costCenterName;
 
     // Item details
     private String description;

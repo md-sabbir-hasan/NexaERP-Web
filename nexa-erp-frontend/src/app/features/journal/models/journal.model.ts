@@ -21,6 +21,9 @@ export interface JournalLine {
   accountId: number;
   accountCode: string;
   accountName: string;
+  costCenterId: number | null;
+  costCenterCode: string | null;
+  costCenterName: string | null;
   debit: number;
   credit: number;
   description: string | null;
@@ -40,6 +43,7 @@ export interface JournalEntry {
 
 export interface JournalLineRequest {
   accountId: number | null;
+  costCenterId: number | null;
   debit: number;
   credit: number;
   description: string;

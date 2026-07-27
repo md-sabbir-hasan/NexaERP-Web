@@ -131,6 +131,12 @@
                   </option>
                 }
               </select>
+              <select formControlName="costCenterId" class="mt-2" aria-label="Cost center">
+                <option [ngValue]="null">No cost center</option>
+                @for (costCenter of costCenters(); track costCenter.id) {
+                  <option [ngValue]="costCenter.id">{{ costCenter.code }} - {{ costCenter.name }}</option>
+                }
+              </select>
 
               <input type="text" formControlName="description" placeholder="Item description" />
 

@@ -13,6 +13,8 @@ import com.nexaerp.budget.BudgetCheckService;
 import com.nexaerp.budget.dto.BudgetWarningDto;
 import com.nexaerp.common.exception.BusinessRuleException;
 import com.nexaerp.common.exception.ResourceNotFoundException;
+import com.nexaerp.costcenter.CostCenter;
+import com.nexaerp.costcenter.CostCenterService;
 import com.nexaerp.email.BudgetAlertEmailService;
 import com.nexaerp.expense.dto.ExpenseCancelRequestDto;
 import com.nexaerp.expense.dto.ExpenseRequestDto;
@@ -59,6 +61,7 @@ public class ExpenseServiceImpl implements ExpenseService {
     private final BudgetCheckService budgetCheckService;
     private final NotificationService notificationService;
     private final BudgetAlertEmailService budgetAlertEmailService;
+    private final CostCenterService costCenterService;
 
     @Override
     @Transactional
@@ -80,6 +83,7 @@ public class ExpenseServiceImpl implements ExpenseService {
         }
 
         boolean paidImmediately = Boolean.TRUE.equals(request.getPaidImmediately());
+        CostCenter costCenter = costCenterService.resolveActive(request.getCostCenterId());
 
         Party party = null;
         if (request.getPartyId() != null) {
@@ -110,6 +114,7 @@ public class ExpenseServiceImpl implements ExpenseService {
                     .expenseNumber(generateExpenseNumber())
                     .expenseDate(request.getExpenseDate())
                     .expenseAccount(expenseAccount)
+                    .costCenter(costCenter)
                     .paidImmediately(paidImmediately)
                     .paymentAccount(paymentAccount)
                     .party(party)
@@ -143,6 +148,7 @@ public class ExpenseServiceImpl implements ExpenseService {
                 .expenseNumber(generateExpenseNumber())
                 .expenseDate(request.getExpenseDate())
                 .expenseAccount(expenseAccount)
+                .costCenter(costCenter)
                 .paidImmediately(paidImmediately)
                 .paymentAccount(paymentAccount)
                 .party(party)
@@ -199,6 +205,7 @@ public class ExpenseServiceImpl implements ExpenseService {
         }
 
         accountingPeriodService.validatePostingDate(expense.getExpenseDate());
+        validateActiveCostCenter(expense.getCostCenter());
 
         boolean paidImmediately = Boolean.TRUE.equals(expense.getPaidImmediately());
 
@@ -304,7 +311,8 @@ public class ExpenseServiceImpl implements ExpenseService {
 
                     List<JournalLine> originalLines = journalLineRepository.findByJournalEntryId(original.getId());
                     originalLines.forEach(line ->
-                            addLine(savedReversal, line.getAccount(), line.getCredit(), line.getDebit(),
+                            addLine(savedReversal, line.getAccount(), line.getCostCenter(),
+                                    line.getCredit(), line.getDebit(),
                                     "Reversal - " + expense.getExpenseNumber())); // debit/credit swapped
 
                     original.setStatus(JournalStatus.REVERSED);
@@ -393,16 +401,18 @@ public class ExpenseServiceImpl implements ExpenseService {
         entry.setReferenceNumber(expense.getExpenseNumber());
         JournalEntry savedEntry = journalEntryRepository.save(entry);
 
-        addLine(savedEntry, expense.getExpenseAccount(), expense.getAmount(), BigDecimal.ZERO,
+        addLine(savedEntry, expense.getExpenseAccount(), expense.getCostCenter(), expense.getAmount(), BigDecimal.ZERO,
                 "Expense - " + expense.getExpenseNumber());
-        addLine(savedEntry, creditAccount, BigDecimal.ZERO, expense.getAmount(),
+        addLine(savedEntry, creditAccount, null, BigDecimal.ZERO, expense.getAmount(),
                 "Expense - " + expense.getExpenseNumber());
     }
 
-    private void addLine(JournalEntry entry, Account account, BigDecimal debit, BigDecimal credit, String description) {
+    private void addLine(JournalEntry entry, Account account, CostCenter costCenter,
+                         BigDecimal debit, BigDecimal credit, String description) {
         JournalLine line = new JournalLine();
         line.setJournalEntry(entry);
         line.setAccount(account);
+        line.setCostCenter(costCenter);
         line.setDebit(debit);
         line.setCredit(credit);
         line.setDescription(description);
@@ -473,6 +483,12 @@ public class ExpenseServiceImpl implements ExpenseService {
                 .orElseThrow(() -> new ResourceNotFoundException("Expense not found"));
     }
 
+    private void validateActiveCostCenter(CostCenter costCenter) {
+        if (costCenter != null) {
+            costCenterService.resolveActive(costCenter.getId());
+        }
+    }
+
     private ExpenseResponseDto toResponse(Expense e) {
         return toResponse(e, Collections.emptyList());
     }
@@ -484,6 +500,9 @@ public class ExpenseServiceImpl implements ExpenseService {
                 .expenseDate(e.getExpenseDate())
                 .expenseAccountId(e.getExpenseAccount().getId())
                 .expenseAccountName(e.getExpenseAccount().getName())
+                .costCenterId(e.getCostCenter() != null ? e.getCostCenter().getId() : null)
+                .costCenterCode(e.getCostCenter() != null ? e.getCostCenter().getCode() : null)
+                .costCenterName(e.getCostCenter() != null ? e.getCostCenter().getName() : null)
                 .paidImmediately(e.getPaidImmediately())
                 .paymentAccountId(e.getPaymentAccount() != null ? e.getPaymentAccount().getId() : null)
                 .paymentAccountName(e.getPaymentAccount() != null ? e.getPaymentAccount().getName() : null)

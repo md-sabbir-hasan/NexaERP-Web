@@ -27,6 +27,10 @@ public class ExpenseResponseDto {
     private Long expenseAccountId;
     private String expenseAccountName;
 
+    private Long costCenterId;
+    private String costCenterCode;
+    private String costCenterName;
+
     private Boolean paidImmediately;
 
     private Long paymentAccountId;

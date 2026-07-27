@@ -1,0 +1,110 @@
+<div class="container-fluid py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+      <h1 class="h3 mb-1">Cost Centers</h1>
+      <p class="text-muted mb-0">Manage optional accounting allocation dimensions.</p>
+    </div>
+    <button *appHasPermission="'CREATE_COST_CENTER'" class="btn btn-primary" type="button" (click)="openCreate()">
+      <i class="bi bi-plus-lg me-1"></i>New Cost Center
+    </button>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-6">
+          <label class="form-label" for="cost-center-search">Search</label>
+          <input id="cost-center-search" class="form-control" [(ngModel)]="search"
+                 placeholder="Code or name" (keyup.enter)="load()">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="cost-center-active">Status</label>
+          <select id="cost-center-active" class="form-select" [(ngModel)]="active">
+            <option value="">All</option>
+            <option [ngValue]="true">Active</option>
+            <option [ngValue]="false">Inactive</option>
+          </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+          <button class="btn btn-primary flex-fill" type="button" (click)="load()">Apply</button>
+          <button class="btn btn-outline-secondary" type="button" (click)="clearFilters()">Clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead><tr><th>Code</th><th>Name</th><th>Description</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+        <tbody>
+          @if (loading()) {
+            <tr><td colspan="5" class="text-center py-5">Loading…</td></tr>
+          } @else if (costCenters().length === 0) {
+            <tr><td colspan="5" class="text-center text-muted py-5">No cost centers found.</td></tr>
+          } @else {
+            @for (costCenter of costCenters(); track costCenter.id) {
+              <tr>
+                <td class="fw-semibold">{{ costCenter.code }}</td>
+                <td>{{ costCenter.name }}</td>
+                <td>{{ costCenter.description || '—' }}</td>
+                <td><span class="badge" [class.text-bg-success]="costCenter.isActive"
+                          [class.text-bg-secondary]="!costCenter.isActive">{{ costCenter.isActive ? 'Active' : 'Inactive' }}</span></td>
+                <td class="text-end">
+                  <button *appHasPermission="'EDIT_COST_CENTER'" class="btn btn-sm btn-outline-primary me-2"
+                          type="button" (click)="openEdit(costCenter)">Edit</button>
+                  @if (costCenter.isActive) {
+                    <button *appHasPermission="'DEACTIVATE_COST_CENTER'" class="btn btn-sm btn-outline-danger"
+                            type="button" (click)="setActive(costCenter, false)">Deactivate</button>
+                  } @else {
+                    <button *appHasPermission="'EDIT_COST_CENTER'" class="btn btn-sm btn-outline-success"
+                            type="button" (click)="setActive(costCenter, true)">Activate</button>
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+@if (showModal()) {
+  <div class="modal-backdrop show"></div>
+  <div class="modal d-block" role="dialog" aria-modal="true" aria-labelledby="cost-center-modal-title">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form [formGroup]="form" (ngSubmit)="submit()">
+          <div class="modal-header">
+            <h2 id="cost-center-modal-title" class="modal-title fs-5">{{ editing ? 'Edit' : 'Create' }} Cost Center</h2>
+            <button class="btn-close" type="button" aria-label="Close" (click)="closeModal()"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label" for="cost-center-code">Code</label>
+              <input id="cost-center-code" class="form-control text-uppercase" formControlName="code">
+              @if (form.controls.code.touched && form.controls.code.invalid) {
+                <div class="text-danger small mt-1">Use letters, numbers, hyphens or underscores.</div>
+              }
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="cost-center-name">Name</label>
+              <input id="cost-center-name" class="form-control" formControlName="name">
+            </div>
+            <div>
+              <label class="form-label" for="cost-center-description">Description</label>
+              <textarea id="cost-center-description" class="form-control" rows="3" formControlName="description"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-outline-secondary" type="button" (click)="closeModal()">Cancel</button>
+            <button class="btn btn-primary" type="submit" [disabled]="submitting()">
+              {{ submitting() ? 'Saving…' : 'Save' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}

@@ -11,6 +11,8 @@ import { Party } from '../../../party/models/party.model';
 import { PartyService } from '../../../party/services/party.service';
 import { ExpenseRequest } from '../../models/expense.model';
 import { ExpenseService } from '../../services/expense.service';
+import { CostCenterLookup } from '../../../cost-center/models/cost-center.model';
+import { CostCenterService } from '../../../cost-center/services/cost-center.service';
 
 @Component({
   selector: 'app-expense-form',
@@ -25,6 +27,7 @@ export class ExpenseForm implements OnInit {
   readonly expenseAccounts = signal<Account[]>([]);
   readonly paymentAccounts = signal<Account[]>([]);
   readonly parties = signal<Party[]>([]);
+  readonly costCenters = signal<CostCenterLookup[]>([]);
 
   selectedFile: File | null = null;
 
@@ -35,12 +38,14 @@ export class ExpenseForm implements OnInit {
     private readonly expenseService: ExpenseService,
     private readonly accountService: AccountService,
     private readonly partyService: PartyService,
+    private readonly costCenterService: CostCenterService,
     private readonly router: Router,
     private readonly alert: AlertService,
   ) {
     this.form = this.fb.group({
       expenseDate: ['', [Validators.required]],
       expenseAccountId: [null, [Validators.required]],
+      costCenterId: [null],
       paidImmediately: [true, [Validators.required]],
       paymentAccountId: [null, [Validators.required]],
       partyId: [null],
@@ -55,6 +60,7 @@ export class ExpenseForm implements OnInit {
     this.loadExpenseAccounts();
     this.loadPaymentAccounts();
     this.loadParties();
+    this.loadCostCenters();
     this.listenToPaidImmediatelyChanges();
   }
 
@@ -128,6 +134,13 @@ export class ExpenseForm implements OnInit {
     });
   }
 
+  loadCostCenters(): void {
+    this.costCenterService.lookup().subscribe({
+      next: (res) => this.costCenters.set(res.data),
+      error: () => this.alert.error('Failed to load cost centers'),
+    });
+  }
+
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.selectedFile = input.files && input.files.length > 0 ? input.files[0] : null;
@@ -146,6 +159,7 @@ export class ExpenseForm implements OnInit {
   const request: ExpenseRequest = {
     expenseDate: raw.expenseDate,
     expenseAccountId: Number(raw.expenseAccountId),
+    costCenterId: raw.costCenterId ? Number(raw.costCenterId) : null,
     paidImmediately: paidNow,
     paymentAccountId: paidNow ? Number(raw.paymentAccountId) : null,
     partyId: raw.partyId ? Number(raw.partyId) : null,

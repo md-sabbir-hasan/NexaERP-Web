@@ -70,6 +70,19 @@
               </select>
             </div>
           </div>
+
+          <div class="form-field">
+            <label for="expense-cost-center">Cost Center <span class="optional">(Optional)</span></label>
+            <div class="input-box">
+              <i class="bi bi-diagram-2"></i>
+              <select id="expense-cost-center" formControlName="costCenterId">
+                <option [ngValue]="null">No cost center</option>
+                @for (costCenter of costCenters(); track costCenter.id) {
+                  <option [ngValue]="costCenter.id">{{ costCenter.code }} - {{ costCenter.name }}</option>
+                }
+              </select>
+            </div>
+          </div>
         </div>
 
         <div class="form-row">

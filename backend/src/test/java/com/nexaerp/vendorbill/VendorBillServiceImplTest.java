@@ -8,6 +8,8 @@ import com.nexaerp.audit.AuditLogService;
 import com.nexaerp.budget.BudgetCheckService;
 import com.nexaerp.budget.dto.BudgetWarningDto;
 import com.nexaerp.email.BudgetAlertEmailService;
+import com.nexaerp.costcenter.CostCenter;
+import com.nexaerp.costcenter.CostCenterService;
 import com.nexaerp.journal.JournalEntry;
 import com.nexaerp.journal.JournalEntryRepository;
 import com.nexaerp.journal.JournalLine;
@@ -64,6 +66,7 @@ class VendorBillServiceImplTest {
     @Mock private BudgetCheckService budgetCheckService;
     @Mock private NotificationService notificationService;
     @Mock private BudgetAlertEmailService budgetAlertEmailService;
+    @Mock private CostCenterService costCenterService;
 
     @InjectMocks private VendorBillServiceImpl service;
 
@@ -213,6 +216,24 @@ class VendorBillServiceImplTest {
                 postingDate,
                 List.of()
         );
+    }
+
+    @Test
+    void itemCostCenterPropagatesOnlyToExpenseDebitLine() {
+        CostCenter costCenter = CostCenter.builder()
+                .id(8L).code("OPS").name("Operations").isActive(true).build();
+        VendorBillItem item = item(1L, expenseAccount, "100.00", "0", "10.00", "5.00");
+        item.setCostCenter(costCenter);
+        when(costCenterService.resolveActive(costCenter.getId())).thenReturn(costCenter);
+        billWithItems(List.of(item));
+
+        service.post(1L);
+
+        ArgumentCaptor<JournalLine> lineCaptor = ArgumentCaptor.forClass(JournalLine.class);
+        verify(journalLineRepository, times(4)).save(lineCaptor.capture());
+        List<JournalLine> lines = lineCaptor.getAllValues();
+        assertSame(costCenter, lines.get(0).getCostCenter());
+        assertTrue(lines.subList(1, lines.size()).stream().allMatch(line -> line.getCostCenter() == null));
     }
 
     private VendorBill billWithItems(List<VendorBillItem> items) {

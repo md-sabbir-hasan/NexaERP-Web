@@ -22,6 +22,8 @@ public class ExpenseRequestDto {
     @NotNull(message = "Expense category account is required")
     private Long expenseAccountId;
 
+    private Long costCenterId;
+
     // true = Pay Now, false = Pay Later
     @NotNull(message = "paidImmediately is required")
     private Boolean paidImmediately;

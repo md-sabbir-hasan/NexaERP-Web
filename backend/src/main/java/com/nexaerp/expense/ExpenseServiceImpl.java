@@ -13,6 +13,7 @@ import com.nexaerp.budget.BudgetCheckService;
 import com.nexaerp.budget.dto.BudgetWarningDto;
 import com.nexaerp.common.exception.BusinessRuleException;
 import com.nexaerp.common.exception.ResourceNotFoundException;
+import com.nexaerp.email.BudgetAlertEmailService;
 import com.nexaerp.expense.dto.ExpenseCancelRequestDto;
 import com.nexaerp.expense.dto.ExpenseRequestDto;
 import com.nexaerp.expense.dto.ExpenseResponseDto;
@@ -57,6 +58,7 @@ public class ExpenseServiceImpl implements ExpenseService {
     private final AuditLogService auditLogService;
     private final BudgetCheckService budgetCheckService;
     private final NotificationService notificationService;
+    private final BudgetAlertEmailService budgetAlertEmailService;
 
     @Override
     @Transactional
@@ -176,6 +178,13 @@ public class ExpenseServiceImpl implements ExpenseService {
                 .map(List::of)
                 .orElse(Collections.emptyList());
 
+        budgetAlertEmailService.scheduleAfterCommit(
+                "Expense",
+                saved.getId(),
+                saved.getExpenseNumber(),
+                saved.getExpenseDate(),
+                budgetWarnings
+        );
         notifyBudgetExceeded(budgetWarnings);
         return toResponse(saved, budgetWarnings);
     }
@@ -219,6 +228,13 @@ public class ExpenseServiceImpl implements ExpenseService {
                 .map(List::of)
                 .orElse(Collections.emptyList());
 
+        budgetAlertEmailService.scheduleAfterCommit(
+                "Expense",
+                saved.getId(),
+                saved.getExpenseNumber(),
+                saved.getExpenseDate(),
+                budgetWarnings
+        );
         notifyBudgetExceeded(budgetWarnings);
         return toResponse(saved, budgetWarnings);
     }

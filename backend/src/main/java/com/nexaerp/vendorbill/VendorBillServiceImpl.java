@@ -9,6 +9,7 @@ import com.nexaerp.budget.BudgetCheckService;
 import com.nexaerp.budget.dto.BudgetWarningDto;
 import com.nexaerp.common.exception.BusinessRuleException;
 import com.nexaerp.common.exception.ResourceNotFoundException;
+import com.nexaerp.email.BudgetAlertEmailService;
 import com.nexaerp.journal.*;
 import com.nexaerp.notification.NotificationService;
 import com.nexaerp.notification.NotificationType;
@@ -58,6 +59,7 @@ public class VendorBillServiceImpl implements VendorBillService {
     private final CurrentUserService currentUserService;
     private final BudgetCheckService budgetCheckService;
     private final NotificationService notificationService;
+    private final BudgetAlertEmailService budgetAlertEmailService;
 
 
     @Override
@@ -321,6 +323,13 @@ public class VendorBillServiceImpl implements VendorBillService {
                 VendorBillStatus.POSTED.name()
         );
 
+        budgetAlertEmailService.scheduleAfterCommit(
+                "Vendor Bill",
+                saved.getId(),
+                saved.getBillNumber(),
+                saved.getPostingDate(),
+                budgetWarnings
+        );
         notifyBudgetExceeded(budgetWarnings);
         return toResponse(saved, budgetWarnings);
     }

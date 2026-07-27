@@ -7,6 +7,7 @@ import com.nexaerp.accountingperiod.AccountingPeriodService;
 import com.nexaerp.audit.AuditLogService;
 import com.nexaerp.budget.BudgetCheckService;
 import com.nexaerp.budget.dto.BudgetWarningDto;
+import com.nexaerp.email.BudgetAlertEmailService;
 import com.nexaerp.journal.JournalEntry;
 import com.nexaerp.journal.JournalEntryRepository;
 import com.nexaerp.journal.JournalLine;
@@ -40,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -61,6 +63,7 @@ class VendorBillServiceImplTest {
     @Mock private CurrentUserService currentUserService;
     @Mock private BudgetCheckService budgetCheckService;
     @Mock private NotificationService notificationService;
+    @Mock private BudgetAlertEmailService budgetAlertEmailService;
 
     @InjectMocks private VendorBillServiceImpl service;
 
@@ -126,6 +129,13 @@ class VendorBillServiceImplTest {
 
         assertEquals(VendorBillStatus.POSTED, response.getStatus());
         assertEquals(List.of(warning), response.getBudgetWarnings());
+        verify(budgetAlertEmailService).scheduleAfterCommit(
+                "Vendor Bill",
+                bill.getId(),
+                bill.getBillNumber(),
+                postingDate,
+                List.of(warning)
+        );
         verify(notificationService).createForCurrentUser(
                 NotificationType.BUDGET_EXCEEDED,
                 "Budget exceeded",
@@ -173,6 +183,13 @@ class VendorBillServiceImplTest {
                 expenseAccount, postingDate, new BigDecimal("90.00"));
         verify(budgetCheckService).checkExpenseAccount(
                 travelAccount, postingDate, new BigDecimal("55.00"));
+        verify(budgetAlertEmailService, times(1)).scheduleAfterCommit(
+                eq("Vendor Bill"),
+                eq(bill.getId()),
+                eq(bill.getBillNumber()),
+                eq(postingDate),
+                any()
+        );
     }
 
     @Test
@@ -189,6 +206,13 @@ class VendorBillServiceImplTest {
         assertEquals(VendorBillStatus.POSTED, response.getStatus());
         assertTrue(response.getBudgetWarnings().isEmpty());
         verify(journalEntryRepository).save(any(JournalEntry.class));
+        verify(budgetAlertEmailService).scheduleAfterCommit(
+                "Vendor Bill",
+                bill.getId(),
+                bill.getBillNumber(),
+                postingDate,
+                List.of()
+        );
     }
 
     private VendorBill billWithItems(List<VendorBillItem> items) {

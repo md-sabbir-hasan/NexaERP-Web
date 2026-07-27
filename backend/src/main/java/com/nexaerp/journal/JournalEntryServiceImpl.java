@@ -13,6 +13,7 @@ import com.nexaerp.budget.BudgetCheckService;
 import com.nexaerp.budget.dto.BudgetWarningDto;
 import com.nexaerp.common.exception.BusinessRuleException;
 import com.nexaerp.common.exception.ResourceNotFoundException;
+import com.nexaerp.email.BudgetAlertEmailService;
 import com.nexaerp.journal.dto.JournalEntryRequestDto;
 import com.nexaerp.journal.dto.JournalEntryResponseDto;
 import com.nexaerp.journal.dto.JournalLineRequestDto;
@@ -46,6 +47,7 @@ public class JournalEntryServiceImpl implements JournalEntryService{
     private final BankTransactionService bankTransactionService;
     private final BudgetCheckService budgetCheckService;
     private final NotificationService notificationService;
+    private final BudgetAlertEmailService budgetAlertEmailService;
 
 
     @Override
@@ -208,7 +210,15 @@ public class JournalEntryServiceImpl implements JournalEntryService{
         );
 
         JournalEntry completed = journalEntryRepository.save(entry);
-        notifyBudgetExceeded(completed);
+        List<BudgetWarningDto> budgetWarnings = checkBudgets(completed);
+        budgetAlertEmailService.scheduleAfterCommit(
+                "Journal",
+                completed.getId(),
+                completed.getEntryNumber(),
+                completed.getDate(),
+                budgetWarnings
+        );
+        budgetWarnings.forEach(this::createBudgetExceededNotification);
         return toResponse(completed);
     }
 
@@ -306,7 +316,7 @@ public class JournalEntryServiceImpl implements JournalEntryService{
 
     }
 
-    private void notifyBudgetExceeded(JournalEntry entry) {
+    private List<BudgetWarningDto> checkBudgets(JournalEntry entry) {
         Map<Long, BigDecimal> debitByAccount = new LinkedHashMap<>();
         Map<Long, Account> accounts = new LinkedHashMap<>();
 
@@ -321,12 +331,14 @@ public class JournalEntryServiceImpl implements JournalEntryService{
             debitByAccount.merge(account.getId(), line.getDebit(), BigDecimal::add);
         }
 
-        for (Map.Entry<Long, BigDecimal> accountDebit : debitByAccount.entrySet()) {
-            Account account = accounts.get(accountDebit.getKey());
-            budgetCheckService
-                    .checkExpenseAccount(account, entry.getDate(), accountDebit.getValue())
-                    .ifPresent(this::createBudgetExceededNotification);
-        }
+        return debitByAccount.entrySet().stream()
+                .map(accountDebit -> budgetCheckService.checkExpenseAccount(
+                        accounts.get(accountDebit.getKey()),
+                        entry.getDate(),
+                        accountDebit.getValue()
+                ))
+                .flatMap(java.util.Optional::stream)
+                .collect(Collectors.toList());
     }
 
     private void createBudgetExceededNotification(BudgetWarningDto warning) {

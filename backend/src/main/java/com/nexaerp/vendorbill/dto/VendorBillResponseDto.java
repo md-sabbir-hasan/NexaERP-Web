@@ -1,5 +1,6 @@
 package com.nexaerp.vendorbill.dto;
 
+import com.nexaerp.budget.dto.BudgetWarningDto;
 import com.nexaerp.vendorbill.VendorBillCancelledReason;
 import com.nexaerp.vendorbill.VendorBillReferenceType;
 import com.nexaerp.vendorbill.VendorBillStatus;
@@ -9,6 +10,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
 @Getter
@@ -69,4 +71,7 @@ public class VendorBillResponseDto {
 
     // Bill line items
     private List<VendorBillItemResponseDto> items;
+
+    @Builder.Default
+    private List<BudgetWarningDto> budgetWarnings = Collections.emptyList();
 }

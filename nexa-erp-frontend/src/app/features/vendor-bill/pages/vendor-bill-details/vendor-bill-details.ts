@@ -92,6 +92,9 @@ export class VendorBillDetails implements OnInit {
     this.vendorBillService.post(bill.id).subscribe({
       next: (res) => {
         this.alert.success('Vendor bill posted successfully');
+        for (const warning of res.data.budgetWarnings) {
+          this.alert.warning(warning.message);
+        }
         this.bill.set(res.data);
       },
       error: (error) => {

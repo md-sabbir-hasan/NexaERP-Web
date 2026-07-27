@@ -5,9 +5,13 @@ import com.nexaerp.account.AccountRepository;
 import com.nexaerp.accountingperiod.AccountingPeriodService;
 import com.nexaerp.audit.AuditAction;
 import com.nexaerp.audit.AuditLogService;
+import com.nexaerp.budget.BudgetCheckService;
+import com.nexaerp.budget.dto.BudgetWarningDto;
 import com.nexaerp.common.exception.BusinessRuleException;
 import com.nexaerp.common.exception.ResourceNotFoundException;
 import com.nexaerp.journal.*;
+import com.nexaerp.notification.NotificationService;
+import com.nexaerp.notification.NotificationType;
 import com.nexaerp.party.Party;
 import com.nexaerp.party.PartyRepository;
 import com.nexaerp.party.PartyType;
@@ -20,6 +24,7 @@ import com.nexaerp.vendorbill.dto.VendorBillItemResponseDto;
 import com.nexaerp.vendorbill.dto.VendorBillRequestDto;
 import com.nexaerp.vendorbill.dto.VendorBillResponseDto;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,12 +33,16 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Year;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class VendorBillServiceImpl implements VendorBillService {
 
     private final VendorBillRepository vendorBillRepository;
@@ -47,6 +56,8 @@ public class VendorBillServiceImpl implements VendorBillService {
     private final AccountingPeriodService accountingPeriodService;
     private final MakerCheckerService makerCheckerService;
     private final CurrentUserService currentUserService;
+    private final BudgetCheckService budgetCheckService;
+    private final NotificationService notificationService;
 
 
     @Override
@@ -286,6 +297,9 @@ public class VendorBillServiceImpl implements VendorBillService {
                 bill.getPostingDate()
         );
 
+        List<BudgetWarningDto> budgetWarnings =
+                checkBudgets(items, bill.getPostingDate());
+
         VendorBillStatus oldStatus = bill.getStatus();
 
         createJournalEntry(bill);
@@ -307,7 +321,8 @@ public class VendorBillServiceImpl implements VendorBillService {
                 VendorBillStatus.POSTED.name()
         );
 
-        return toResponse(saved);
+        notifyBudgetExceeded(budgetWarnings);
+        return toResponse(saved, budgetWarnings);
     }
 
     @Override
@@ -618,6 +633,63 @@ public class VendorBillServiceImpl implements VendorBillService {
         accountRepository.save(account);
     }
 
+    private List<BudgetWarningDto> checkBudgets(
+            List<VendorBillItem> items,
+            LocalDate postingDate
+    ) {
+        Map<Long, BigDecimal> debitByAccount = new LinkedHashMap<>();
+        Map<Long, Account> accounts = new LinkedHashMap<>();
+
+        for (VendorBillItem item : items) {
+            Account account = item.getExpenseAccount();
+            BigDecimal expenseDebit = item.getSubTotal()
+                    .subtract(item.getDiscountAmount());
+
+            accounts.putIfAbsent(account.getId(), account);
+            debitByAccount.merge(account.getId(), expenseDebit, BigDecimal::add);
+        }
+
+        return debitByAccount.entrySet().stream()
+                .map(entry -> budgetCheckService.checkExpenseAccount(
+                        accounts.get(entry.getKey()),
+                        postingDate,
+                        entry.getValue()
+                ))
+                .flatMap(java.util.Optional::stream)
+                .collect(Collectors.toList());
+    }
+
+    private void notifyBudgetExceeded(List<BudgetWarningDto> warnings) {
+        for (BudgetWarningDto warning : warnings) {
+            String route = warning.getBudgetId() != null
+                    ? "/budget/" + warning.getBudgetId() + "/variance"
+                    : "/budget";
+            String message = String.format(
+                    "Budget for %s exceeded by %s.",
+                    warning.getAccountName(),
+                    warning.getExceededAmount()
+            );
+
+            try {
+                notificationService.createForCurrentUser(
+                        NotificationType.BUDGET_EXCEEDED,
+                        "Budget exceeded",
+                        message,
+                        route,
+                        "BUDGET",
+                        warning.getBudgetId()
+                );
+            } catch (RuntimeException exception) {
+                log.warn(
+                        "Vendor bill posting succeeded, but budget notification creation failed for budget {} and account {}",
+                        warning.getBudgetId(),
+                        warning.getAccountId(),
+                        exception
+                );
+            }
+        }
+    }
+
     private String generateBillNumber() {
         int year = Year.now().getValue();
         return vendorBillRepository.findTopByOrderByIdDesc()
@@ -686,6 +758,13 @@ private void validateVendorParty(Party party) {
     // ---Mappers----
 
     private VendorBillResponseDto toResponse(VendorBill bill) {
+        return toResponse(bill, Collections.emptyList());
+    }
+
+    private VendorBillResponseDto toResponse(
+            VendorBill bill,
+            List<BudgetWarningDto> budgetWarnings
+    ) {
         List<VendorBillItem> items =
                 vendorBillItemRepository.findByVendorBillId(bill.getId());
 
@@ -722,6 +801,7 @@ private void validateVendorParty(Party party) {
                 .items(items.stream()
                         .map(this::toItemResponse)
                         .collect(Collectors.toList()))
+                .budgetWarnings(budgetWarnings)
                 .build();
     }
 

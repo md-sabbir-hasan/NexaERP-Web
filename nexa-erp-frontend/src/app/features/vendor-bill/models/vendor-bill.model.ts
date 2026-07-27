@@ -18,6 +18,21 @@ export type VendorBillCancelledReason =
   | 'WRONG_ENTRY'
   | 'DUPLICATE_ENTRY';
 
+export interface BudgetWarning {
+  budgetId: number;
+  accountId: number;
+  accountCode: string;
+  accountName: string;
+  accountingPeriodId: number;
+  accountingPeriodName: string;
+  budgetAmount: number;
+  actualBeforePosting: number;
+  transactionAmount: number;
+  projectedActual: number;
+  exceededAmount: number;
+  message: string;
+}
+
 export interface VendorBillItem {
   id: number;
   productId: number | null;
@@ -69,6 +84,7 @@ export interface VendorBill {
   createdAt: string;
   updatedAt: string;
   items: VendorBillItem[];
+  budgetWarnings: BudgetWarning[];
 }
 
 export interface VendorBillItemRequest {

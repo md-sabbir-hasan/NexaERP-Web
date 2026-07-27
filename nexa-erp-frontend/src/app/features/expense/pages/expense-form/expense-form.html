@@ -39,12 +39,13 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label>Expense Date</label>
+            <label for="expense-date">Expense Date</label>
 
             <div class="input-box">
               <i class="bi bi-calendar3"></i>
 
               <input
+                id="expense-date"
                 type="date"
                 formControlName="expenseDate"
               />
@@ -52,12 +53,12 @@
           </div>
 
           <div class="form-group">
-            <label>Category</label>
+            <label for="expense-category">Category</label>
 
             <div class="input-box">
               <i class="bi bi-tags"></i>
 
-              <select formControlName="expenseAccountId">
+              <select id="expense-category" formControlName="expenseAccountId">
                 <option [ngValue]="null">
                   Select category
                 </option>
@@ -71,28 +72,38 @@
             </div>
           </div>
 
-          <div class="form-field">
+          <div class="form-group">
             <label for="expense-cost-center">Cost Center <span class="optional">(Optional)</span></label>
             <div class="input-box">
               <i class="bi bi-diagram-2"></i>
-              <select id="expense-cost-center" formControlName="costCenterId">
-                <option [ngValue]="null">No cost center</option>
+              <select id="expense-cost-center" formControlName="costCenterId" [attr.aria-describedby]="'cost-center-help'">
+                <option [ngValue]="null">
+                  {{ costCentersLoading() ? 'Loading cost centers…' : 'No cost center' }}
+                </option>
                 @for (costCenter of costCenters(); track costCenter.id) {
                   <option [ngValue]="costCenter.id">{{ costCenter.code }} - {{ costCenter.name }}</option>
                 }
               </select>
             </div>
+            <span id="cost-center-help" class="field-note">
+              @if (costCentersError()) {
+                Cost centers are currently unavailable. You can still save without one.
+              } @else {
+                Optional accounting dimension for this expense.
+              }
+            </span>
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label>Amount</label>
+            <label for="expense-amount">Amount</label>
 
             <div class="input-box amount-input">
               <span class="currency-symbol">৳</span>
 
               <input
+                id="expense-amount"
                 type="number"
                 step="0.01"
                 formControlName="amount"
@@ -102,7 +113,7 @@
           </div>
 
           <div class="form-group">
-            <label>
+            <label for="expense-reference">
               Reference No
               <span class="optional">(optional)</span>
             </label>
@@ -111,6 +122,7 @@
               <i class="bi bi-hash"></i>
 
               <input
+                id="expense-reference"
                 type="text"
                 formControlName="referenceNumber"
                 placeholder="Operator bill ref, etc."

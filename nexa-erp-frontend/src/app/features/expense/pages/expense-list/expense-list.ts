@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { AlertService } from '../../../../core/services/alert.service';
+import { CostCenterLookup } from '../../../cost-center/models/cost-center.model';
+import { CostCenterService } from '../../../cost-center/services/cost-center.service';
 import { ExpensePaymentStatus, ExpenseResponse, ExpenseStatus } from '../../models/expense.model';
 import { ExpenseService } from '../../services/expense.service';
 import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
@@ -17,11 +19,14 @@ import { HasPermissionDirective } from '../../../../shared/directives/has-permis
 })
 export class ExpenseList implements OnInit {
   readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
   readonly expenses = signal<ExpenseResponse[]>([]);
+  readonly costCenters = signal<CostCenterLookup[]>([]);
 
   readonly search = signal('');
   readonly paymentStatus = signal('');
   readonly status = signal('');
+  readonly costCenter = signal('');
 
   readonly paymentStatuses: ExpensePaymentStatus[] = ['UNPAID', 'PARTIAL', 'PAID'];
   readonly statuses: ExpenseStatus[] = ['DRAFT', 'POSTED', 'CANCELLED'];
@@ -35,7 +40,9 @@ export class ExpenseList implements OnInit {
         (e) =>
           e.expenseNumber.toLowerCase().includes(keyword) ||
           e.expenseAccountName.toLowerCase().includes(keyword) ||
-          (e.partyName ?? '').toLowerCase().includes(keyword),
+          (e.partyName ?? '').toLowerCase().includes(keyword) ||
+          (e.costCenterCode ?? '').toLowerCase().includes(keyword) ||
+          (e.costCenterName ?? '').toLowerCase().includes(keyword),
       );
     }
 
@@ -47,30 +54,47 @@ export class ExpenseList implements OnInit {
       list = list.filter((e) => e.status === this.status());
     }
 
+    if (this.costCenter() === 'UNASSIGNED') {
+      list = list.filter((e) => e.costCenterId == null);
+    } else if (this.costCenter()) {
+      const costCenterId = Number(this.costCenter());
+      list = list.filter((e) => e.costCenterId === costCenterId);
+    }
+
     return list;
   });
 
   constructor(
     private expenseService: ExpenseService,
+    private costCenterService: CostCenterService,
     private alert: AlertService,
   ) {}
 
   ngOnInit(): void {
     this.loadExpenses();
+    this.loadCostCenters();
   }
 
   loadExpenses(): void {
     this.loading.set(true);
+    this.error.set(null);
 
     this.expenseService.getAll().subscribe({
       next: (res) => {
         this.expenses.set([...res.data].sort((a, b) => (a.expenseDate < b.expenseDate ? 1 : -1)));
         this.loading.set(false);
       },
-      error: () => {
+      error: (error) => {
         this.loading.set(false);
-        this.alert.error('Failed to load expenses');
+        this.error.set(error?.error?.message ?? 'Unable to load expenses. Please try again.');
       },
+    });
+  }
+
+  loadCostCenters(): void {
+    this.costCenterService.lookup().subscribe({
+      next: (res) => this.costCenters.set(res.data),
+      error: () => this.costCenters.set([]),
     });
   }
 
@@ -78,6 +102,7 @@ export class ExpenseList implements OnInit {
     this.search.set('');
     this.paymentStatus.set('');
     this.status.set('');
+    this.costCenter.set('');
   }
 
   totalAmount(): number {
@@ -110,6 +135,10 @@ export class ExpenseList implements OnInit {
 
   getStatusClass(status: ExpenseStatus): string {
     return status.toLowerCase();
+  }
+
+  isDueOutstanding(dueAmount: number): boolean {
+    return Number(dueAmount) > 0;
   }
 
   async postExpense(id: number): Promise<void> {

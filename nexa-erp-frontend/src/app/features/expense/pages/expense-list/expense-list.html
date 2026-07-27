@@ -3,61 +3,51 @@
     <div>
       <span class="eyebrow">Finance Operations</span>
       <h1>Expenses</h1>
-      <p>Record and track small bills — mobile, utility, office supplies etc.</p>
+      <p>Record and track small bills — mobile, utility, office supplies, and more.</p>
     </div>
-
     <a *appHasPermission="'CREATE_EXPENSE'" routerLink="/expense/new" class="new-btn">
-      <i class="bi bi-plus-circle-fill"></i>
-      New Expense
+      <i class="bi bi-plus-circle-fill" aria-hidden="true"></i> New Expense
     </a>
   </section>
 
-  <section class="summary-grid erp-page-section">
-    <div class="summary-card total">
-      <span>Total Posted</span>
-      <strong>{{ totalAmount() | number:'1.2-2' }}</strong>
-    </div>
-
-    <div class="summary-card due">
-      <span>Total Due (Unpaid)</span>
-      <strong>{{ unpaidTotal() | number:'1.2-2' }}</strong>
-    </div>
-
-    <div class="summary-card draft">
-      <span>Draft (Pending Review)</span>
-      <strong>{{ draftCount() }}</strong>
-    </div>
-
-    <div class="summary-card posted">
-      <span>Posted</span>
-      <strong>{{ postedCount() }}</strong>
-    </div>
-
-    <div class="summary-card cancelled">
-      <span>Cancelled</span>
-      <strong>{{ cancelledCount() }}</strong>
-    </div>
+  <section class="summary-grid erp-page-section" aria-label="Expense summary">
+    <div class="summary-card total"><span>Total Posted</span><strong>{{ totalAmount() | number:'1.2-2' }}</strong></div>
+    <div class="summary-card due"><span>Total Due (Unpaid)</span><strong>{{ unpaidTotal() | number:'1.2-2' }}</strong></div>
+    <div class="summary-card draft"><span>Draft (Pending Review)</span><strong>{{ draftCount() }}</strong></div>
+    <div class="summary-card posted"><span>Posted</span><strong>{{ postedCount() }}</strong></div>
+    <div class="summary-card cancelled"><span>Cancelled</span><strong>{{ cancelledCount() }}</strong></div>
   </section>
 
-  <section class="filter-panel erp-page-section">
-    <input type="text" placeholder="Search expense no, category, party..." [ngModel]="search()"
-      (ngModelChange)="search.set($event)" />
+  <section class="filter-panel erp-page-section" aria-label="Expense filters">
+    <label class="visually-hidden" for="expense-search">Search expenses</label>
+    <input id="expense-search" type="search" placeholder="Search number, category, party, or cost center"
+      [ngModel]="search()" (ngModelChange)="search.set($event)" />
 
-    <select [ngModel]="paymentStatus()" (ngModelChange)="paymentStatus.set($event)">
+    <label class="visually-hidden" for="expense-cost-center-filter">Filter by cost center</label>
+    <select id="expense-cost-center-filter" [ngModel]="costCenter()" (ngModelChange)="costCenter.set($event)">
+      <option value="">All Cost Centers</option>
+      <option value="UNASSIGNED">Unassigned</option>
+      @for (item of costCenters(); track item.id) {
+      <option [value]="item.id">{{ item.code }} - {{ item.name }}</option>
+      }
+    </select>
+
+    <label class="visually-hidden" for="expense-payment-filter">Filter by payment status</label>
+    <select id="expense-payment-filter" [ngModel]="paymentStatus()" (ngModelChange)="paymentStatus.set($event)">
       <option value="">All Payment Status</option>
-      @for (s of paymentStatuses; track s) {
-      <option [value]="s">{{ s }}</option>
+      @for (item of paymentStatuses; track item) {
+      <option [value]="item">{{ item }}</option>
       }
     </select>
 
-    <select [ngModel]="status()" (ngModelChange)="status.set($event)">
+    <label class="visually-hidden" for="expense-status-filter">Filter by expense status</label>
+    <select id="expense-status-filter" [ngModel]="status()" (ngModelChange)="status.set($event)">
       <option value="">All Status</option>
-      @for (s of statuses; track s) {
-      <option [value]="s">{{ s }}</option>
+      @for (item of statuses; track item) {
+      <option [value]="item">{{ item }}</option>
       }
     </select>
-
-    <button class="clear-btn" type="button" (click)="clearFilter()">Clear</button>
+    <button class="clear-btn" type="button" (click)="clearFilter()">Clear filters</button>
   </section>
 
   <section class="table-card erp-content-card erp-page-section">
@@ -67,15 +57,23 @@
     </div>
 
     @if (loading()) {
-    <div class="loading-box">Loading...</div>
+    <div class="state-box" role="status">
+      <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Loading expenses…
+    </div>
+    } @else if (error()) {
+    <div class="state-box error-state" role="alert">
+      <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
+      <p>{{ error() }}</p>
+      <button type="button" class="retry-btn" (click)="loadExpenses()">Try again</button>
+    </div>
     } @else {
     <div class="table-wrap erp-table-scroll">
       <table>
         <thead>
           <tr>
             <th>Expense No</th>
-            <th>Category</th>
-            <th>Party</th>
+            <th>Category / Expense Account</th>
+            <th>Cost Center</th>
             <th>Date</th>
             <th class="text-end">Amount</th>
             <th class="text-end">Due</th>
@@ -84,52 +82,44 @@
             <th>Actions</th>
           </tr>
         </thead>
-
         <tbody>
           @for (expense of filteredExpenses(); track expense.id) {
           <tr>
+            <td><strong>{{ expense.expenseNumber }}</strong>
+              @if (expense.referenceNumber) { <small>Ref: {{ expense.referenceNumber }}</small> }
+            </td>
+            <td>{{ expense.expenseAccountName }}</td>
             <td>
-              <strong>{{ expense.expenseNumber }}</strong>
-              @if (expense.referenceNumber) {
-              <small>Ref: {{ expense.referenceNumber }}</small>
+              @if (expense.costCenterCode) {
+              <span class="cost-center-badge" [title]="expense.costCenterName ?? expense.costCenterCode">{{ expense.costCenterCode }}</span>
+              @if (expense.costCenterName) { <small>{{ expense.costCenterName }}</small> }
+              } @else {
+              <span class="unassigned-badge">Not Assigned</span>
               }
             </td>
-
-            <td>{{ expense.expenseAccountName }}</td>
-            <td>{{ expense.partyName ?? '—' }}</td>
             <td>{{ expense.expenseDate | date }}</td>
-
             <td class="text-end amount-text">{{ expense.amount | number:'1.2-2' }}</td>
-            <td class="text-end due-text">{{ expense.dueAmount | number:'1.2-2' }}</td>
-
-            <td>
-              <span class="payment-badge" [class]="getPaymentStatusClass(expense.paymentStatus)">
-                {{ expense.paymentStatus }}
-              </span>
+            <td class="text-end due-text" [class.outstanding]="isDueOutstanding(expense.dueAmount)">
+              {{ expense.dueAmount | number:'1.2-2' }}
             </td>
-
-            <td>
-              <span class="status-badge" [class]="getStatusClass(expense.status)">
-                {{ expense.status }}
-              </span>
-            </td>
-
+            <td><span class="payment-badge" [class]="getPaymentStatusClass(expense.paymentStatus)">{{ expense.paymentStatus }}</span></td>
+            <td><span class="status-badge" [class]="getStatusClass(expense.status)">{{ expense.status }}</span></td>
             <td class="actions-cell">
-              <a [routerLink]="['/expense', expense.id]" class="btn-view">View</a>
+              <a [routerLink]="['/expense', expense.id]" class="btn-view"
+                [attr.aria-label]="'View expense ' + expense.expenseNumber" [title]="'View ' + expense.expenseNumber">
+                <i class="bi bi-eye" aria-hidden="true"></i><span>View</span>
+              </a>
               @if (expense.status === 'DRAFT') {
-              <button *appHasPermission="'CREATE_EXPENSE'" class="btn-post" type="button"
-                (click)="postExpense(expense.id)">
-                Post
-              </button>
+              <button *appHasPermission="'CREATE_EXPENSE'" class="btn-post" type="button" (click)="postExpense(expense.id)">Post</button>
               }
             </td>
           </tr>
           } @empty {
-          <tr>
-            <td colspan="9">
-              <div class="empty-box">No expenses found</div>
-            </td>
-          </tr>
+          <tr><td colspan="9">
+            <div class="empty-box"><i class="bi bi-receipt" aria-hidden="true"></i>
+              <strong>No expenses found</strong><span>Try changing the filters or create a new expense.</span>
+            </div>
+          </td></tr>
           }
         </tbody>
       </table>

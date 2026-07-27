@@ -23,6 +23,8 @@ import { CostCenterService } from '../../../cost-center/services/cost-center.ser
 })
 export class ExpenseForm implements OnInit {
   readonly submitting = signal(false);
+  readonly costCentersLoading = signal(false);
+  readonly costCentersError = signal(false);
 
   readonly expenseAccounts = signal<Account[]>([]);
   readonly paymentAccounts = signal<Account[]>([]);
@@ -135,9 +137,18 @@ export class ExpenseForm implements OnInit {
   }
 
   loadCostCenters(): void {
+    this.costCentersLoading.set(true);
+    this.costCentersError.set(false);
     this.costCenterService.lookup().subscribe({
-      next: (res) => this.costCenters.set(res.data),
-      error: () => this.alert.error('Failed to load cost centers'),
+      next: (res) => {
+        this.costCenters.set(res.data);
+        this.costCentersLoading.set(false);
+      },
+      error: () => {
+        this.costCenters.set([]);
+        this.costCentersLoading.set(false);
+        this.costCentersError.set(true);
+      },
     });
   }
 
@@ -147,6 +158,8 @@ export class ExpenseForm implements OnInit {
   }
 
   submit(): void {
+  if (this.submitting()) return;
+
   if (this.form.invalid) {
     this.form.markAllAsTouched();
     this.alert.error('Please complete required fields');

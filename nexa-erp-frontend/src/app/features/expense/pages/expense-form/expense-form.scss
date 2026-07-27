@@ -828,3 +828,23 @@
     grid-column: 2;
   }
 }
+
+.form-group input:disabled,
+.form-group select:disabled,
+.form-group textarea:disabled {
+  cursor: not-allowed;
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.form-group input.ng-invalid.ng-touched,
+.form-group select.ng-invalid.ng-touched,
+.form-group textarea.ng-invalid.ng-touched {
+  border-color: #dc2626;
+}
+
+.form-group input.ng-invalid.ng-touched:focus,
+.form-group select.ng-invalid.ng-touched:focus,
+.form-group textarea.ng-invalid.ng-touched:focus {
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
+}

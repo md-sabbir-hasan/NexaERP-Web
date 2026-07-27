@@ -1,104 +1,110 @@
-<div class="expense-detail-page">
+<div class="expense-detail-page erp-page erp-page-inner">
   @if (loading()) {
-  <div class="loading-box">Loading...</div>
+  <div class="state-box" role="status"><span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Loading expense…</div>
+  } @else if (error()) {
+  <div class="state-box error-state" role="alert">
+    <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
+    <p>{{ error() }}</p>
+    <div class="state-actions">
+      <button type="button" class="btn-retry" (click)="loadExpense(0)">Try again</button>
+      <a routerLink="/expense" class="btn-back">Back to List</a>
+    </div>
+  </div>
   } @else if (expense(); as e) {
-
   <section class="detail-hero">
-    <div>
+    <div class="hero-copy">
       <span class="eyebrow">Expense</span>
       <h1>{{ e.expenseNumber }}</h1>
-      <p>{{ e.expenseAccountName }} — {{ e.expenseDate | date }}</p>
-      @if (e.costCenterName) {
-        <p class="mb-0">Cost Center: {{ e.costCenterCode }} - {{ e.costCenterName }}</p>
-      }
+      <p>{{ e.expenseAccountName }} <span aria-hidden="true">•</span> {{ e.expenseDate | date:'mediumDate' }}</p>
+      <div class="status-row" aria-label="Expense status">
+        <span class="status-badge" [class]="e.status.toLowerCase()">{{ e.status }}</span>
+        <span class="payment-badge" [class]="e.paymentStatus.toLowerCase()">{{ e.paymentStatus }}</span>
+      </div>
     </div>
-
     <div class="hero-actions">
-      <a routerLink="/expense" class="btn-back">Back to List</a>
+      <a routerLink="/expense" class="btn-back"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back to List</a>
       @if (e.status === 'DRAFT') {
-      <button *appHasPermission="'CREATE_EXPENSE'" class="btn-post" type="button" (click)="postExpense()">
-        Post Expense
-      </button>
+      <button *appHasPermission="'CREATE_EXPENSE'" class="btn-post" type="button" (click)="postExpense()">Post Expense</button>
       }
       @if (e.status === 'POSTED') {
-      <button *appHasPermission="'CANCEL_EXPENSE'" class="btn-cancel" type="button" (click)="cancelExpense()">
-        Cancel Expense
+      <button *appHasPermission="'CANCEL_EXPENSE'" class="btn-cancel" type="button"
+        [disabled]="cancelling()" (click)="cancelExpense()">
+        @if (cancelling()) { <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Cancelling… }
+        @else { <i class="bi bi-x-circle" aria-hidden="true"></i> Cancel Expense }
       </button>
       }
     </div>
   </section>
 
-  <section class="status-row">
-    <span class="status-badge" [class]="e.status.toLowerCase()">{{ e.status }}</span>
-    <span class="payment-badge" [class]="e.paymentStatus.toLowerCase()">{{ e.paymentStatus }}</span>
+  <section class="detail-grid" aria-label="Expense details">
+    <article class="detail-card">
+      <div class="card-heading"><i class="bi bi-cash-stack" aria-hidden="true"></i><h2>Amount Summary</h2></div>
+      <dl>
+        <div><dt>Total Amount</dt><dd>{{ e.amount | number:'1.2-2' }}</dd></div>
+        <div><dt>Paid Amount</dt><dd>{{ e.paidAmount | number:'1.2-2' }}</dd></div>
+        <div><dt>Due Amount</dt><dd [class.outstanding]="isDueOutstanding(e)">{{ e.dueAmount | number:'1.2-2' }}</dd></div>
+      </dl>
+    </article>
+
+    <article class="detail-card">
+      <div class="card-heading"><i class="bi bi-wallet2" aria-hidden="true"></i><h2>Payment Information</h2></div>
+      <dl>
+        <div><dt>Paid Immediately</dt><dd>{{ e.paidImmediately ? 'Yes' : 'No' }}</dd></div>
+        <div><dt>Payment Account</dt><dd>{{ e.paymentAccountName || 'Not Applicable' }}</dd></div>
+        <div><dt>Party</dt><dd>{{ e.partyName || 'Not Assigned' }}</dd></div>
+        <div><dt>Reference Number</dt><dd>{{ e.referenceNumber || 'Not Provided' }}</dd></div>
+      </dl>
+    </article>
+
+    <article class="detail-card">
+      <div class="card-heading"><i class="bi bi-receipt" aria-hidden="true"></i><h2>Expense Information</h2></div>
+      <dl>
+        <div><dt>Cost Center</dt><dd [class.muted-value]="!e.costCenterId">{{ costCenterLabel(e) }}</dd></div>
+        <div><dt>Expense Account</dt><dd>{{ e.expenseAccountName }}</dd></div>
+        <div><dt>Expense Date</dt><dd>{{ e.expenseDate | date:'mediumDate' }}</dd></div>
+        <div><dt>Created</dt><dd>{{ e.createdAt | date:'medium' }}</dd></div>
+      </dl>
+    </article>
   </section>
 
-  <section class="detail-grid">
-    <div class="detail-card">
-      <h3>Amount Summary</h3>
-      <div class="row"><span>Total Amount</span><strong>{{ e.amount | number:'1.2-2' }}</strong></div>
-      <div class="row"><span>Paid Amount</span><strong>{{ e.paidAmount | number:'1.2-2' }}</strong></div>
-      <div class="row due"><span>Due Amount</span><strong>{{ e.dueAmount | number:'1.2-2' }}</strong></div>
-    </div>
-
-    <div class="detail-card">
-      <h3>Payment Info</h3>
-      <div class="row"><span>Paid Immediately</span><strong>{{ e.paidImmediately ? 'Yes' : 'No' }}</strong></div>
-      @if (e.paymentAccountName) {
-      <div class="row"><span>Paid From</span><strong>{{ e.paymentAccountName }}</strong></div>
-      }
-      @if (e.partyName) {
-      <div class="row"><span>Party</span><strong>{{ e.partyName }}</strong></div>
-      }
-      @if (e.referenceNumber) {
-      <div class="row"><span>Reference</span><strong>{{ e.referenceNumber }}</strong></div>
-      }
-    </div>
-
-    @if (e.notes) {
-    <div class="detail-card full">
-      <h3>Notes</h3>
-      <p>{{ e.notes }}</p>
-    </div>
-    }
-
-    @if (e.attachmentUrl) {
-    <div class="detail-card full">
-      <h3>Receipt</h3>
-      <a [href]="e.attachmentUrl" target="_blank" class="attachment-link">View Attached Receipt</a>
-    </div>
-    }
-
-    @if (e.paymentStatus === 'UNPAID' || e.paymentStatus === 'PARTIAL') {
-    <div class="detail-card full pay-hint">
-      <h3>Pay this expense</h3>
-      <p>
-        Due amount <strong>{{ e.dueAmount | number:'1.2-2' }}</strong> — go to
-        <a *appHasPermission="'CREATE_PAYMENT'" routerLink="/payment/new">Payments → New Payment</a>,
-        select party <strong>{{ e.partyName }}</strong>, Payment Type = PAYMENT,
-        and allocate against this expense.
-      </p>
-    </div>
-    }
-
-    @if (e.status === 'CANCELLED') {
-    <div class="detail-card full cancel-info">
-      <h3>Cancellation Info</h3>
-      <div class="row"><span>Cancelled At</span><strong>{{ e.cancelledAt | date:'medium' }}</strong></div>
-      <div class="row"><span>Reason</span><strong>{{ e.cancelReason }}</strong></div>
-    </div>
-    }
-
-    @if (e.status === 'DRAFT') {
-    <section class="draft-notice">
-      ⚠️ Ei expense ta ekhono <strong>DRAFT</strong> — journal entry post hoyni, kono taka kata hoyni ba payable e
-      bosheni।
-      Review kore <strong>"Post Expense"</strong> button e click koro finalize korte।
-    </section>
-    }
+  <section class="notes-card">
+    <div class="card-heading"><i class="bi bi-card-text" aria-hidden="true"></i><h2>Notes</h2></div>
+    <p [class.muted-value]="!e.notes">{{ e.notes?.trim() || 'No notes provided' }}</p>
   </section>
 
+  @if (e.attachmentUrl) {
+  <section class="support-card">
+    <h2>Receipt</h2>
+    <a [href]="e.attachmentUrl" target="_blank" rel="noopener noreferrer" class="attachment-link">
+      <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i> View Attached Receipt
+    </a>
+  </section>
+  }
+
+  @if ((e.paymentStatus === 'UNPAID' || e.paymentStatus === 'PARTIAL') && e.partyName) {
+  <section class="support-card pay-hint">
+    <h2>Pay this expense</h2>
+    <p>Due amount <strong>{{ e.dueAmount | number:'1.2-2' }}</strong>. Create a payment and allocate it to this expense.</p>
+    <a *appHasPermission="'CREATE_PAYMENT'" routerLink="/payment/new">Create Payment</a>
+  </section>
+  }
+
+  @if (e.status === 'CANCELLED') {
+  <section class="support-card cancel-info">
+    <h2>Cancellation Information</h2>
+    <dl><div><dt>Cancelled At</dt><dd>{{ e.cancelledAt | date:'medium' }}</dd></div>
+      <div><dt>Reason</dt><dd>{{ e.cancelReason || 'Not provided' }}</dd></div></dl>
+  </section>
+  }
+
+  @if (e.status === 'DRAFT') {
+  <section class="draft-notice" role="note"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+    This expense is still <strong>DRAFT</strong>. No journal entry has been posted yet.
+  </section>
+  }
   } @else {
-  <div class="empty-box">Expense not found</div>
+  <div class="state-box"><i class="bi bi-receipt" aria-hidden="true"></i><p>Expense not found.</p>
+    <a routerLink="/expense" class="btn-back">Back to List</a>
+  </div>
   }
 </div>

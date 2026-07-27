@@ -36,7 +36,7 @@
   &:hover { background: #15803d; }
 }
 
-.summary-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 18px; }
+.summary-grid { display: grid; grid-template-columns: repeat(5,minmax(0, 1fr)); gap: 16px; }
 
 .summary-card {
   background: white;
@@ -56,7 +56,7 @@
 
 .filter-panel {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 140px;
+  grid-template-columns: minmax(220px, 2fr) repeat(3, minmax(150px, 1fr)) 140px;
   gap: 16px;
   padding: 18px;
   border: 1px solid #e5e7eb;
@@ -110,7 +110,19 @@ tbody tr:hover { background: #f8fafc; }
 small { display: block; margin-top: 4px; color: #64748b; }
 
 .amount-text { font-weight: 900; }
-.due-text { font-weight: 900; color: #dc2626; }
+.due-text { font-weight: 800; color: #64748b; }
+.due-text.outstanding { color: #b91c1c; }
+
+.cost-center-badge, .unassigned-badge {
+  display: inline-flex;
+  max-width: 100%;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 800;
+}
+.cost-center-badge { background: #e0f2fe; color: #075985; }
+.unassigned-badge { background: #f1f5f9; color: #64748b; font-weight: 700; }
 
 .payment-badge, .status-badge { padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; }
 
@@ -127,6 +139,9 @@ small { display: block; margin-top: 4px; color: #64748b; }
 }
 
 .btn-view {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: #eff6ff;
   color: #2563eb;
   text-decoration: none;
@@ -151,7 +166,23 @@ small { display: block; margin-top: 4px; color: #64748b; }
   &:hover { background: #15803d; }
 }
 
-.loading-box, .empty-box { padding: 60px; text-align: center; color: #64748b; font-weight: 700; }
+.state-box, .empty-box {
+  min-height: 190px;
+  padding: 40px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  color: #64748b;
+  font-weight: 700;
+}
+.state-box p { margin: 0; }
+.error-state { flex-direction: column; color: #991b1b; }
+.error-state > i, .empty-box > i { font-size: 28px; }
+.retry-btn { border: 0; border-radius: 10px; padding: 9px 15px; background: #2563eb; color: #fff; font-weight: 700; }
+.empty-box { flex-direction: column; }
+.empty-box span { font-weight: 500; }
 
 @media (max-width:1200px) {
   .summary-grid { grid-template-columns: repeat(2,1fr); }
@@ -170,6 +201,6 @@ small { display: block; margin-top: 4px; color: #64748b; }
 
 @media (max-width:575.98px) {
   .new-btn { width: 100%; justify-content: center; }
-  .loading-box, .empty-box { padding: 36px 18px; }
+  .state-box, .empty-box { padding: 36px 18px; }
   .table-header { padding: 16px; }
 }

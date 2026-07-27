@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import Swal from 'sweetalert2';
 
 import { AlertService } from '../../../../core/services/alert.service';
 import { ExpenseResponse } from '../../models/expense.model';
@@ -15,7 +16,10 @@ import { HasPermissionDirective } from '../../../../shared/directives/has-permis
   styleUrl: './expense-detail.scss',
 })
 export class ExpenseDetail implements OnInit {
+  private expenseId = 0;
   readonly loading = signal(false);
+  readonly cancelling = signal(false);
+  readonly error = signal<string | null>(null);
   readonly expense = signal<ExpenseResponse | null>(null);
 
   constructor(
@@ -27,49 +31,90 @@ export class ExpenseDetail implements OnInit {
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (id) {
+      this.expenseId = id;
       this.loadExpense(id);
     }
   }
 
   loadExpense(id: number): void {
+    if (!id) id = this.expenseId;
+    if (!id) return;
     this.loading.set(true);
+    this.error.set(null);
 
     this.expenseService.getById(id).subscribe({
       next: (res) => {
         this.expense.set(res.data);
         this.loading.set(false);
       },
-      error: () => {
+      error: (error) => {
         this.loading.set(false);
-        this.alert.error('Failed to load expense');
+        this.error.set(error?.error?.message ?? 'Unable to load this expense. Please try again.');
       },
     });
   }
 
   async cancelExpense(): Promise<void> {
     const expense = this.expense();
-    if (!expense) return;
+    if (!expense || expense.status !== 'POSTED' || this.cancelling()) return;
 
-    const reason = window.prompt('Cancel reason?', '');
-    if (reason === null) return;
+    const result = await Swal.fire<string>({
+      title: 'Cancel this expense?',
+      text: 'This action will reverse the posted accounting entry. The original expense will remain in the audit history.',
+      icon: 'warning',
+      input: 'textarea',
+      inputLabel: 'Cancellation reason',
+      inputPlaceholder: 'Enter the reason for cancellation',
+      inputAttributes: { 'aria-label': 'Cancellation reason' },
+      showCancelButton: true,
+      focusCancel: true,
+      reverseButtons: true,
+      confirmButtonText: 'Yes, cancel expense',
+      cancelButtonText: 'Keep expense',
+      inputValidator: (value) => value?.trim() ? undefined : 'Cancellation reason is required',
+    });
+    if (!result.isConfirmed || !result.value?.trim()) return;
 
-    if (!reason.trim()) {
-      this.alert.warning('Cancel reason is required');
-      return;
-    }
+    this.cancelling.set(true);
+    void Swal.fire({
+      title: 'Cancelling expense…',
+      text: 'Please wait while the accounting entry is reversed.',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      showConfirmButton: false,
+      didOpen: () => Swal.showLoading(),
+    });
 
-    const confirmed = await this.alert.confirm(`Cancel ${expense.expenseNumber}?`);
-    if (!confirmed) return;
-
-    this.expenseService.cancel(expense.id, { reason: reason.trim() }).subscribe({
-      next: (res) => {
-        this.expense.set(res.data);
-        this.alert.success('Expense cancelled');
+    this.expenseService.cancel(expense.id, { reason: result.value.trim() }).subscribe({
+      next: async () => {
+        this.cancelling.set(false);
+        await Swal.fire({
+          title: 'Expense cancelled',
+          text: 'The expense was cancelled and its accounting entry was reversed successfully.',
+          icon: 'success',
+          confirmButtonText: 'OK',
+        });
+        this.loadExpense(expense.id);
       },
       error: (err) => {
-        this.alert.error(err?.error?.message ?? 'Failed to cancel expense');
+        this.cancelling.set(false);
+        void Swal.fire({
+          title: 'Unable to cancel expense',
+          text: err?.error?.message ?? 'Unable to cancel the expense. Please try again.',
+          icon: 'error',
+        });
       },
     });
+  }
+
+  costCenterLabel(expense: ExpenseResponse): string {
+    return expense.costCenterCode && expense.costCenterName
+      ? `${expense.costCenterCode} - ${expense.costCenterName}`
+      : 'Not Assigned';
+  }
+
+  isDueOutstanding(expense: ExpenseResponse): boolean {
+    return Number(expense.dueAmount) > 0;
   }
 
   async postExpense(): Promise<void> {

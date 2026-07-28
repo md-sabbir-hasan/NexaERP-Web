@@ -45,16 +45,30 @@ export class AccountingPeriodService {
   open(id: number, remarks?: string | null): Observable<ApiResponse<AccountingPeriod>> {
     let params = new HttpParams();
     if (remarks?.trim()) params = params.set('remarks', remarks.trim());
-    return this.http.patch<ApiResponse<AccountingPeriod>>(`${this.baseUrl}/${id}/open`, {}, { params });
+    return this.http.patch<ApiResponse<AccountingPeriod>>(
+      `${this.baseUrl}/${id}/open`,
+      {},
+      { params },
+    );
   }
 
   close(id: number, remarks?: string | null): Observable<ApiResponse<AccountingPeriod>> {
     let params = new HttpParams();
     if (remarks?.trim()) params = params.set('remarks', remarks.trim());
-    return this.http.patch<ApiResponse<AccountingPeriod>>(`${this.baseUrl}/${id}/close`, {}, { params });
+    return this.http.patch<ApiResponse<AccountingPeriod>>(
+      `${this.baseUrl}/${id}/close`,
+      {},
+      { params },
+    );
   }
 
   delete(id: number): Observable<ApiResponse<void>> {
     return this.http.delete<ApiResponse<void>>(`${this.baseUrl}/${id}`);
+  }
+
+  lock(id: number, remarks?: string | null) {
+    return this.http.patch<ApiResponse<AccountingPeriod>>(`${this.baseUrl}/${id}/lock`, null, {
+      params: remarks ? new HttpParams().set('remarks', remarks) : undefined,
+    });
   }
 }

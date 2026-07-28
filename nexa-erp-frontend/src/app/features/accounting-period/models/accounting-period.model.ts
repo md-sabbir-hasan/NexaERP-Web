@@ -1,4 +1,4 @@
-export type AccountingPeriodStatus = 'OPEN' | 'CLOSED';
+export type AccountingPeriodStatus = 'OPEN' | 'CLOSED' | 'LOCKED';
 
 export interface AccountingPeriod {
   id: number;
@@ -16,6 +16,9 @@ export interface AccountingPeriod {
   remarks: string | null;
   createdAt: string;
   updatedAt: string;
+
+  lockedAt?: string | null;
+  lockedBy?: number | null;
 }
 
 export interface AccountingPeriodRequest {

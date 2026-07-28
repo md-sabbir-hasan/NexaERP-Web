@@ -22,18 +22,11 @@ import { AccountingPeriodService } from '../../services/accounting-period.servic
 @Component({
   selector: 'app-accounting-period-list',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    ReactiveFormsModule,
-    RouterLink,
-    HasPermissionDirective,
-  ],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, HasPermissionDirective],
   templateUrl: './accounting-period-list.html',
   styleUrl: './accounting-period-list.scss',
 })
 export class AccountingPeriodList implements OnInit {
-
   private readonly fb = inject(FormBuilder);
   private readonly accountingPeriodService = inject(AccountingPeriodService);
   private readonly fiscalYearService = inject(FiscalYearService);
@@ -48,14 +41,14 @@ export class AccountingPeriodList implements OnInit {
   readonly formOpen = signal(false);
   readonly editingId = signal<number | null>(null);
   readonly search = signal('');
+  readonly lockedCount = computed(
+    () => this.periods().filter((period) => period.status === 'LOCKED').length,
+  );
 
   readonly form = this.fb.nonNullable.group({
     fiscalYearId: [0, [Validators.required, Validators.min(1)]],
     name: ['', [Validators.required, Validators.maxLength(100)]],
-    periodNumber: [
-      1,
-      [Validators.required, Validators.min(1), Validators.max(99)],
-    ],
+    periodNumber: [1, [Validators.required, Validators.min(1), Validators.max(99)]],
     startDate: ['', Validators.required],
     endDate: ['', Validators.required],
     remarks: ['', Validators.maxLength(500)],
@@ -64,18 +57,14 @@ export class AccountingPeriodList implements OnInit {
   readonly totalCount = computed(() => this.periods().length);
 
   readonly openCount = computed(
-    () =>
-      this.periods().filter((period) => period.status === 'OPEN').length,
+    () => this.periods().filter((period) => period.status === 'OPEN').length,
   );
 
   readonly closedCount = computed(
-    () =>
-      this.periods().filter((period) => period.status === 'CLOSED').length,
+    () => this.periods().filter((period) => period.status === 'CLOSED').length,
   );
 
-  readonly currentCount = computed(
-    () => this.periods().filter((period) => period.current).length,
-  );
+  readonly currentCount = computed(() => this.periods().filter((period) => period.current).length);
 
   readonly filteredPeriods = computed(() => {
     const query = this.search().trim().toLowerCase();
@@ -85,13 +74,7 @@ export class AccountingPeriodList implements OnInit {
     }
 
     return this.periods().filter((period) =>
-      [
-        period.name,
-        period.fiscalYearName,
-        period.status,
-        period.startDate,
-        period.endDate,
-      ]
+      [period.name, period.fiscalYearName, period.status, period.startDate, period.endDate]
         .join(' ')
         .toLowerCase()
         .includes(query),
@@ -115,9 +98,7 @@ export class AccountingPeriodList implements OnInit {
         this.fiscalYears.set(fiscalYears);
         this.periods.set(periods.data ?? []);
 
-        const activeFiscalYear = fiscalYears.find(
-          (year) => year.status === 'ACTIVE',
-        );
+        const activeFiscalYear = fiscalYears.find((year) => year.status === 'ACTIVE');
 
         if (activeFiscalYear) {
           this.selectedFiscalYearId.set(activeFiscalYear.id);
@@ -135,17 +116,15 @@ export class AccountingPeriodList implements OnInit {
   loadPeriods(): void {
     this.loading.set(true);
 
-    this.accountingPeriodService
-      .getAll(this.selectedFiscalYearId())
-      .subscribe({
-        next: (response) => {
-          this.periods.set(response.data ?? []);
-          this.loading.set(false);
-        },
-        error: () => {
-          this.loading.set(false);
-        },
-      });
+    this.accountingPeriodService.getAll(this.selectedFiscalYearId()).subscribe({
+      next: (response) => {
+        this.periods.set(response.data ?? []);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.loading.set(false);
+      },
+    });
   }
 
   onFiscalYearChange(value: string): void {
@@ -156,8 +135,7 @@ export class AccountingPeriodList implements OnInit {
   }
 
   openCreate(): void {
-    const fiscalYearId =
-      this.selectedFiscalYearId() ?? this.fiscalYears()[0]?.id ?? 0;
+    const fiscalYearId = this.selectedFiscalYearId() ?? this.fiscalYears()[0]?.id ?? 0;
 
     this.editingId.set(null);
 
@@ -206,9 +184,7 @@ export class AccountingPeriodList implements OnInit {
     const value = this.form.getRawValue();
 
     if (value.endDate < value.startDate) {
-      this.alertService.warning(
-        'End date cannot be before start date',
-      );
+      this.alertService.warning('End date cannot be before start date');
       return;
     }
 
@@ -239,9 +215,7 @@ export class AccountingPeriodList implements OnInit {
 
         this.alertService.success(
           response.message ||
-            (editingId === null
-              ? 'Accounting period created'
-              : 'Accounting period updated'),
+            (editingId === null ? 'Accounting period created' : 'Accounting period updated'),
         );
 
         this.loadPeriods();
@@ -249,10 +223,7 @@ export class AccountingPeriodList implements OnInit {
       error: (error) => {
         this.saving.set(false);
 
-        this.alertService.error(
-          error?.error?.message ??
-            'Could not save accounting period',
-        );
+        this.alertService.error(error?.error?.message ?? 'Could not save accounting period');
       },
     });
   }
@@ -265,14 +236,10 @@ export class AccountingPeriodList implements OnInit {
       return;
     }
 
-    const fiscalYear = this.fiscalYears().find(
-      (item) => item.id === fiscalYearId,
-    );
+    const fiscalYear = this.fiscalYears().find((item) => item.id === fiscalYearId);
 
     const confirmed = await this.alertService.confirm(
-      `Generate monthly periods for ${
-        fiscalYear?.name ?? 'selected fiscal year'
-      }?`,
+      `Generate monthly periods for ${fiscalYear?.name ?? 'selected fiscal year'}?`,
     );
 
     if (!confirmed) {
@@ -287,41 +254,30 @@ export class AccountingPeriodList implements OnInit {
   }
 
   async toggleStatus(period: AccountingPeriod): Promise<void> {
-    const nextAction =
-      period.status === 'OPEN' ? 'close' : 'open';
+    if (period.status === 'LOCKED') {
+      this.alertService.warning('Locked accounting period cannot be reopened');
+      return;
+    }
+
+    const isClosing = period.status === 'OPEN';
 
     const confirmed = await this.alertService.confirm(
-      `${nextAction === 'close' ? 'Close' : 'Open'} ${period.name}?`,
+      `${isClosing ? 'Close' : 'Reopen'} ${period.name}?`,
     );
 
     if (!confirmed) {
       return;
     }
 
-    const request$ =
-      nextAction === 'close'
-        ? this.accountingPeriodService.close(
-            period.id,
-            period.remarks,
-          )
-        : this.accountingPeriodService.open(
-            period.id,
-            period.remarks,
-          );
+    const request$ = isClosing
+      ? this.accountingPeriodService.close(period.id, period.remarks)
+      : this.accountingPeriodService.open(period.id, period.remarks);
 
-    this.runAction(
-      period.id,
-      request$,
-      `Accounting period ${
-        nextAction === 'close' ? 'closed' : 'opened'
-      }`,
-    );
+    this.runAction(period.id, request$, `Accounting period ${isClosing ? 'closed' : 'reopened'}`);
   }
 
   async remove(period: AccountingPeriod): Promise<void> {
-    const confirmed = await this.alertService.confirm(
-      `Delete ${period.name}?`,
-    );
+    const confirmed = await this.alertService.confirm(`Delete ${period.name}?`);
 
     if (!confirmed) {
       return;
@@ -369,19 +325,38 @@ export class AccountingPeriodList implements OnInit {
       next: (response: any) => {
         this.actionId.set(null);
 
-        this.alertService.success(
-          response?.message || fallbackMessage,
-        );
+        this.alertService.success(response?.message || fallbackMessage);
 
         this.loadPeriods();
       },
       error: (error) => {
         this.actionId.set(null);
 
-        this.alertService.error(
-          error?.error?.message ?? 'Action failed',
-        );
+        this.alertService.error(error?.error?.message ?? 'Action failed');
       },
     });
+  }
+
+  async lockPeriod(period: AccountingPeriod): Promise<void> {
+    if (period.status !== 'CLOSED') {
+      this.alertService.warning('Only a closed accounting period can be locked');
+      return;
+    }
+
+    const confirmed = await this.alertService.confirm(
+      `Lock ${period.name}?\n\n` +
+        'A locked accounting period cannot be reopened. ' +
+        'Posting will remain blocked for this period.',
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.runAction(
+      period.id,
+      this.accountingPeriodService.lock(period.id, period.remarks),
+      'Accounting period locked',
+    );
   }
 }

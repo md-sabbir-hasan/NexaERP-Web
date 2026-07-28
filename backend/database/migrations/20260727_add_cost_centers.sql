@@ -1,33 +1,33 @@
-CREATE TABLE cost_centers (
-    id BIGINT NOT NULL AUTO_INCREMENT,
-    code VARCHAR(30) NOT NULL,
-    name VARCHAR(150) NOT NULL,
-    description VARCHAR(500) NULL,
-    is_active BIT(1) NOT NULL DEFAULT b'1',
-    created_by BIGINT NULL,
-    updated_by BIGINT NULL,
-    created_at DATETIME(6) NOT NULL,
-    updated_at DATETIME(6) NOT NULL,
-    deleted_at DATETIME(6) NULL,
-    PRIMARY KEY (id),
-    CONSTRAINT uk_cost_centers_code UNIQUE (code),
-    INDEX idx_cost_center_active (is_active)
-);
-
-ALTER TABLE expenses
-    ADD COLUMN cost_center_id BIGINT NULL,
-    ADD INDEX idx_expenses_cost_center (cost_center_id),
-    ADD CONSTRAINT fk_expenses_cost_center
-        FOREIGN KEY (cost_center_id) REFERENCES cost_centers (id);
-
--- vendor_bill_items.cost_center_id already exists in the current model as a nullable scalar.
-ALTER TABLE vendor_bill_items
-    ADD INDEX idx_vendor_bill_items_cost_center (cost_center_id),
-    ADD CONSTRAINT fk_vendor_bill_items_cost_center
-        FOREIGN KEY (cost_center_id) REFERENCES cost_centers (id);
-
-ALTER TABLE journal_lines
-    ADD COLUMN cost_center_id BIGINT NULL,
-    ADD INDEX idx_journal_lines_cost_center (cost_center_id),
-    ADD CONSTRAINT fk_journal_lines_cost_center
-        FOREIGN KEY (cost_center_id) REFERENCES cost_centers (id);
+-- CREATE TABLE cost_centers (
+--     id BIGINT NOT NULL AUTO_INCREMENT,
+--     code VARCHAR(30) NOT NULL,
+--     name VARCHAR(150) NOT NULL,
+--     description VARCHAR(500) NULL,
+--     is_active BIT(1) NOT NULL DEFAULT b'1',
+--     created_by BIGINT NULL,
+--     updated_by BIGINT NULL,
+--     created_at DATETIME(6) NOT NULL,
+--     updated_at DATETIME(6) NOT NULL,
+--     deleted_at DATETIME(6) NULL,
+--     PRIMARY KEY (id),
+--     CONSTRAINT uk_cost_centers_code UNIQUE (code),
+--     INDEX idx_cost_center_active (is_active)
+-- );
+--
+-- ALTER TABLE expenses
+--     ADD COLUMN cost_center_id BIGINT NULL,
+--     ADD INDEX idx_expenses_cost_center (cost_center_id),
+--     ADD CONSTRAINT fk_expenses_cost_center
+--         FOREIGN KEY (cost_center_id) REFERENCES cost_centers (id);
+--
+-- -- vendor_bill_items.cost_center_id already exists in the current model as a nullable scalar.
+-- ALTER TABLE vendor_bill_items
+--     ADD INDEX idx_vendor_bill_items_cost_center (cost_center_id),
+--     ADD CONSTRAINT fk_vendor_bill_items_cost_center
+--         FOREIGN KEY (cost_center_id) REFERENCES cost_centers (id);
+--
+-- ALTER TABLE journal_lines
+--     ADD COLUMN cost_center_id BIGINT NULL,
+--     ADD INDEX idx_journal_lines_cost_center (cost_center_id),
+--     ADD CONSTRAINT fk_journal_lines_cost_center
+--         FOREIGN KEY (cost_center_id) REFERENCES cost_centers (id);

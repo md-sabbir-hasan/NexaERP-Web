@@ -41,4 +41,16 @@ class AuthControllerTest {
         assertThat(response.getBody().getData().getEmail()).isEqualTo(principal.email());
         verify(userRepository).findByEmail(principal.email());
     }
+
+    @Test
+    void mobileLogoutUsesCurrentUserPrincipalAndKeepsLogoutAllContract() {
+        AuthController controller = new AuthController(authService, userRepository);
+        CurrentUserPrincipal principal = new CurrentUserPrincipal(42L, "user@nexaerp.test");
+        User user = User.builder().id(42L).email(principal.email()).build();
+        when(userRepository.findByEmail(principal.email())).thenReturn(Optional.of(user));
+
+        controller.logout(principal);
+
+        verify(authService).logout(42L);
+    }
 }

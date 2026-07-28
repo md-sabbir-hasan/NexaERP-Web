@@ -1,5 +1,5 @@
 import { Directive, Input, TemplateRef, ViewContainerRef } from '@angular/core';
-import { TokenService } from '../../core/services/token.service';
+import { AuthStore } from '../../core/auth/auth.store';
 
 @Directive({
   selector: '[appHasPermission]',
@@ -11,11 +11,11 @@ export class HasPermissionDirective {
   constructor(
     private templateRef: TemplateRef<unknown>,
     private viewContainer: ViewContainerRef,
-    private tokenService: TokenService,
+    private authStore: AuthStore,
   ) {}
 
   @Input() set appHasPermission(permission: string) {
-    const allowed = this.tokenService.hasPermission(permission);
+    const allowed = this.authStore.hasPermission(permission);
 
     if (allowed && !this.hasView) {
       this.viewContainer.createEmbeddedView(this.templateRef);

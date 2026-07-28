@@ -15,16 +15,14 @@ import { AlertService } from '../../../../core/services/alert.service';
 export class LoginComponent {
   readonly loading = signal(false);
   readonly showPassword = signal(false);
-
   readonly currentYear = new Date().getFullYear();
-
   readonly loginForm;
 
   constructor(
-    private fb: NonNullableFormBuilder,
-    private authService: AuthService,
-    private alert: AlertService,
-    private router: Router,
+    private readonly fb: NonNullableFormBuilder,
+    private readonly authService: AuthService,
+    private readonly alert: AlertService,
+    private readonly router: Router,
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -39,22 +37,10 @@ export class LoginComponent {
     }
 
     this.loading.set(true);
-
-    const request = this.loginForm.getRawValue();
-
-    this.authService.login(request).subscribe({
+    this.authService.login(this.loginForm.getRawValue()).subscribe({
       next: () => {
-        this.authService.refreshCurrentUser().subscribe({
-          next: () => {
-            this.loading.set(false);
-            this.router.navigate(['/dashboard']);
-          },
-          error: () => {
-            // Profile fetch failed but login itself succeeded — still proceed
-            this.loading.set(false);
-            this.router.navigate(['/dashboard']);
-          },
-        });
+        this.loading.set(false);
+        void this.router.navigate(['/dashboard']);
       },
       error: (error) => {
         this.loading.set(false);

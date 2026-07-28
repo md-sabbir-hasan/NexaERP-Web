@@ -1,140 +1,127 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, WritableSignal, computed, signal } from '@angular/core';
-import { Observable, finalize, map, tap } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import {
+  Observable,
+  catchError,
+  finalize,
+  map,
+  of,
+  shareReplay,
+  switchMap,
+  tap,
+  throwError,
+} from 'rxjs';
 
+import { NotificationStore } from '../../features/notifications/services/notification.store';
 import { APP_CONFIG } from '../config/app.config';
-import { STORAGE_KEYS } from '../constants/storage.constants';
+import { LEGACY_AUTH_STORAGE_KEYS } from '../constants/storage.constants';
 import { ApiResponse } from '../models/api-response.model';
 import {
   CurrentUserProfile,
   ForgotPasswordRequest,
   LoginRequest,
-  LoginResponse,
-  RefreshTokenRequest,
   ResetPasswordRequest,
   SetPasswordRequest,
+  WebAuthResponse,
 } from '../models/auth.model';
 import { CurrentUser } from '../models/current-user.model';
 import { StorageService } from '../services/storage.service';
-import { TokenService } from '../services/token.service';
-import { NotificationStore } from '../../features/notifications/services/notification.store';
+import { AuthStore } from './auth.store';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly baseUrl = `${APP_CONFIG.apiUrl}/auth`;
+  private refreshRequest$: Observable<WebAuthResponse> | null = null;
+  private readonly http = inject(HttpClient);
+  private readonly authStore = inject(AuthStore);
+  private readonly storage = inject(StorageService);
+  private readonly notificationStore = inject(NotificationStore);
 
-  private readonly currentUserSignal: WritableSignal<CurrentUser | null>;
+  readonly currentUser = this.authStore.currentUser;
+  readonly isLoggedIn = this.authStore.isAuthenticated;
 
-  readonly currentUser;
-
-  readonly isLoggedIn;
-
-  constructor(
-    private http: HttpClient,
-    private tokenService: TokenService,
-    private storage: StorageService,
-    private notificationStore: NotificationStore,
-  ) {
-    // পুরনো duplicate keys startup-এ clean করবে
-    this.tokenService.clearLegacyTokens();
-
-    this.currentUserSignal = signal<CurrentUser | null>(
-      this.storage.get<CurrentUser>(STORAGE_KEYS.CURRENT_USER),
-    );
-
-    this.currentUser = this.currentUserSignal.asReadonly();
-
-    this.isLoggedIn = computed(() => {
-      const user = this.currentUserSignal();
-
-      return user !== null && this.tokenService.isLoggedIn();
-    });
+  login(request: LoginRequest): Observable<CurrentUser> {
+    return this.http
+      .post<ApiResponse<WebAuthResponse>>(`${this.baseUrl}/web/login`, request, {
+        withCredentials: true,
+      })
+      .pipe(
+        tap((response) => this.authStore.setAccessToken(response.data.accessToken)),
+        switchMap(() => this.loadCurrentUser()),
+        catchError((error) =>
+          this.expireWebSession().pipe(switchMap(() => throwError(() => error))),
+        ),
+      );
   }
 
-  login(request: LoginRequest): Observable<ApiResponse<LoginResponse>> {
-    return this.http.post<ApiResponse<LoginResponse>>(`${this.baseUrl}/login`, request).pipe(
-      tap((response) => {
-        const data = response.data;
-
-        this.tokenService.saveTokens(data.accessToken, data.refreshToken);
-
-        const user: CurrentUser = {
-          id: data.userId,
-          name: data.name,
-          email: data.email,
-          status: 'ACTIVE',
-          roles: [],
-          permissions: [],
-        };
-
-        this.storage.set(STORAGE_KEYS.CURRENT_USER, user);
-        this.currentUserSignal.set(user);
-      }),
-    );
-  }
-
-  // Full profile (real name, roles, permissions) for the logged-in user.
-  // Login response only carries id/name/email — this fills in the rest.
   getMe(): Observable<ApiResponse<CurrentUserProfile>> {
     return this.http.get<ApiResponse<CurrentUserProfile>>(`${this.baseUrl}/me`);
   }
 
-  // Fetches the full profile and updates stored/in-memory current user.
-  refreshCurrentUser(): Observable<CurrentUser> {
+  loadCurrentUser(): Observable<CurrentUser> {
     return this.getMe().pipe(
-      map((res) => {
-        const profile = res.data;
-        const user: CurrentUser = {
-          id: profile.id,
-          name: profile.name,
-          email: profile.email,
-          status: profile.status,
-          roles: profile.roles,
-          permissions: profile.permissions,
-        };
-        this.storage.set(STORAGE_KEYS.CURRENT_USER, user);
-        this.currentUserSignal.set(user);
-        return user;
-      }),
+      map((response) => this.toCurrentUser(response.data)),
+      tap((user) => this.authStore.setCurrentUser(user)),
     );
   }
 
-  refreshToken(): Observable<ApiResponse<LoginResponse>> {
-    const request: RefreshTokenRequest = {
-      refreshToken: this.tokenService.getRefreshToken() ?? '',
-    };
+  refreshAccessToken(): Observable<WebAuthResponse> {
+    if (this.refreshRequest$) {
+      return this.refreshRequest$;
+    }
 
-    return this.http.post<ApiResponse<LoginResponse>>(`${this.baseUrl}/refresh`, request).pipe(
-      tap((response) => {
-        this.tokenService.saveTokens(response.data.accessToken, response.data.refreshToken);
+    this.authStore.setRefreshInProgress(true);
+    this.refreshRequest$ = this.http
+      .post<ApiResponse<WebAuthResponse>>(
+        `${this.baseUrl}/web/refresh`,
+        {},
+        { withCredentials: true },
+      )
+      .pipe(
+        map((response) => response.data),
+        tap((response) => this.authStore.setAccessToken(response.accessToken)),
+        finalize(() => {
+          this.refreshRequest$ = null;
+          this.authStore.setRefreshInProgress(false);
+        }),
+        shareReplay({ bufferSize: 1, refCount: false }),
+      );
+    return this.refreshRequest$;
+  }
+
+  initialize(): Observable<void> {
+    this.removeLegacyAuthStorage();
+    this.authStore.beginInitialization();
+    return this.refreshAccessToken().pipe(
+      switchMap(() => this.loadCurrentUser()),
+      map(() => undefined),
+      catchError(() => {
+        this.clearSession(false);
+        return of(undefined);
       }),
+      finalize(() => this.authStore.completeInitialization()),
     );
   }
 
   logout(): Observable<ApiResponse<null>> {
-    return this.http.post<ApiResponse<null>>(`${this.baseUrl}/logout`, {}).pipe(
-      // Backend logout fail হলেও browser session clear হবে
-      finalize(() => this.clearSession()),
-    );
+    return this.http
+      .post<ApiResponse<null>>(`${this.baseUrl}/web/logout`, {}, { withCredentials: true })
+      .pipe(finalize(() => this.clearSession(false)));
   }
 
-  clearSession(): void {
+  clearSession(sessionExpired = false): void {
     this.notificationStore.reset();
-    this.tokenService.clearTokens();
+    this.authStore.clear(sessionExpired);
+  }
 
-    this.storage.removeMany([
-      STORAGE_KEYS.CURRENT_USER,
+  markSessionExpired(): boolean {
+    if (this.authStore.sessionExpired()) return false;
+    this.clearSession(true);
+    return true;
+  }
 
-      // পুরনো duplicate user key
-      'user',
-
-      // APP_CONFIG দিয়ে আগে save হয়ে থাকলে সম্ভাব্য keys
-      'current_user',
-    ]);
-
-    this.currentUserSignal.set(null);
+  removeLegacyAuthStorage(): void {
+    this.storage.removeMany([...LEGACY_AUTH_STORAGE_KEYS]);
   }
 
   forgotPassword(request: ForgotPasswordRequest): Observable<ApiResponse<null>> {
@@ -153,5 +140,25 @@ export class AuthService {
     return this.http.get<ApiResponse<unknown>>(`${this.baseUrl}/validate-invite`, {
       params: { token },
     });
+  }
+
+  private expireWebSession(): Observable<ApiResponse<null> | null> {
+    return this.http
+      .post<ApiResponse<null>>(`${this.baseUrl}/web/logout`, {}, { withCredentials: true })
+      .pipe(
+        catchError(() => of(null)),
+        finalize(() => this.clearSession(false)),
+      );
+  }
+
+  private toCurrentUser(profile: CurrentUserProfile): CurrentUser {
+    return {
+      id: profile.id,
+      name: profile.name,
+      email: profile.email,
+      status: profile.status,
+      roles: profile.roles,
+      permissions: profile.permissions,
+    };
   }
 }

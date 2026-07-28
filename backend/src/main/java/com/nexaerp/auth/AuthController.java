@@ -49,8 +49,8 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(
-            @AuthenticationPrincipal String email) {
-        User user = userRepository.findByEmail(email)
+            @AuthenticationPrincipal CurrentUserPrincipal principal) {
+        User user = userRepository.findByEmail(principal.email())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         authService.logout(user.getId());
         return ResponseEntity.ok(ApiResponse.success("Logged out successfully", null));

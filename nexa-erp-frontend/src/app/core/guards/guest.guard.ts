@@ -1,15 +1,15 @@
-import { CanActivateFn, Router } from '@angular/router';
 import { inject } from '@angular/core';
-import { TokenService } from '../services/token.service';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { CanActivateFn, Router } from '@angular/router';
+import { filter, map, take } from 'rxjs';
+import { AuthStore } from '../auth/auth.store';
 
 export const guestGuard: CanActivateFn = () => {
-  const tokenService = inject(TokenService);
+  const authStore = inject(AuthStore);
   const router = inject(Router);
-
-  if (!tokenService.isLoggedIn()) {
-    return true;
-  }
-
-  router.navigate(['/dashboard']);
-  return false;
+  return toObservable(authStore.initialized).pipe(
+    filter(Boolean),
+    take(1),
+    map(() => authStore.isAuthenticated() ? router.createUrlTree(['/dashboard']) : true),
+  );
 };

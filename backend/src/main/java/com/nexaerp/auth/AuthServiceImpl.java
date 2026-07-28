@@ -4,6 +4,7 @@ import com.nexaerp.audit.AuditAction;
 import com.nexaerp.audit.AuditLogService;
 import com.nexaerp.auth.dto.*;
 import com.nexaerp.common.exception.BusinessRuleException;
+import com.nexaerp.common.exception.BrowserAuthenticationException;
 import com.nexaerp.common.exception.ResourceNotFoundException;
 import com.nexaerp.email.EmailService;
 import com.nexaerp.passwordreset.PasswordResetToken;
@@ -191,10 +192,101 @@ public class AuthServiceImpl implements AuthService{
     }
 
     @Override
+    @Transactional(noRollbackFor = BrowserAuthenticationException.class)
+    public BrowserAuthResult webLogin(
+            LoginRequestDto request, String ipAddress, String deviceName) {
+        try {
+            LoginResponseDto mobileResult = login(request, ipAddress, deviceName);
+            return new BrowserAuthResult(
+                    toWebResponse(mobileResult),
+                    mobileResult.getRefreshToken());
+        } catch (BusinessRuleException exception) {
+            throw new BrowserAuthenticationException(exception.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public BrowserAuthResult webRefresh(
+            String tokenValue, String ipAddress, String deviceName) {
+        RefreshToken currentToken = refreshTokenRepository
+                .findByTokenForUpdate(tokenValue)
+                .orElseThrow(() -> new BrowserAuthenticationException("Invalid refresh session"));
+
+        LocalDateTime now = LocalDateTime.now();
+        if (Boolean.TRUE.equals(currentToken.getRevoked())) {
+            throw new BrowserAuthenticationException("Refresh session has been revoked");
+        }
+        if (!now.isBefore(currentToken.getExpiresAt())) {
+            throw new BrowserAuthenticationException("Refresh session has expired");
+        }
+
+        User user = currentToken.getUser();
+        if (user == null || user.getStatus() != UserStatus.ACTIVE) {
+            throw new BrowserAuthenticationException("User session is no longer active");
+        }
+
+        currentToken.setRevoked(true);
+        refreshTokenRepository.save(currentToken);
+
+        String replacementValue = UUID.randomUUID().toString();
+        RefreshToken replacement = RefreshToken.builder()
+                .user(user)
+                .token(replacementValue)
+                .expiresAt(now.plusSeconds(refreshTokenExpiration / 1000))
+                .revoked(false)
+                .ipAddress(ipAddress)
+                .deviceName(deviceName)
+                .build();
+        refreshTokenRepository.save(replacement);
+
+        List<String> permissions = collectPermissions(user);
+        String accessToken = jwtUtil.generateAccessToken(
+                user.getId(), user.getEmail(), permissions);
+        WebAuthResponseDto response = WebAuthResponseDto.builder()
+                .accessToken(accessToken)
+                .expiresIn(accessTokenExpiration)
+                .userId(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .build();
+        return new BrowserAuthResult(response, replacementValue);
+    }
+
+    @Override
+    @Transactional
+    public void webLogout(String tokenValue) {
+        refreshTokenRepository.findByTokenForUpdate(tokenValue).ifPresent(token -> {
+            if (!Boolean.TRUE.equals(token.getRevoked())) {
+                token.setRevoked(true);
+                refreshTokenRepository.save(token);
+            }
+        });
+    }
+
+    @Override
     @Transactional
     public void logout(Long userId) {
         // Revoke all refresh token for this user
         refreshTokenRepository.deleteAllByUserId(userId);
+    }
+
+    private WebAuthResponseDto toWebResponse(LoginResponseDto source) {
+        return WebAuthResponseDto.builder()
+                .accessToken(source.getAccessToken())
+                .expiresIn(source.getExpiresIn())
+                .userId(source.getUserId())
+                .name(source.getName())
+                .email(source.getEmail())
+                .build();
+    }
+
+    private List<String> collectPermissions(User user) {
+        return user.getRoles().stream()
+                .flatMap(role -> role.getPermissions().stream())
+                .map(permission -> permission.getCode())
+                .distinct()
+                .collect(Collectors.toList());
     }
 
 

@@ -12,6 +12,14 @@ export interface LoginResponse {
   email: string;
 }
 
+export interface WebAuthResponse {
+  accessToken: string;
+  expiresIn: number;
+  userId: number;
+  name: string;
+  email: string;
+}
+
 export interface CurrentUserProfile {
   id: number;
   name: string;

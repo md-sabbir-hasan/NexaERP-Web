@@ -13,6 +13,11 @@ public interface AuthService {
     // Revoke all refresh tokens for current user (logout)
     void logout(Long userId);
 
+    BrowserAuthResult webLogin(LoginRequestDto request, String ipAddress, String deviceName);
+
+    BrowserAuthResult webRefresh(String refreshToken, String ipAddress, String deviceName);
+
+    void webLogout(String refreshToken);
 
 //    for email
 

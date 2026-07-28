@@ -1,20 +1,23 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { TokenService } from '../services/token.service';
+import { AuthStore } from '../auth/auth.store';
+import { APP_CONFIG } from '../config/app.config';
+
+const PUBLIC_AUTH_PATHS = [
+  '/auth/web/login',
+  '/auth/web/refresh',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/auth/set-password',
+  '/auth/validate-invite',
+];
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const tokenService = inject(TokenService);
-  const token = tokenService.getAccessToken();
+  const authStore = inject(AuthStore);
+  const isBackendApi = req.url.startsWith(APP_CONFIG.apiUrl);
+  const isPublicAuth = PUBLIC_AUTH_PATHS.some((path) => req.url.includes(path));
+  const token = authStore.accessToken();
 
-  if (!token) {
-    return next(req);
-  }
-
-  const authReq = req.clone({
-    setHeaders: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  return next(authReq);
+  if (!isBackendApi || isPublicAuth || !token) return next(req);
+  return next(req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }));
 };

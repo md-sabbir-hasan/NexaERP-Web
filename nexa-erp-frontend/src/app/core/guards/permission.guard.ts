@@ -1,28 +1,21 @@
 import { inject } from '@angular/core';
-import {
-  ActivatedRouteSnapshot,
-  CanActivateFn,
-  Router,
-  UrlTree,
-} from '@angular/router';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { ActivatedRouteSnapshot, CanActivateFn, Router } from '@angular/router';
+import { filter, map, take } from 'rxjs';
+import { AuthStore } from '../auth/auth.store';
 
-import { TokenService } from '../services/token.service';
-
-export const permissionGuard: CanActivateFn = (
-  route: ActivatedRouteSnapshot,
-): boolean | UrlTree => {
-  const tokenService = inject(TokenService);
+export const permissionGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
+  const authStore = inject(AuthStore);
   const router = inject(Router);
-
   const requiredPermission = route.data['permission'] as string | undefined;
 
-  if (!requiredPermission) {
-    return true;
-  }
-
-  if (tokenService.hasPermission(requiredPermission)) {
-    return true;
-  }
-
-  return router.createUrlTree(['/access-denied']);
+  return toObservable(authStore.initialized).pipe(
+    filter(Boolean),
+    take(1),
+    map(() => {
+      if (!authStore.isAuthenticated()) return router.createUrlTree(['/login']);
+      if (!requiredPermission || authStore.hasPermission(requiredPermission)) return true;
+      return router.createUrlTree(['/access-denied']);
+    }),
+  );
 };

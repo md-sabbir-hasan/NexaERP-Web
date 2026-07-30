@@ -13,6 +13,9 @@ import com.nexaerp.email.BudgetAlertEmailService;
 import com.nexaerp.journal.dto.JournalEntryRequestDto;
 import com.nexaerp.journal.dto.JournalLineRequestDto;
 import com.nexaerp.notification.NotificationService;
+import com.nexaerp.notification.NotificationModule;
+import com.nexaerp.notification.NotificationPriority;
+import com.nexaerp.notification.NotificationType;
 import com.nexaerp.security.MakerCheckerService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +33,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.lenient;
 
@@ -89,6 +94,16 @@ class JournalCostCenterPropagationTest {
         verify(journalLineRepository).saveAll(captor.capture());
         assertSame(costCenter, captor.getValue().get(0).getCostCenter());
         assertSame(null, captor.getValue().get(1).getCostCenter());
+        verify(notificationService).scheduleUniqueForCurrentUserAfterCommit(
+                NotificationType.JOURNAL_DRAFT_PENDING,
+                NotificationPriority.MEDIUM,
+                NotificationModule.JOURNAL,
+                "Journal draft created",
+                "Journal JE-0001 was created as a draft.",
+                "/journals/10/edit",
+                "JOURNAL",
+                10L
+        );
     }
 
     @Test
@@ -108,6 +123,48 @@ class JournalCostCenterPropagationTest {
         ArgumentCaptor<List<JournalLine>> captor = ArgumentCaptor.forClass(List.class);
         verify(journalLineRepository).saveAll(captor.capture());
         assertSame(costCenter, captor.getValue().get(0).getCostCenter());
+        verify(notificationService, never()).scheduleUniqueForCurrentUserAfterCommit(
+                any(), any(), any(), any(), any(), any(), any(), any()
+        );
+    }
+
+    @Test
+    void editingExistingDraftDoesNotCreateAnotherNotification() {
+        JournalEntry draft = JournalEntry.builder()
+                .id(20L)
+                .entryNumber("JE-0020")
+                .date(LocalDate.of(2026, 7, 20))
+                .description("Original")
+                .type(JournalEntryType.GENERAL)
+                .status(JournalStatus.DRAFT)
+                .sourceType(JournalSourceType.MANUAL)
+                .totalAmount(new BigDecimal("50.00"))
+                .build();
+        draft.setLines(List.of(
+                JournalLine.builder().journalEntry(draft).account(debitAccount)
+                        .debit(new BigDecimal("50.00")).credit(BigDecimal.ZERO).build(),
+                JournalLine.builder().journalEntry(draft).account(creditAccount)
+                        .debit(BigDecimal.ZERO).credit(new BigDecimal("50.00")).build()
+        ));
+        when(journalEntryRepository.findById(20L)).thenReturn(Optional.of(draft));
+
+        JournalLineRequestDto debit = new JournalLineRequestDto();
+        debit.setAccountId(1L);
+        debit.setDebit(new BigDecimal("60.00"));
+        debit.setCredit(BigDecimal.ZERO);
+        JournalLineRequestDto credit = new JournalLineRequestDto();
+        credit.setAccountId(2L);
+        credit.setDebit(BigDecimal.ZERO);
+        credit.setCredit(new BigDecimal("60.00"));
+
+        service.update(20L, new JournalEntryRequestDto(
+                LocalDate.of(2026, 7, 21), "Updated", JournalEntryType.GENERAL,
+                List.of(debit, credit)));
+
+        verify(notificationService, never()).scheduleUniqueForCurrentUserAfterCommit(
+                any(), any(), any(), any(), any(), any(), any(), any()
+        );
+        verify(journalEntryRepository, times(1)).save(draft);
     }
 
     private Account account(Long id, AccountType type) {

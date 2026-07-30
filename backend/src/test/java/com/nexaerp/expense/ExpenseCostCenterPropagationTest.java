@@ -16,6 +16,9 @@ import com.nexaerp.journal.JournalEntryRepository;
 import com.nexaerp.journal.JournalLine;
 import com.nexaerp.journal.JournalLineRepository;
 import com.nexaerp.notification.NotificationService;
+import com.nexaerp.notification.NotificationModule;
+import com.nexaerp.notification.NotificationPriority;
+import com.nexaerp.notification.NotificationType;
 import com.nexaerp.party.PartyRepository;
 import com.nexaerp.payment.PaymentAllocationRepository;
 import com.nexaerp.settings.SystemSettingsService;
@@ -36,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -91,6 +95,44 @@ class ExpenseCostCenterPropagationTest {
         List<JournalLine> lines = captor.getAllValues();
         assertSame(costCenter, lines.get(0).getCostCenter());
         assertTrue(lines.get(1).getCostCenter() == null);
+        verify(notificationService, never()).scheduleUniqueForCurrentUserAfterCommit(
+                any(), any(), any(), any(), any(), any(), any(), any()
+        );
+    }
+
+    @Test
+    void recurringTemplateCreatesOneDraftNotification() {
+        Account expenseAccount = account(1L, AccountType.EXPENSE);
+        Account paymentAccount = account(2L, AccountType.ASSET);
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(expenseAccount));
+        when(accountRepository.findById(2L)).thenReturn(Optional.of(paymentAccount));
+        when(expenseRepository.findTopByOrderByIdDesc()).thenReturn(Optional.empty());
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(invocation -> {
+            Expense expense = invocation.getArgument(0);
+            expense.setId(10L);
+            return expense;
+        });
+
+        ExpenseRequestDto request = new ExpenseRequestDto();
+        request.setExpenseDate(LocalDate.of(2026, 7, 20));
+        request.setExpenseAccountId(1L);
+        request.setPaidImmediately(true);
+        request.setPaymentAccountId(2L);
+        request.setAmount(new BigDecimal("100.00"));
+
+        service.createFromRecurringTemplate(request, 99L);
+
+        verify(notificationService).scheduleUniqueForCurrentUserAfterCommit(
+                NotificationType.RECURRING_EXPENSE_DRAFT_PENDING,
+                NotificationPriority.MEDIUM,
+                NotificationModule.EXPENSE,
+                "Recurring expense draft created",
+                "Expense EXP-0001 was generated as a draft.",
+                "/expense/10",
+                "EXPENSE",
+                10L
+        );
+        verify(journalEntryRepository, never()).save(any());
     }
 
     private Account account(Long id, AccountType type) {

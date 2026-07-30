@@ -21,6 +21,8 @@ import com.nexaerp.expense.dto.ExpenseRequestDto;
 import com.nexaerp.expense.dto.ExpenseResponseDto;
 import com.nexaerp.journal.*;
 import com.nexaerp.notification.NotificationService;
+import com.nexaerp.notification.NotificationModule;
+import com.nexaerp.notification.NotificationPriority;
 import com.nexaerp.notification.NotificationType;
 import com.nexaerp.party.Party;
 import com.nexaerp.party.PartyRepository;
@@ -137,6 +139,17 @@ public class ExpenseServiceImpl implements ExpenseService {
                     saved.getId(),
                     null,
                     saved.getExpenseNumber() + " - DRAFT (awaiting review from recurring template)"
+            );
+
+            notificationService.scheduleUniqueForCurrentUserAfterCommit(
+                    NotificationType.RECURRING_EXPENSE_DRAFT_PENDING,
+                    NotificationPriority.MEDIUM,
+                    NotificationModule.EXPENSE,
+                    "Recurring expense draft created",
+                    "Expense " + saved.getExpenseNumber() + " was generated as a draft.",
+                    "/expense/" + saved.getId(),
+                    "EXPENSE",
+                    saved.getId()
             );
 
             return toResponse(saved, Collections.emptyList());
@@ -365,23 +378,16 @@ public class ExpenseServiceImpl implements ExpenseService {
                     warning.getExceededAmount()
             );
 
-            try {
-                notificationService.createForCurrentUser(
-                        NotificationType.BUDGET_EXCEEDED,
-                        "Budget exceeded",
-                        message,
-                        route,
-                        "BUDGET",
-                        warning.getBudgetId()
-                );
-            } catch (RuntimeException exception) {
-                log.warn(
-                        "Expense succeeded, but budget notification creation failed for budget {} and account {}",
-                        warning.getBudgetId(),
-                        warning.getAccountId(),
-                        exception
-                );
-            }
+            notificationService.scheduleForCurrentUserAfterCommit(
+                    NotificationType.BUDGET_EXCEEDED,
+                    NotificationPriority.HIGH,
+                    NotificationModule.BUDGET,
+                    "Budget exceeded",
+                    message,
+                    route,
+                    "BUDGET",
+                    warning.getBudgetId()
+            );
         }
     }
     // _______ Private helpers __________

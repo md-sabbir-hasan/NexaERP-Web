@@ -6,6 +6,11 @@ import { NotificationResponse } from '../../models/notification.model';
 import { NotificationApiService } from '../../services/notification-api.service';
 import { NotificationStore } from '../../services/notification.store';
 import { getSupportedNotificationRoute } from '../../utils/notification-navigation.util';
+import {
+  getNotificationModuleIcon,
+  getNotificationModuleLabel,
+  getNotificationPriority,
+} from '../../utils/notification-display.util';
 
 @Component({
   selector: 'app-notification-center',
@@ -15,6 +20,9 @@ import { getSupportedNotificationRoute } from '../../utils/notification-navigati
   styleUrl: './notification-center.scss',
 })
 export class NotificationCenter implements OnInit {
+  readonly priority = getNotificationPriority;
+  readonly moduleLabel = getNotificationModuleLabel;
+  readonly moduleIcon = getNotificationModuleIcon;
   readonly notifications = signal<NotificationResponse[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);

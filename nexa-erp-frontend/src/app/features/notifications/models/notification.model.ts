@@ -12,11 +12,31 @@ export type NotificationType =
   | 'RECURRING_EXPENSE'
   | 'PAYMENT'
   | 'BANKING'
+  | 'FIXED_ASSET'
+  | 'JOURNAL_DRAFT_PENDING'
+  | 'RECURRING_EXPENSE_DRAFT_PENDING'
+  | 'ACCOUNTING_PERIOD_CLOSED'
+  | 'ACCOUNTING_PERIOD_LOCKED';
+
+export type NotificationPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+export type NotificationModule =
+  | 'SYSTEM'
+  | 'BUDGET'
+  | 'JOURNAL'
+  | 'EXPENSE'
+  | 'ACCOUNTING_PERIOD'
+  | 'INVOICE'
+  | 'VENDOR_BILL'
+  | 'PAYMENT'
+  | 'BANKING'
   | 'FIXED_ASSET';
 
 export interface NotificationResponse {
   id: number;
   type: NotificationType;
+  priority?: NotificationPriority | null;
+  module?: NotificationModule | null;
   title: string;
   message: string;
   route: string | null;

@@ -14,6 +14,8 @@ import com.nexaerp.costcenter.CostCenterService;
 import com.nexaerp.email.BudgetAlertEmailService;
 import com.nexaerp.journal.*;
 import com.nexaerp.notification.NotificationService;
+import com.nexaerp.notification.NotificationModule;
+import com.nexaerp.notification.NotificationPriority;
 import com.nexaerp.notification.NotificationType;
 import com.nexaerp.party.Party;
 import com.nexaerp.party.PartyRepository;
@@ -686,23 +688,16 @@ public class VendorBillServiceImpl implements VendorBillService {
                     warning.getExceededAmount()
             );
 
-            try {
-                notificationService.createForCurrentUser(
-                        NotificationType.BUDGET_EXCEEDED,
-                        "Budget exceeded",
-                        message,
-                        route,
-                        "BUDGET",
-                        warning.getBudgetId()
-                );
-            } catch (RuntimeException exception) {
-                log.warn(
-                        "Vendor bill posting succeeded, but budget notification creation failed for budget {} and account {}",
-                        warning.getBudgetId(),
-                        warning.getAccountId(),
-                        exception
-                );
-            }
+            notificationService.scheduleForCurrentUserAfterCommit(
+                    NotificationType.BUDGET_EXCEEDED,
+                    NotificationPriority.HIGH,
+                    NotificationModule.BUDGET,
+                    "Budget exceeded",
+                    message,
+                    route,
+                    "BUDGET",
+                    warning.getBudgetId()
+            );
         }
     }
 

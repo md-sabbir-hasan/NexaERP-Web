@@ -81,7 +81,7 @@
           <article class="notification-row" [class.unread]="!notification.read">
             <span class="status-indicator" aria-hidden="true"></span>
             <div class="notification-icon" aria-hidden="true">
-              <i class="bi bi-bell"></i>
+              <i class="bi {{ moduleIcon(notification) }}"></i>
             </div>
 
             <div class="notification-copy">
@@ -90,6 +90,15 @@
                 @if (!notification.read) {
                   <span class="unread-label">Unread</span>
                 }
+              </div>
+              <div class="notification-badges">
+                <span class="module-badge">{{ moduleLabel(notification) }}</span>
+                <span
+                  class="priority-badge"
+                  [attr.data-priority]="priority(notification).toLowerCase()"
+                >
+                  {{ priority(notification) }}
+                </span>
               </div>
               <p>{{ notification.message }}</p>
               <time [attr.datetime]="notification.createdAt">

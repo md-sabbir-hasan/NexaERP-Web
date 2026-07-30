@@ -9,6 +9,10 @@ import com.nexaerp.common.exception.BusinessRuleException;
 import com.nexaerp.common.exception.ResourceNotFoundException;
 import com.nexaerp.fiscalyear.FiscalYear;
 import com.nexaerp.fiscalyear.FiscalYearRepository;
+import com.nexaerp.notification.NotificationModule;
+import com.nexaerp.notification.NotificationPriority;
+import com.nexaerp.notification.NotificationService;
+import com.nexaerp.notification.NotificationType;
 import com.nexaerp.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -35,6 +39,7 @@ public class AccountingPeriodServiceImpl implements AccountingPeriodService {
     private final AuditLogService auditLogService;
     private final UserRepository userRepository;
     private final PeriodCloseValidationService periodCloseValidationService;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -217,6 +222,16 @@ public class AccountingPeriodServiceImpl implements AccountingPeriodService {
 
         AccountingPeriod saved = accountingPeriodRepository.save(period);
         auditLogService.log(AuditAction.CLOSED, ENTITY_NAME, saved.getId(), oldValue, auditValue(saved));
+        notificationService.scheduleUniqueForCurrentUserAfterCommit(
+                NotificationType.ACCOUNTING_PERIOD_CLOSED,
+                NotificationPriority.HIGH,
+                NotificationModule.ACCOUNTING_PERIOD,
+                "Accounting period closed",
+                periodDescription(saved) + " was closed.",
+                "/accounting-periods",
+                ENTITY_NAME,
+                saved.getId()
+        );
         return toResponse(saved);
     }
 
@@ -239,7 +254,22 @@ public class AccountingPeriodServiceImpl implements AccountingPeriodService {
 
         AccountingPeriod saved = accountingPeriodRepository.save(period);
         auditLogService.log(AuditAction.LOCKED, ENTITY_NAME, saved.getId(), oldValue, auditValue(saved));
+        notificationService.scheduleUniqueForCurrentUserAfterCommit(
+                NotificationType.ACCOUNTING_PERIOD_LOCKED,
+                NotificationPriority.CRITICAL,
+                NotificationModule.ACCOUNTING_PERIOD,
+                "Accounting period locked",
+                periodDescription(saved) + " was locked.",
+                "/accounting-periods",
+                ENTITY_NAME,
+                saved.getId()
+        );
         return toResponse(saved);
+    }
+
+    private String periodDescription(AccountingPeriod period) {
+        return "Accounting period " + period.getName()
+                + " (" + period.getStartDate() + " to " + period.getEndDate() + ")";
     }
 
     @Override

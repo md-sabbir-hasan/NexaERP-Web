@@ -39,4 +39,27 @@ public interface BankTransactionRepository extends JpaRepository<BankTransaction
     Optional<BankTransaction> findByReferenceNumber(String referenceNumber);
 
     List<BankTransaction> findByReconciledFalseAndVoidedFalseAndTransactionDateLessThanEqual(LocalDate date);
+
+
+    boolean existsByTransactionNumber(String transactionNumber);
+
+    @Query(
+            value = """
+                SELECT COALESCE(
+                    MAX(
+                        CAST(
+                            SUBSTRING_INDEX(transaction_number, '-', -1)
+                            AS UNSIGNED
+                        )
+                    ),
+                    0
+                )
+                FROM bank_transactions
+                WHERE transaction_number LIKE CONCAT('TXN-', :year, '-%')
+                """,
+            nativeQuery = true
+    )
+    int findMaximumTransactionSequenceByYear(
+            @Param("year") int year
+    );
 }

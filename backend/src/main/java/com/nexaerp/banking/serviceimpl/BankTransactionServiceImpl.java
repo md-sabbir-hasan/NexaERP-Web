@@ -318,7 +318,8 @@ public class BankTransactionServiceImpl implements BankTransactionService {
                 .sourceId(sourceId)
                 .build();
 
-        BankTransaction saved = bankTransactionRepository.save(transaction);
+        BankTransaction saved =
+                bankTransactionRepository.saveAndFlush(transaction);
 
         if (type == TransactionType.CREDIT) {
             bankAccount.setCurrentBalance(bankAccount.getCurrentBalance().add(amount));
@@ -386,7 +387,7 @@ public class BankTransactionServiceImpl implements BankTransactionService {
                 .build();
 
         BankTransaction saved =
-                bankTransactionRepository.save(transaction);
+                bankTransactionRepository.saveAndFlush(transaction);
 
         if (transactionType == TransactionType.CREDIT) {
             bankAccount.setCurrentBalance(
@@ -470,13 +471,28 @@ public class BankTransactionServiceImpl implements BankTransactionService {
 
     private synchronized String generateTransactionNumber() {
         int year = Year.now().getValue();
-        return bankTransactionRepository.findTopByOrderByIdDesc()
-                .map(last -> {
-                    String[] parts = last.getTransactionNumber().split("-");
-                    int next = Integer.parseInt(parts[2]) + 1;
-                    return String.format("TXN-%d-%06d", year, next);
-                })
-                .orElse(String.format("TXN-%d-%06d", year, 1));
+
+        int nextSequence =
+                bankTransactionRepository
+                        .findMaximumTransactionSequenceByYear(year) + 1;
+
+        String transactionNumber =
+                String.format("TXN-%d-%06d", year, nextSequence);
+
+        while (bankTransactionRepository
+                .existsByTransactionNumber(transactionNumber)) {
+
+            nextSequence++;
+
+            transactionNumber =
+                    String.format(
+                            "TXN-%d-%06d",
+                            year,
+                            nextSequence
+                    );
+        }
+
+        return transactionNumber;
     }
 
     private synchronized String generateJournalNumber() {

@@ -208,6 +208,34 @@ describe('NotificationCenter', () => {
     expect(fixture.nativeElement.textContent).toContain('No notifications yet');
   });
 
+  it('renders fallback priority and module badges for an old payload', () => {
+    api.getNotifications.mockReturnValue(of(pageResponse([unreadBudgetNotification])));
+    createComponent();
+
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('MEDIUM');
+    expect(text).toContain('SYSTEM');
+  });
+
+  it('renders explicit priority and module badges', () => {
+    api.getNotifications.mockReturnValue(
+      of(
+        pageResponse([
+          {
+            ...unreadBudgetNotification,
+            priority: 'CRITICAL',
+            module: 'ACCOUNTING_PERIOD',
+          },
+        ]),
+      ),
+    );
+    createComponent();
+
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('CRITICAL');
+    expect(text).toContain('ACCOUNTING PERIOD');
+  });
+
   it('renders the unread empty state for an empty unread result', () => {
     api.getNotifications.mockReturnValue(of(pageResponse([])));
     createComponent();

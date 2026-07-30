@@ -31,6 +31,10 @@ import java.time.LocalDateTime;
                 @Index(
                         name = "idx_notification_user_read_created",
                         columnList = "user_id,read_at,created_at"
+                ),
+                @Index(
+                        name = "idx_notification_event_identity",
+                        columnList = "user_id,type,entity_type,entity_id"
                 )
         }
 )
@@ -52,6 +56,16 @@ public class Notification extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
     private NotificationType type;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    @Builder.Default
+    private NotificationPriority priority = NotificationPriority.MEDIUM;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    @Builder.Default
+    private NotificationModule module = NotificationModule.SYSTEM;
 
     @Column(nullable = false, length = 200)
     private String title;

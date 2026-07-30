@@ -22,6 +22,8 @@ import com.nexaerp.journal.dto.JournalLineRequestDto;
 import com.nexaerp.journal.dto.JournalLineResponseDto;
 import com.nexaerp.security.MakerCheckerService;
 import com.nexaerp.notification.NotificationService;
+import com.nexaerp.notification.NotificationModule;
+import com.nexaerp.notification.NotificationPriority;
 import com.nexaerp.notification.NotificationType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -89,6 +91,17 @@ public class JournalEntryServiceImpl implements JournalEntryService{
                 saved.getId(),
                 null,
                 saved.getEntryNumber()
+        );
+
+        notificationService.scheduleUniqueForCurrentUserAfterCommit(
+                NotificationType.JOURNAL_DRAFT_PENDING,
+                NotificationPriority.MEDIUM,
+                NotificationModule.JOURNAL,
+                "Journal draft created",
+                "Journal " + saved.getEntryNumber() + " was created as a draft.",
+                "/journals/" + saved.getId() + "/edit",
+                "JOURNAL",
+                saved.getId()
         );
 
         return toResponse(saved);
@@ -356,23 +369,16 @@ public class JournalEntryServiceImpl implements JournalEntryService{
                 warning.getExceededAmount()
         );
 
-        try {
-            notificationService.createForCurrentUser(
-                    NotificationType.BUDGET_EXCEEDED,
-                    "Budget exceeded",
-                    message,
-                    route,
-                    "BUDGET",
-                    warning.getBudgetId()
-            );
-        } catch (RuntimeException exception) {
-            log.warn(
-                    "Journal posting succeeded, but budget notification creation failed for budget {} and account {}",
-                    warning.getBudgetId(),
-                    warning.getAccountId(),
-                    exception
-            );
-        }
+        notificationService.scheduleForCurrentUserAfterCommit(
+                NotificationType.BUDGET_EXCEEDED,
+                NotificationPriority.HIGH,
+                NotificationModule.BUDGET,
+                "Budget exceeded",
+                message,
+                route,
+                "BUDGET",
+                warning.getBudgetId()
+        );
     }
                                 // -- Private Helpers --
 

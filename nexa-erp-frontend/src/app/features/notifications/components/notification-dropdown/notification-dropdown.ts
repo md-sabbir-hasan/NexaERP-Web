@@ -5,6 +5,11 @@ import { Router } from '@angular/router';
 import { NotificationResponse } from '../../models/notification.model';
 import { NotificationStore } from '../../services/notification.store';
 import { getSupportedNotificationRoute } from '../../utils/notification-navigation.util';
+import {
+  getNotificationModuleIcon,
+  getNotificationModuleLabel,
+  getNotificationPriority,
+} from '../../utils/notification-display.util';
 
 @Component({
   selector: 'app-notification-dropdown',
@@ -14,6 +19,9 @@ import { getSupportedNotificationRoute } from '../../utils/notification-navigati
   styleUrl: './notification-dropdown.scss',
 })
 export class NotificationDropdown {
+  readonly priority = getNotificationPriority;
+  readonly moduleLabel = getNotificationModuleLabel;
+  readonly moduleIcon = getNotificationModuleIcon;
   @Output() closeRequested = new EventEmitter<void>();
 
   constructor(

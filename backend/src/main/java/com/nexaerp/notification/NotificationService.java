@@ -24,4 +24,38 @@ public interface NotificationService {
             String route,
             String entityType,
             Long entityId
-    );}
+    );
+
+    NotificationResponseDto createForCurrentUser(
+            NotificationType type,
+            NotificationPriority priority,
+            NotificationModule module,
+            String title,
+            String message,
+            String route,
+            String entityType,
+            Long entityId
+    );
+
+    void scheduleForCurrentUserAfterCommit(
+            NotificationType type,
+            NotificationPriority priority,
+            NotificationModule module,
+            String title,
+            String message,
+            String route,
+            String entityType,
+            Long entityId
+    );
+
+    void scheduleUniqueForCurrentUserAfterCommit(
+            NotificationType type,
+            NotificationPriority priority,
+            NotificationModule module,
+            String title,
+            String message,
+            String route,
+            String entityType,
+            Long entityId
+    );
+}

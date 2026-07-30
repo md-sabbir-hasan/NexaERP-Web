@@ -204,6 +204,40 @@
   text-transform: uppercase;
 }
 
+.notification-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.module-badge,
+.priority-badge {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.priority-badge[data-priority='high'] {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.priority-badge[data-priority='critical'] {
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.priority-badge[data-priority='low'] {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
 .notification-action {
   display: inline-flex;
   align-items: center;

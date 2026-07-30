@@ -87,6 +87,19 @@
               }
             </span>
 
+            <span class="notification-badges">
+              <span class="module-badge">
+                <i class="bi {{ moduleIcon(notification) }}" aria-hidden="true"></i>
+                {{ moduleLabel(notification) }}
+              </span>
+              <span
+                class="priority-badge"
+                [attr.data-priority]="priority(notification).toLowerCase()"
+              >
+                {{ priority(notification) }}
+              </span>
+            </span>
+
             <span class="notification-message">{{ notification.message }}</span>
 
             <span class="notification-time">

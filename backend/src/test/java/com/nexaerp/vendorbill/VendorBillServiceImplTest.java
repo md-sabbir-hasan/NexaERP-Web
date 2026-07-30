@@ -139,8 +139,10 @@ class VendorBillServiceImplTest {
                 postingDate,
                 List.of(warning)
         );
-        verify(notificationService).createForCurrentUser(
+        verify(notificationService).scheduleForCurrentUserAfterCommit(
                 NotificationType.BUDGET_EXCEEDED,
+                com.nexaerp.notification.NotificationPriority.HIGH,
+                com.nexaerp.notification.NotificationModule.BUDGET,
                 "Budget exceeded",
                 "Budget for Office Expense exceeded by 15.00.",
                 "/budget/7/variance",

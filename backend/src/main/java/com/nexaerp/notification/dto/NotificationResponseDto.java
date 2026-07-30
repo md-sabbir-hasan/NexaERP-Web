@@ -1,6 +1,8 @@
 package com.nexaerp.notification.dto;
 
 import com.nexaerp.notification.NotificationType;
+import com.nexaerp.notification.NotificationModule;
+import com.nexaerp.notification.NotificationPriority;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,6 +20,8 @@ public class NotificationResponseDto {
 
     private Long id;
     private NotificationType type;
+    private NotificationPriority priority;
+    private NotificationModule module;
     private String title;
     private String message;
     private String route;

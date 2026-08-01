@@ -118,7 +118,7 @@
 .line-head,
 .line-row {
   display: grid;
-  grid-template-columns: 2fr 140px 140px 1.5fr 48px;
+  grid-template-columns: 1.8fr 1.3fr 120px 120px 1.3fr 44px;
   gap: 10px;
   align-items: center;
 }
@@ -152,7 +152,11 @@
   border-radius: 12px;
   background: #fee2e2;
   color: #991b1b;
+  width: 44px;
   height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
 }
 

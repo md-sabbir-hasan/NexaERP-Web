@@ -14,6 +14,10 @@ import com.nexaerp.invoice.dto.InvoiceItemResponseDto;
 import com.nexaerp.invoice.dto.InvoiceRequestDto;
 import com.nexaerp.invoice.dto.InvoiceResponseDto;
 import com.nexaerp.journal.*;
+import com.nexaerp.notification.NotificationModule;
+import com.nexaerp.notification.NotificationPriority;
+import com.nexaerp.notification.NotificationService;
+import com.nexaerp.notification.NotificationType;
 import com.nexaerp.party.Party;
 import com.nexaerp.party.PartyRepository;
 import com.nexaerp.security.CurrentUserService;
@@ -50,6 +54,7 @@ public class InvoiceServiceImpl implements InvoiceService{
     private final CurrentUserService currentUserService;
     private final ExchangeRateService exchangeRateService;
     private final CurrencyService currencyService;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -285,6 +290,17 @@ public class InvoiceServiceImpl implements InvoiceService{
                 "POSTED"
         );
 
+        notificationService.scheduleUniqueForCurrentUserAfterCommit(
+                NotificationType.INVOICE_POSTED,
+                NotificationPriority.MEDIUM,
+                NotificationModule.INVOICE,
+                "Invoice posted",
+                "Invoice " + saved.getInvoiceNumber() + " was posted successfully.",
+                "/invoice/" + saved.getId(),
+                "INVOICE",
+                saved.getId()
+        );
+
         return toResponse(saved);
     }
 
@@ -340,6 +356,17 @@ public class InvoiceServiceImpl implements InvoiceService{
                 saved.getId(),
                 oldStatus.name(),
                 InvoiceStatus.CANCELLED.name()
+        );
+
+        notificationService.scheduleUniqueForCurrentUserAfterCommit(
+                NotificationType.INVOICE_CANCELLED,
+                NotificationPriority.HIGH,
+                NotificationModule.INVOICE,
+                "Invoice cancelled",
+                "Invoice " + saved.getInvoiceNumber() + " was cancelled.",
+                "/invoice/" + saved.getId(),
+                "INVOICE",
+                saved.getId()
         );
 
         return toResponse(saved);
@@ -510,66 +537,64 @@ public class InvoiceServiceImpl implements InvoiceService{
 
         LocalDate reversalDate = LocalDate.now();
 
-        journalEntryRepository
+        JournalEntry original = journalEntryRepository
                 .findBySourceTypeAndSourceId(
                         JournalSourceType.INVOICE,
                         invoice.getId()
                 )
-                .ifPresent(original -> {
+                .orElseThrow(() -> new BusinessRuleException(
+                        "Original journal entry not found for posted invoice"
+                ));
 
-                    if (original.getStatus() == JournalStatus.REVERSED) {
-                        throw new BusinessRuleException(
-                                "Journal entry is already reversed"
-                        );
-                    }
+        if (original.getStatus() == JournalStatus.REVERSED) {
+            throw new BusinessRuleException(
+                    "Journal entry is already reversed"
+            );
+        }
 
-                    JournalEntry reversal = new JournalEntry();
-                    reversal.setEntryNumber(generateJournalNumber());
-                    reversal.setDate(reversalDate);
-                    reversal.setDescription(
-                            "Reversal - " + invoice.getInvoiceNumber()
-                    );
-                    reversal.setType(JournalEntryType.SALES);
-                    reversal.setStatus(JournalStatus.POSTED);
-                    reversal.setSourceType(JournalSourceType.INVOICE);
-                    reversal.setSourceId(invoice.getId());
-                    reversal.setTotalAmount(original.getTotalAmount());
-                    reversal.setReversedFromId(original.getId());
-                    reversal.setReferenceNumber(
-                            "REV-" + original.getReferenceNumber()
-                    );
+        JournalEntry reversal = new JournalEntry();
+        reversal.setEntryNumber(generateJournalNumber());
+        reversal.setDate(reversalDate);
+        reversal.setDescription(
+                "Reversal - " + invoice.getInvoiceNumber()
+        );
+        reversal.setType(JournalEntryType.SALES);
+        reversal.setStatus(JournalStatus.POSTED);
+        reversal.setSourceType(JournalSourceType.INVOICE);
+        reversal.setSourceId(invoice.getId());
+        reversal.setTotalAmount(original.getTotalAmount());
+        reversal.setReversedFromId(original.getId());
+        reversal.setReferenceNumber(
+                "REV-" + original.getReferenceNumber()
+        );
 
-                    JournalEntry savedReversal =
-                            journalEntryRepository.save(reversal);
+        JournalEntry savedReversal = journalEntryRepository.save(reversal);
 
-                    List<JournalLine> originalLines =
-                            journalLineRepository
-                                    .findByJournalEntryId(original.getId());
+        List<JournalLine> originalLines =
+                journalLineRepository.findByJournalEntryId(original.getId());
 
-                    originalLines.forEach(line -> {
-                        JournalLine reversalLine =
-                                new JournalLine();
+        originalLines.forEach(line -> {
+            JournalLine reversalLine = new JournalLine();
 
-                        reversalLine.setJournalEntry(savedReversal);
-                        reversalLine.setAccount(line.getAccount());
-                        reversalLine.setDebit(line.getCredit());
-                        reversalLine.setCredit(line.getDebit());
-                        reversalLine.setDescription(
-                                "Reversal: " + line.getDescription()
-                        );
+            reversalLine.setJournalEntry(savedReversal);
+            reversalLine.setAccount(line.getAccount());
+            reversalLine.setDebit(line.getCredit());
+            reversalLine.setCredit(line.getDebit());
+            reversalLine.setDescription(
+                    "Reversal: " + line.getDescription()
+            );
 
-                        journalLineRepository.save(reversalLine);
+            journalLineRepository.save(reversalLine);
 
-                        updateBalance(
-                                line.getAccount(),
-                                line.getCredit(),
-                                line.getDebit()
-                        );
-                    });
+            updateBalance(
+                    line.getAccount(),
+                    line.getCredit(),
+                    line.getDebit()
+            );
+        });
 
-                    original.setStatus(JournalStatus.REVERSED);
-                    journalEntryRepository.save(original);
-                });
+        original.setStatus(JournalStatus.REVERSED);
+        journalEntryRepository.save(original);
     }
 
 

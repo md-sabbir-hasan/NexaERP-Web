@@ -1,5 +1,9 @@
 import { NotificationResponse } from '../models/notification.model';
-import { getNotificationModule, getNotificationPriority } from './notification-display.util';
+import {
+  getNotificationModule,
+  getNotificationModuleIcon,
+  getNotificationPriority,
+} from './notification-display.util';
 import { getSupportedNotificationRoute } from './notification-navigation.util';
 
 function notification(
@@ -23,6 +27,25 @@ function notification(
 }
 
 describe('notification utilities', () => {
+  it.each(['INVOICE_POSTED', 'INVOICE_CANCELLED'] as const)(
+    'supports the %s notification payload type',
+    (type) => {
+      const value: NotificationResponse = {
+        ...notification('INVOICE', 12, '/invoice/12'),
+        type,
+        priority: type === 'INVOICE_CANCELLED' ? 'HIGH' : 'MEDIUM',
+        module: 'INVOICE',
+      };
+
+      expect(value.type).toBe(type);
+      expect(getNotificationModule(value)).toBe('INVOICE');
+      expect(getNotificationModuleIcon(value)).toBe('bi-file-earmark-text');
+      expect(getNotificationPriority(value)).toBe(
+        type === 'INVOICE_CANCELLED' ? 'HIGH' : 'MEDIUM',
+      );
+    },
+  );
+
   it('defaults old payloads to MEDIUM priority and SYSTEM module', () => {
     const oldPayload = notification('SYSTEM', null, null);
 
@@ -33,6 +56,7 @@ describe('notification utilities', () => {
   it.each([
     [notification('JOURNAL', 12, '/journals/12/edit'), '/journals/12/edit'],
     [notification('EXPENSE', 13, '/expense/13'), '/expense/13'],
+    [notification('INVOICE', 12, '/invoice/12'), '/invoice/12'],
     [notification('ACCOUNTING_PERIOD', 14, '/accounting-periods'), '/accounting-periods'],
     [notification('BUDGET', 15, '/budget/15/variance'), '/budget/15/variance'],
     [notification('BUDGET', null, '/budget'), '/budget'],
@@ -43,6 +67,12 @@ describe('notification utilities', () => {
   it.each([
     notification('JOURNAL', 12, '/journals/99/edit'),
     notification('EXPENSE', 13, '/expense/99'),
+    notification('INVOICE', 12, '/invoice/99'),
+    notification('INVOICE', 12, '/invoice/12/edit'),
+    notification('INVOICE', 12, '/invoices/12'),
+    notification('PAYMENT', 12, '/invoice/12'),
+    notification('INVOICE', 12, '/invoice/12?tab=payments'),
+    notification('INVOICE', 12, 'data:text/html,test'),
     notification('SYSTEM', null, 'https://example.com'),
     notification('SYSTEM', null, '//example.com/path'),
     notification('SYSTEM', null, 'javascript:alert(1)'),

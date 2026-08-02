@@ -35,6 +35,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -71,7 +72,28 @@ class InvoiceNotificationTest {
         service.post(invoice.getId());
 
         assertEquals(InvoiceStatus.POSTED, invoice.getStatus());
-        verify(notificationService).scheduleUniqueForCurrentUserAfterCommit(
+        verify(notificationService).scheduleUniqueForUsersAfterCommit(
+                Arrays.asList(55L, 99L),
+                NotificationType.INVOICE_POSTED,
+                NotificationPriority.MEDIUM,
+                NotificationModule.INVOICE,
+                "Invoice posted",
+                "Invoice INV-2026-000001 was posted successfully.",
+                "/invoice/1",
+                "INVOICE",
+                1L
+        );
+    }
+
+    @Test
+    void successfulPostingPassesSameCreatorAndActorSafely() {
+        Invoice invoice = preparePostableInvoice();
+        invoice.setCreatedBy(99L);
+
+        service.post(invoice.getId());
+
+        verify(notificationService).scheduleUniqueForUsersAfterCommit(
+                Arrays.asList(99L, 99L),
                 NotificationType.INVOICE_POSTED,
                 NotificationPriority.MEDIUM,
                 NotificationModule.INVOICE,
@@ -146,6 +168,7 @@ class InvoiceNotificationTest {
         when(invoiceRepository.findById(1L)).thenReturn(Optional.of(invoice));
         when(invoiceRepository.save(invoice)).thenReturn(invoice);
         when(invoiceItemRepository.findByInvoiceId(1L)).thenReturn(List.of(item(invoice)));
+        when(currentUserService.getCurrentUserId()).thenReturn(99L);
 
         service.cancel(1L, CancelledReason.WRONG_ENTRY);
 
@@ -157,6 +180,7 @@ class InvoiceNotificationTest {
     @Test
     void postedCancellationReversesJournalAndSchedulesExactNotification() {
         Invoice invoice = preparePostedCancellation(JournalStatus.POSTED);
+        when(currentUserService.getCurrentUserId()).thenReturn(99L);
 
         service.cancel(1L, CancelledReason.WRONG_ENTRY);
 
@@ -334,7 +358,8 @@ class InvoiceNotificationTest {
     }
 
     private void verifyCancelledNotification() {
-        verify(notificationService).scheduleUniqueForCurrentUserAfterCommit(
+        verify(notificationService).scheduleUniqueForUsersAfterCommit(
+                Arrays.asList(55L, 99L),
                 NotificationType.INVOICE_CANCELLED,
                 NotificationPriority.HIGH,
                 NotificationModule.INVOICE,
@@ -347,8 +372,8 @@ class InvoiceNotificationTest {
     }
 
     private void verifyNoNotification() {
-        verify(notificationService, never()).scheduleUniqueForCurrentUserAfterCommit(
-                any(), any(), any(), any(), any(), any(), any(), any()
+        verify(notificationService, never()).scheduleUniqueForUsersAfterCommit(
+                any(), any(), any(), any(), any(), any(), any(), any(), any()
         );
     }
 }

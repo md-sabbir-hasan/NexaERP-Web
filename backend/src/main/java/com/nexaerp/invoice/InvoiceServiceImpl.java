@@ -34,6 +34,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -290,7 +291,8 @@ public class InvoiceServiceImpl implements InvoiceService{
                 "POSTED"
         );
 
-        notificationService.scheduleUniqueForCurrentUserAfterCommit(
+        notificationService.scheduleUniqueForUsersAfterCommit(
+                Arrays.asList(saved.getCreatedBy(), saved.getPostedBy()),
                 NotificationType.INVOICE_POSTED,
                 NotificationPriority.MEDIUM,
                 NotificationModule.INVOICE,
@@ -358,7 +360,9 @@ public class InvoiceServiceImpl implements InvoiceService{
                 InvoiceStatus.CANCELLED.name()
         );
 
-        notificationService.scheduleUniqueForCurrentUserAfterCommit(
+        Long actorUserId = currentUserService.getCurrentUserId();
+        notificationService.scheduleUniqueForUsersAfterCommit(
+                Arrays.asList(saved.getCreatedBy(), actorUserId),
                 NotificationType.INVOICE_CANCELLED,
                 NotificationPriority.HIGH,
                 NotificationModule.INVOICE,

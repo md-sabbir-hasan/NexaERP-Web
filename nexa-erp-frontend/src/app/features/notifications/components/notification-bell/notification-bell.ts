@@ -22,15 +22,27 @@ export class NotificationBell implements OnInit {
     this.store.loadUnreadCount();
   }
 
+  // toggleDropdown(): void {
+  //   const willOpen = !this.open();
+
+  //   this.open.set(willOpen);
+
+  //   if (willOpen && !this.store.loaded()) {
+  //     this.store.loadFirstPage(false);
+  //   }
+  // }
+
   toggleDropdown(): void {
-    const willOpen = !this.open();
+  const willOpen = !this.open();
+  this.open.set(willOpen);
 
-    this.open.set(willOpen);
-
-    if (willOpen && !this.store.loaded()) {
-      this.store.loadFirstPage(false);
-    }
+  if (!willOpen) {
+    return;
   }
+
+  this.store.loadUnreadCount();
+  this.store.loadFirstPage(this.store.unreadOnly());
+}
 
   @HostListener('document:keydown.escape')
   closeOnEscape(): void {

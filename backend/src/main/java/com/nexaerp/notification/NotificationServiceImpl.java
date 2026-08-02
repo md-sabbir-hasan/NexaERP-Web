@@ -6,6 +6,7 @@ import com.nexaerp.notification.dto.NotificationResponseDto;
 import com.nexaerp.security.CurrentUserService;
 import com.nexaerp.user.User;
 import com.nexaerp.user.UserRepository;
+import com.nexaerp.user.UserStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -21,6 +22,11 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -129,6 +135,7 @@ public class NotificationServiceImpl implements NotificationService {
                 route,
                 entityType,
                 entityId,
+                false,
                 false
         );
     }
@@ -144,7 +151,7 @@ public class NotificationServiceImpl implements NotificationService {
             String entityType,
             Long entityId
     ) {
-        scheduleAfterCommit(
+        scheduleForCurrentUserAfterCommit(
                 type, priority, module, title, message, route, entityType, entityId, false
         );
     }
@@ -160,12 +167,52 @@ public class NotificationServiceImpl implements NotificationService {
             String entityType,
             Long entityId
     ) {
-        scheduleAfterCommit(
+        scheduleForCurrentUserAfterCommit(
                 type, priority, module, title, message, route, entityType, entityId, true
         );
     }
 
-    private void scheduleAfterCommit(
+    @Override
+    public void scheduleUniqueForUserAfterCommit(
+            Long userId,
+            NotificationType type,
+            NotificationPriority priority,
+            NotificationModule module,
+            String title,
+            String message,
+            String route,
+            String entityType,
+            Long entityId
+    ) {
+        scheduleAfterCommit(
+                Collections.singletonList(userId),
+                type, priority, module, title, message, route, entityType, entityId,
+                true,
+                true
+        );
+    }
+
+    @Override
+    public void scheduleUniqueForUsersAfterCommit(
+            Collection<Long> userIds,
+            NotificationType type,
+            NotificationPriority priority,
+            NotificationModule module,
+            String title,
+            String message,
+            String route,
+            String entityType,
+            Long entityId
+    ) {
+        scheduleAfterCommit(
+                userIds,
+                type, priority, module, title, message, route, entityType, entityId,
+                true,
+                true
+        );
+    }
+
+    private void scheduleForCurrentUserAfterCommit(
             NotificationType type,
             NotificationPriority priority,
             NotificationModule module,
@@ -185,8 +232,39 @@ public class NotificationServiceImpl implements NotificationService {
             return;
         }
 
+        scheduleAfterCommit(
+                List.of(userId),
+                type, priority, module, title, message, route, entityType, entityId,
+                preventDuplicate,
+                false
+        );
+    }
+
+    private void scheduleAfterCommit(
+            Collection<Long> userIds,
+            NotificationType type,
+            NotificationPriority priority,
+            NotificationModule module,
+            String title,
+            String message,
+            String route,
+            String entityType,
+            Long entityId,
+            boolean preventDuplicate,
+            boolean requireActiveRecipient
+    ) {
+        LinkedHashSet<Long> copiedUserIds = new LinkedHashSet<>();
+        if (userIds != null) {
+            userIds.stream()
+                    .filter(java.util.Objects::nonNull)
+                    .forEach(copiedUserIds::add);
+        }
+        if (copiedUserIds.isEmpty()) {
+            return;
+        }
+
         Runnable persistNotification = () -> {
-            try {
+            for (Long userId : copiedUserIds) {
                 TransactionTemplate transactionTemplate =
                         new TransactionTemplate(transactionManager);
 
@@ -194,30 +272,33 @@ public class NotificationServiceImpl implements NotificationService {
                         TransactionDefinition.PROPAGATION_REQUIRES_NEW
                 );
 
-                transactionTemplate.executeWithoutResult(status ->
-                        createForUser(
-                                userId,
-                                type,
-                                priority,
-                                module,
-                                title,
-                                message,
-                                route,
-                                entityType,
-                                entityId,
-                                preventDuplicate
-                        )
-                );
-
-            } catch (RuntimeException exception) {
-                log.warn(
-                        "Business operation committed, but notification creation failed " +
-                                "for type {} and entity {}:{}",
-                        type,
-                        entityType,
-                        entityId,
-                        exception
-                );
+                try {
+                    transactionTemplate.executeWithoutResult(status ->
+                            createForUser(
+                                    userId,
+                                    type,
+                                    priority,
+                                    module,
+                                    title,
+                                    message,
+                                    route,
+                                    entityType,
+                                    entityId,
+                                    preventDuplicate,
+                                    requireActiveRecipient
+                            )
+                    );
+                } catch (RuntimeException exception) {
+                    log.warn(
+                            "Business operation committed, but notification creation failed " +
+                                    "for user {}, type {} and entity {}:{}",
+                            userId,
+                            type,
+                            entityType,
+                            entityId,
+                            exception
+                    );
+                }
             }
         };
 
@@ -245,7 +326,8 @@ public class NotificationServiceImpl implements NotificationService {
             String route,
             String entityType,
             Long entityId,
-            boolean preventDuplicate
+            boolean preventDuplicate,
+            boolean requireActiveRecipient
     ) {
         if (preventDuplicate
                 && entityId != null
@@ -259,8 +341,19 @@ public class NotificationServiceImpl implements NotificationService {
             return null;
         }
 
-        User user = userRepository.findById(userId)
+        Optional<User> foundUser = userRepository.findById(userId);
+        if (requireActiveRecipient && foundUser.isEmpty()) {
+            log.debug("Skipping notification for missing user {}", userId);
+            return null;
+        }
+
+        User user = foundUser
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        if (requireActiveRecipient && user.getStatus() != UserStatus.ACTIVE) {
+            log.debug("Skipping notification for non-active user {} with status {}",
+                    userId, user.getStatus());
+            return null;
+        }
 
         Notification notification = Notification.builder()
                 .user(user)

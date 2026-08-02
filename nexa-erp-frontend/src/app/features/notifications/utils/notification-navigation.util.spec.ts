@@ -79,6 +79,28 @@ describe('notification utilities', () => {
     expect(getNotificationPriority(value)).toBe('MEDIUM');
   });
 
+  it('supports overdue invoice and vendor bill payload display metadata', () => {
+    const invoice: NotificationResponse = {
+      ...notification('INVOICE', 12, '/invoice/12'),
+      type: 'INVOICE_OVERDUE',
+      priority: 'HIGH',
+      module: 'INVOICE',
+    };
+    const vendorBill: NotificationResponse = {
+      ...notification('VENDOR_BILL', 13, '/vendor-bill/13'),
+      type: 'VENDOR_BILL_OVERDUE',
+      priority: 'HIGH',
+      module: 'VENDOR_BILL',
+    };
+
+    expect(getSupportedNotificationRoute(invoice)).toBe('/invoice/12');
+    expect(getNotificationModuleIcon(invoice)).toBe('bi-file-earmark-text');
+    expect(getNotificationPriority(invoice)).toBe('HIGH');
+    expect(getSupportedNotificationRoute(vendorBill)).toBe('/vendor-bill/13');
+    expect(getNotificationModuleIcon(vendorBill)).toBe('bi-file-earmark-minus');
+    expect(getNotificationPriority(vendorBill)).toBe('HIGH');
+  });
+
   it('defaults old payloads to MEDIUM priority and SYSTEM module', () => {
     const oldPayload = notification('SYSTEM', null, null);
 

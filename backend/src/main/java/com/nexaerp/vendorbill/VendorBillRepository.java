@@ -48,4 +48,11 @@ public interface VendorBillRepository extends JpaRepository<VendorBill, Long> {
 
     List<VendorBill> findByStatusAndBillDateLessThanEqual(VendorBillStatus status, LocalDate date);
 
+    Page<VendorBill> findByStatusInAndDueDateBeforeAndDueAmountGreaterThan(
+            List<VendorBillStatus> statuses,
+            LocalDate dueDate,
+            BigDecimal dueAmount,
+            Pageable pageable
+    );
+
 }

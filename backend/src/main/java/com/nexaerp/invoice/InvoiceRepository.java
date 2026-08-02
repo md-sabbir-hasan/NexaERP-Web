@@ -47,5 +47,12 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     BigDecimal sumGrandTotalBetween(@Param("from") LocalDate from, @Param("to") LocalDate to);
 
     List<Invoice> findByStatusAndInvoiceDateLessThanEqual(InvoiceStatus status, LocalDate date);
+
+    Page<Invoice> findByStatusInAndDueDateBeforeAndDueAmountGreaterThan(
+            List<InvoiceStatus> statuses,
+            LocalDate dueDate,
+            BigDecimal dueAmount,
+            Pageable pageable
+    );
 }
 

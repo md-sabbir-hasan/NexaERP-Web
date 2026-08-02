@@ -123,10 +123,12 @@
                   Edit
                 </a>
 
-                <button *appHasPermission="'APPROVE_VENDOR_BILL'" class="btn-approve" type="button"
-                  (click)="approveBill(bill)">
-                  Approve
-                </button>
+                @if (!bill.approvalFeatureEnabled) {
+                  <button *appHasPermission="'APPROVE_VENDOR_BILL'" class="btn-approve" type="button"
+                    (click)="approveBill(bill)">
+                    Approve
+                  </button>
+                }
                 }
 
                 @if (bill.status === 'APPROVED') {

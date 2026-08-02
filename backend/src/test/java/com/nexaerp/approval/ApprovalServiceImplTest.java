@@ -32,13 +32,14 @@ class ApprovalServiceImplTest {
 
     @BeforeEach void setUp(){
         properties=new ApprovalProperties();properties.setEnabled(true);properties.getManualJournal().setEnabled(true);
-        service=new ApprovalServiceImpl(properties,requests,actions,journals,users,currentUser,audit,notifications);
+        service=new ApprovalServiceImpl(properties,requests,actions,
+                List.of(new ManualJournalApprovalAdapter(properties,journals)),users,currentUser,audit,notifications);
         lenient().when(requests.saveAndFlush(any())).thenAnswer(i->{ApprovalRequest r=i.getArgument(0);r.setId(50L);return r;});
     }
     @AfterEach void clear(){SecurityContextHolder.clearContext();}
 
     @Test void successfulJournalSubmitNotifiesActiveApproversExceptMaker(){
-        JournalEntry journal=journal(10L,1L);when(journals.findById(10L)).thenReturn(Optional.of(journal));when(currentUser.getCurrentUserId()).thenReturn(1L);
+        JournalEntry journal=journal(10L,1L);when(journals.findByIdForUpdate(10L)).thenReturn(Optional.of(journal));when(currentUser.getCurrentUserId()).thenReturn(1L);
         when(requests.findByEntityTypeAndEntityIdAndActiveMarker(any(),eq(10L),eq(1))).thenReturn(Optional.empty());
         when(requests.findTopByEntityTypeAndEntityIdOrderBySubmittedAtDesc(any(),eq(10L))).thenReturn(Optional.empty());
         when(users.findById(1L)).thenReturn(Optional.of(user(1L,UserStatus.ACTIVE)));
@@ -52,14 +53,14 @@ class ApprovalServiceImplTest {
     }
 
     @Test void nonOwnerAndGeneratedJournalSubmissionsAreBlocked(){
-        JournalEntry journal=journal(10L,1L);when(journals.findById(10L)).thenReturn(Optional.of(journal));when(currentUser.getCurrentUserId()).thenReturn(9L);
+        JournalEntry journal=journal(10L,1L);when(journals.findByIdForUpdate(10L)).thenReturn(Optional.of(journal));when(currentUser.getCurrentUserId()).thenReturn(9L);
         assertThatThrownBy(()->service.submitManualJournal(10L)).isInstanceOf(BusinessRuleException.class).hasMessageContaining("creator");
         journal.setSourceType(JournalSourceType.INVOICE);
         assertThatThrownBy(()->service.submitManualJournal(10L)).isInstanceOf(BusinessRuleException.class).hasMessageContaining("MANUAL");
     }
 
     @Test void approverCannotBeMakerAndMustBeActive(){
-        ApprovalRequest request=pending(1L);when(requests.findByIdForUpdate(50L)).thenReturn(Optional.of(request));when(currentUser.getCurrentUserId()).thenReturn(1L);
+        ApprovalRequest request=pending(1L);JournalEntry journal=journal(10L,1L);when(requests.findById(50L)).thenReturn(Optional.of(request));when(requests.findByIdForUpdate(50L)).thenReturn(Optional.of(request));when(journals.findByIdForUpdate(10L)).thenReturn(Optional.of(journal));when(currentUser.getCurrentUserId()).thenReturn(1L);
         when(users.findById(1L)).thenReturn(Optional.of(user(1L,UserStatus.ACTIVE)));authenticate(1L,"APPROVE_JOURNAL");
         assertThatThrownBy(()->service.approve(50L,new ApprovalDecisionDto())).isInstanceOf(BusinessRuleException.class).hasMessageContaining("Maker");
         when(currentUser.getCurrentUserId()).thenReturn(2L);when(users.findById(2L)).thenReturn(Optional.of(user(2L,UserStatus.LOCKED)));authenticate(2L,"APPROVE_JOURNAL");
@@ -68,8 +69,8 @@ class ApprovalServiceImplTest {
 
     @Test void approveKeepsJournalDraftAndRejectRequiresComment(){
         ApprovalRequest request=pending(1L);JournalEntry journal=journal(10L,1L);
-        when(requests.findByIdForUpdate(50L)).thenReturn(Optional.of(request));when(currentUser.getCurrentUserId()).thenReturn(2L);
-        when(users.findById(2L)).thenReturn(Optional.of(user(2L,UserStatus.ACTIVE)));when(journals.findById(10L)).thenReturn(Optional.of(journal));authenticate(2L,"APPROVE_JOURNAL");
+        when(requests.findById(50L)).thenReturn(Optional.of(request));when(requests.findByIdForUpdate(50L)).thenReturn(Optional.of(request));when(currentUser.getCurrentUserId()).thenReturn(2L);
+        when(users.findById(2L)).thenReturn(Optional.of(user(2L,UserStatus.ACTIVE)));when(journals.findByIdForUpdate(10L)).thenReturn(Optional.of(journal));authenticate(2L,"APPROVE_JOURNAL");
         service.approve(50L,new ApprovalDecisionDto());
         assertThat(request.getStatus()).isEqualTo(ApprovalStatus.APPROVED);assertThat(request.getActiveMarker()).isEqualTo(1);assertThat(journal.getStatus()).isEqualTo(JournalStatus.DRAFT);
         ApprovalDecisionDto empty=new ApprovalDecisionDto();assertThatThrownBy(()->service.reject(50L,empty)).isInstanceOf(BusinessRuleException.class).hasMessageContaining("comment");
@@ -77,8 +78,8 @@ class ApprovalServiceImplTest {
 
     @Test void staleJournalBlocksDecisionAndSuccessfulConsumptionClearsActiveMarker(){
         ApprovalRequest request=pending(1L);JournalEntry journal=journal(10L,1L);journal.setUpdatedAt(request.getDocumentUpdatedAt().plusSeconds(1));
-        when(requests.findByIdForUpdate(50L)).thenReturn(Optional.of(request));when(currentUser.getCurrentUserId()).thenReturn(2L);
-        when(users.findById(2L)).thenReturn(Optional.of(user(2L,UserStatus.ACTIVE)));when(journals.findById(10L)).thenReturn(Optional.of(journal));authenticate(2L,"APPROVE_JOURNAL");
+        when(requests.findById(50L)).thenReturn(Optional.of(request));when(requests.findByIdForUpdate(50L)).thenReturn(Optional.of(request));when(currentUser.getCurrentUserId()).thenReturn(2L);
+        when(users.findById(2L)).thenReturn(Optional.of(user(2L,UserStatus.ACTIVE)));when(journals.findByIdForUpdate(10L)).thenReturn(Optional.of(journal));authenticate(2L,"APPROVE_JOURNAL");
         assertThatThrownBy(()->service.approve(50L,new ApprovalDecisionDto())).isInstanceOf(BusinessRuleException.class).hasMessageContaining("changed");
         request.setStatus(ApprovalStatus.APPROVED);when(users.findById(2L)).thenReturn(Optional.of(user(2L,UserStatus.ACTIVE)));
         service.consumeAfterSuccessfulPost(request);

@@ -11,6 +11,7 @@ import {
 import { VendorBillService } from '../../services/vendor-bill.service';
 import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
 import { AuditTimeline } from '../../../audit/components/audit-timeline/audit-timeline';
+import { AuthService } from '../../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-vendor-bill-details',
@@ -35,6 +36,7 @@ export class VendorBillDetails implements OnInit {
     private router: Router,
     private vendorBillService: VendorBillService,
     private alert: AlertService,
+    private authService: AuthService,
   ) {}
 
   ngOnInit(): void {
@@ -80,6 +82,33 @@ export class VendorBillDetails implements OnInit {
         this.alert.error(error?.error?.message ?? 'Failed to approve vendor bill');
       },
     });
+  }
+
+  submitForApproval(): void {
+    const bill = this.bill();
+    if (!bill) return;
+    this.vendorBillService.submitForApproval(bill.id).subscribe({
+      next: (response) => {
+        this.alert.success('Vendor bill submitted for approval');
+        this.bill.update((current) => current ? {...current, activeApprovalId: response.data.id, approvalStatus: response.data.status} : current);
+      },
+      error: (error) => this.alert.error(error?.error?.message ?? 'Failed to submit vendor bill'),
+    });
+  }
+
+  isCreator(bill: VendorBill): boolean {
+    return this.authService.currentUser()?.id === bill.createdBy;
+  }
+
+  hasActiveApproval(bill: VendorBill): boolean {
+    return bill.activeApprovalId !== null &&
+      (bill.approvalStatus === 'PENDING' || bill.approvalStatus === 'APPROVED') &&
+      !bill.approvalConsumed;
+  }
+
+  canSubmitApproval(): boolean {
+    const permissions = this.authService.currentUser()?.permissions ?? [];
+    return permissions.includes('CREATE_VENDOR_BILL') || permissions.includes('EDIT_VENDOR_BILL');
   }
 
   async postBill(): Promise<void> {

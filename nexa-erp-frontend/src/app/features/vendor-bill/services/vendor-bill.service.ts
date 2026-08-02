@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 import { APP_CONFIG } from '../../../core/config/app.config';
 import { ApiResponse } from '../../../core/models/api-response.model';
+import { ApprovalRequest } from '../../approval/models/approval.model';
 import {
   VendorBill,
   VendorBillCancelledReason,
@@ -50,6 +51,10 @@ export class VendorBillService {
 
   approve(id: number): Observable<ApiResponse<VendorBill>> {
     return this.http.post<ApiResponse<VendorBill>>(`${this.baseUrl}/${id}/approve`, {});
+  }
+
+  submitForApproval(id: number): Observable<ApiResponse<ApprovalRequest>> {
+    return this.http.post<ApiResponse<ApprovalRequest>>(`${this.baseUrl}/${id}/submit-approval`, {});
   }
 
   post(id: number): Observable<ApiResponse<VendorBill>> {

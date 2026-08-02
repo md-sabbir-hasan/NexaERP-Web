@@ -83,6 +83,11 @@ export interface VendorBill {
   dueAmount: number;
   approvedAt: string | null;
   postedAt: string | null;
+  createdBy: number | null;
+  approvalFeatureEnabled: boolean;
+  activeApprovalId: number | null;
+  approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'RETURNED' | 'CANCELLED' | null;
+  approvalConsumed: boolean | null;
   createdAt: string;
   updatedAt: string;
   items: VendorBillItem[];

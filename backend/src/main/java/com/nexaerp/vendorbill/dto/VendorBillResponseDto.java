@@ -5,6 +5,7 @@ import com.nexaerp.vendorbill.VendorBillCancelledReason;
 import com.nexaerp.vendorbill.VendorBillReferenceType;
 import com.nexaerp.vendorbill.VendorBillStatus;
 import com.nexaerp.vendorbill.VendorBillType;
+import com.nexaerp.approval.ApprovalStatus;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -64,6 +65,11 @@ public class VendorBillResponseDto {
     // Workflow timestamps
     private LocalDateTime approvedAt;
     private LocalDateTime postedAt;
+    private Long createdBy;
+    private Boolean approvalFeatureEnabled;
+    private Long activeApprovalId;
+    private ApprovalStatus approvalStatus;
+    private Boolean approvalConsumed;
 
     // Audit timestamps
     private LocalDateTime createdAt;

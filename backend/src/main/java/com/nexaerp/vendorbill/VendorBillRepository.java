@@ -6,6 +6,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -14,6 +16,9 @@ import java.util.Optional;
 
 @Repository
 public interface VendorBillRepository extends JpaRepository<VendorBill, Long> {
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select b from VendorBill b where b.id = :id")
+    Optional<VendorBill> findByIdForUpdate(@Param("id") Long id);
     Optional<VendorBill> findTopByOrderByIdDesc();
     List<VendorBill> findByPartyId(Long partyId);
     List<VendorBill> findByStatus(VendorBillStatus status);

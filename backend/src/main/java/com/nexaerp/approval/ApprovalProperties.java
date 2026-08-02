@@ -14,10 +14,17 @@ import org.springframework.validation.annotation.Validated;
 public class ApprovalProperties {
     private boolean enabled = false;
     private ManualJournal manualJournal = new ManualJournal();
+    private VendorBill vendorBill = new VendorBill();
 
     @Getter
     @Setter
     public static class ManualJournal {
+        private boolean enabled = true;
+    }
+
+    @Getter
+    @Setter
+    public static class VendorBill {
         private boolean enabled = true;
     }
 }

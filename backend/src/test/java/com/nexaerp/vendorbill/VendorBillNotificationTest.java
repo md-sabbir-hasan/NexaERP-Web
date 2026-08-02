@@ -4,6 +4,7 @@ import com.nexaerp.account.Account;
 import com.nexaerp.account.AccountRepository;
 import com.nexaerp.account.AccountType;
 import com.nexaerp.accountingperiod.AccountingPeriodService;
+import com.nexaerp.approval.ApprovalService;
 import com.nexaerp.audit.AuditAction;
 import com.nexaerp.audit.AuditLogService;
 import com.nexaerp.budget.BudgetCheckService;
@@ -68,6 +69,7 @@ class VendorBillNotificationTest {
     @Mock private NotificationService notificationService;
     @Mock private BudgetAlertEmailService budgetAlertEmailService;
     @Mock private CostCenterService costCenterService;
+    @Mock private ApprovalService approvalService;
 
     @InjectMocks private VendorBillServiceImpl service;
 
@@ -78,6 +80,8 @@ class VendorBillNotificationTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(approvalService.lockAndValidateVendorBillForPosting(any())).thenReturn(null);
+        lenient().when(approvalService.lockActiveVendorBillForCancellation(any())).thenReturn(null);
         expense = account(10L, AccountType.EXPENSE);
         payable = account(20L, AccountType.LIABILITY);
         inputVat = account(30L, AccountType.ASSET);

@@ -3,6 +3,8 @@ package com.nexaerp.vendorbill;
 import com.nexaerp.account.Account;
 import com.nexaerp.account.AccountRepository;
 import com.nexaerp.accountingperiod.AccountingPeriodService;
+import com.nexaerp.approval.ApprovalRequest;
+import com.nexaerp.approval.ApprovalService;
 import com.nexaerp.audit.AuditAction;
 import com.nexaerp.audit.AuditLogService;
 import com.nexaerp.budget.BudgetCheckService;
@@ -66,6 +68,7 @@ public class VendorBillServiceImpl implements VendorBillService {
     private final NotificationService notificationService;
     private final BudgetAlertEmailService budgetAlertEmailService;
     private final CostCenterService costCenterService;
+    private final ApprovalService approvalService;
 
 
     @Override
@@ -115,6 +118,7 @@ public class VendorBillServiceImpl implements VendorBillService {
     @Override
     @Transactional
     public VendorBillResponseDto update(Long id, VendorBillRequestDto request) {
+        approvalService.assertVendorBillChangeAllowed(id);
         VendorBill bill = vendorBillRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vendor bill not found"));
 
@@ -166,7 +170,7 @@ public class VendorBillServiceImpl implements VendorBillService {
     public VendorBillResponseDto getById(Long id) {
         VendorBill bill = vendorBillRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vendor bill not found"));
-        return toResponse(bill);
+        return toResponse(bill, Collections.emptyList(), true);
     }
 
     @Override
@@ -204,6 +208,12 @@ public class VendorBillServiceImpl implements VendorBillService {
     @Override
     @Transactional
     public VendorBillResponseDto approve(Long id) {
+        if (approvalService.isVendorBillApprovalEnabled()) {
+            approvalService.approveVendorBillCompatibility(id);
+            VendorBill approved = vendorBillRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Vendor bill not found"));
+            return toResponse(approved, Collections.emptyList(), true);
+        }
         VendorBill bill = vendorBillRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vendor bill not found"));
 
@@ -265,6 +275,8 @@ public class VendorBillServiceImpl implements VendorBillService {
                     "Only APPROVED bills can be posted"
             );
         }
+
+        ApprovalRequest approvalRequest = approvalService.lockAndValidateVendorBillForPosting(id);
 
         List<VendorBillItem> items =
                 vendorBillItemRepository.findByVendorBillId(
@@ -351,12 +363,14 @@ public class VendorBillServiceImpl implements VendorBillService {
                 budgetWarnings
         );
         notifyBudgetExceeded(budgetWarnings);
+        approvalService.consumeAfterSuccessfulPost(approvalRequest);
         return toResponse(saved, budgetWarnings);
     }
 
     @Override
     @Transactional
     public VendorBillResponseDto cancel(Long id, VendorBillCancelledReason reason) {
+        ApprovalRequest approvalRequest = approvalService.lockActiveVendorBillForCancellation(id);
         VendorBill bill = vendorBillRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vendor bill not found"));
 
@@ -411,6 +425,8 @@ public class VendorBillServiceImpl implements VendorBillService {
                 "VENDOR_BILL",
                 saved.getId()
         );
+
+        approvalService.cancelAfterSuccessfulDocumentCancellation(approvalRequest);
 
         return toResponse(saved);
     }
@@ -803,15 +819,26 @@ private void validateVendorParty(Party party) {
     // ---Mappers----
 
     private VendorBillResponseDto toResponse(VendorBill bill) {
-        return toResponse(bill, Collections.emptyList());
+        return toResponse(bill, Collections.emptyList(), false);
     }
 
     private VendorBillResponseDto toResponse(
             VendorBill bill,
             List<BudgetWarningDto> budgetWarnings
     ) {
+        return toResponse(bill, budgetWarnings, false);
+    }
+
+    private VendorBillResponseDto toResponse(
+            VendorBill bill,
+            List<BudgetWarningDto> budgetWarnings,
+            boolean includeApproval
+    ) {
         List<VendorBillItem> items =
                 vendorBillItemRepository.findByVendorBillId(bill.getId());
+        ApprovalRequest latestApproval = includeApproval
+                ? approvalService.findLatestVendorBillRequest(bill.getId())
+                : null;
 
         return VendorBillResponseDto.builder()
                 .id(bill.getId())
@@ -841,6 +868,11 @@ private void validateVendorParty(Party party) {
                 .dueAmount(bill.getDueAmount())
                 .approvedAt(bill.getApprovedAt())
                 .postedAt(bill.getPostedAt())
+                .createdBy(bill.getCreatedBy())
+                .approvalFeatureEnabled(approvalService.isVendorBillApprovalEnabled())
+                .activeApprovalId(latestApproval != null && latestApproval.getActiveMarker() != null ? latestApproval.getId() : null)
+                .approvalStatus(latestApproval != null ? latestApproval.getStatus() : null)
+                .approvalConsumed(latestApproval != null ? latestApproval.getConsumedAt() != null : null)
                 .createdAt(bill.getCreatedAt())
                 .updatedAt(bill.getUpdatedAt())
                 .items(items.stream()

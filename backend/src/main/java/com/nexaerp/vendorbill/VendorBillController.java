@@ -4,6 +4,8 @@ package com.nexaerp.vendorbill;
 import com.nexaerp.common.response.ApiResponse;
 import com.nexaerp.vendorbill.dto.VendorBillRequestDto;
 import com.nexaerp.vendorbill.dto.VendorBillResponseDto;
+import com.nexaerp.approval.ApprovalService;
+import com.nexaerp.approval.dto.ApprovalRequestResponseDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class VendorBillController {
     private final VendorBillService vendorBillService;
+    private final ApprovalService approvalService;
 
     @PostMapping
     @PreAuthorize("hasAuthority('CREATE_VENDOR_BILL')")
@@ -83,6 +86,13 @@ public class VendorBillController {
             @PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success("Vendor bill approved",
                 vendorBillService.approve(id)));
+    }
+
+    @PostMapping("/{id}/submit-approval")
+    @PreAuthorize("hasAnyAuthority('CREATE_VENDOR_BILL','EDIT_VENDOR_BILL')")
+    public ResponseEntity<ApiResponse<ApprovalRequestResponseDto>> submitApproval(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success("Vendor bill submitted for approval",
+                approvalService.submitVendorBill(id)));
     }
 
 

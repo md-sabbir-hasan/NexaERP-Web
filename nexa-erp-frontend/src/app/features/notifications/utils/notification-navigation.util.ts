@@ -6,6 +6,7 @@ const JOURNAL_EDIT_ROUTE = /^\/journals\/([1-9]\d*)\/edit$/;
 const EXPENSE_DETAIL_ROUTE = /^\/expense\/([1-9]\d*)$/;
 const INVOICE_DETAIL_ROUTE = /^\/invoice\/([1-9]\d*)$/;
 const VENDOR_BILL_DETAIL_ROUTE = /^\/vendor-bill\/([1-9]\d*)$/;
+const PAYMENT_DETAIL_ROUTE = /^\/payment\/([1-9]\d*)$/;
 const ACCOUNTING_PERIOD_LIST_ROUTE = '/accounting-periods';
 
 export function getSupportedNotificationRoute(
@@ -28,6 +29,8 @@ export function getSupportedNotificationRoute(
       return getEntityRoute(route, notification.entityId, INVOICE_DETAIL_ROUTE);
     case 'VENDOR_BILL':
       return getEntityRoute(route, notification.entityId, VENDOR_BILL_DETAIL_ROUTE);
+    case 'PAYMENT':
+      return getEntityRoute(route, notification.entityId, PAYMENT_DETAIL_ROUTE);
     case 'ACCOUNTING_PERIOD':
       return route === ACCOUNTING_PERIOD_LIST_ROUTE && notification.entityId !== null
         ? route

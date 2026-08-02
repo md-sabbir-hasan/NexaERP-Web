@@ -15,6 +15,7 @@ export type NotificationType =
   | 'EXPENSE'
   | 'RECURRING_EXPENSE'
   | 'PAYMENT'
+  | 'PAYMENT_POSTED'
   | 'BANKING'
   | 'FIXED_ASSET'
   | 'JOURNAL_DRAFT_PENDING'

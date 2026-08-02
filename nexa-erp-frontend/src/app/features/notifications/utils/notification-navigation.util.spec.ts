@@ -65,6 +65,20 @@ describe('notification utilities', () => {
     },
   );
 
+  it('supports the PAYMENT_POSTED payload display metadata', () => {
+    const value: NotificationResponse = {
+      ...notification('PAYMENT', 12, '/payment/12'),
+      type: 'PAYMENT_POSTED',
+      priority: 'MEDIUM',
+      module: 'PAYMENT',
+    };
+
+    expect(value.type).toBe('PAYMENT_POSTED');
+    expect(getNotificationModule(value)).toBe('PAYMENT');
+    expect(getNotificationModuleIcon(value)).toBe('bi-credit-card');
+    expect(getNotificationPriority(value)).toBe('MEDIUM');
+  });
+
   it('defaults old payloads to MEDIUM priority and SYSTEM module', () => {
     const oldPayload = notification('SYSTEM', null, null);
 
@@ -77,6 +91,7 @@ describe('notification utilities', () => {
     [notification('EXPENSE', 13, '/expense/13'), '/expense/13'],
     [notification('INVOICE', 12, '/invoice/12'), '/invoice/12'],
     [notification('VENDOR_BILL', 12, '/vendor-bill/12'), '/vendor-bill/12'],
+    [notification('PAYMENT', 12, '/payment/12'), '/payment/12'],
     [notification('ACCOUNTING_PERIOD', 14, '/accounting-periods'), '/accounting-periods'],
     [notification('BUDGET', 15, '/budget/15/variance'), '/budget/15/variance'],
     [notification('BUDGET', null, '/budget'), '/budget'],
@@ -99,6 +114,14 @@ describe('notification utilities', () => {
     notification('VENDOR_BILL', 12, '/vendor-bill/not-a-number'),
     notification('VENDOR_BILL', 12, '/vendor-bill/12?tab=payments'),
     notification('PAYMENT', 12, '/vendor-bill/12'),
+    notification('PAYMENT', 12, '/payment/99'),
+    notification('PAYMENT', 12, '/payment/12/edit'),
+    notification('PAYMENT', 12, '/payments/12'),
+    notification('PAYMENT', 12, '/payment/0'),
+    notification('PAYMENT', 12, '/payment/-12'),
+    notification('PAYMENT', 12, '/payment/not-a-number'),
+    notification('PAYMENT', 12, '/payment/12?tab=allocations'),
+    notification('INVOICE', 12, '/payment/12'),
     notification('INVOICE', 12, 'data:text/html,test'),
     notification('SYSTEM', null, 'https://example.com'),
     notification('SYSTEM', null, '//example.com/path'),

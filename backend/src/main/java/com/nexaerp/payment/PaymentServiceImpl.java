@@ -17,6 +17,10 @@ import com.nexaerp.invoice.Invoice;
 import com.nexaerp.invoice.InvoiceRepository;
 import com.nexaerp.invoice.InvoiceStatus;
 import com.nexaerp.journal.*;
+import com.nexaerp.notification.NotificationModule;
+import com.nexaerp.notification.NotificationPriority;
+import com.nexaerp.notification.NotificationService;
+import com.nexaerp.notification.NotificationType;
 import com.nexaerp.party.Party;
 import com.nexaerp.party.PartyRepository;
 import com.nexaerp.party.PartyType;
@@ -36,6 +40,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Year;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -59,6 +64,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final BankAccountRepository bankAccountRepository;
     private final BankTransactionRepository bankTransactionRepository;
     private final ExpenseRepository expenseRepository;
+    private final NotificationService notificationService;
 
 
     @Override
@@ -350,6 +356,18 @@ public class PaymentServiceImpl implements PaymentService {
                 saved.getId(),
                 PaymentStatus.DRAFT.name(),
                 PaymentStatus.POSTED.name()
+        );
+
+        notificationService.scheduleUniqueForUsersAfterCommit(
+                Arrays.asList(saved.getCreatedBy(), saved.getPostedBy()),
+                NotificationType.PAYMENT_POSTED,
+                NotificationPriority.MEDIUM,
+                NotificationModule.PAYMENT,
+                "Payment posted",
+                "Payment " + saved.getPaymentNumber() + " was posted successfully.",
+                "/payment/" + saved.getId(),
+                "PAYMENT",
+                saved.getId()
         );
 
         return toResponse(saved);

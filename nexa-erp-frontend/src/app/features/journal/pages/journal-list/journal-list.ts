@@ -6,6 +6,7 @@ import { AlertService } from '../../../../core/services/alert.service';
 import { JournalEntry, JournalEntryType, JournalStatus } from '../../models/journal.model';
 import { JournalService } from '../../services/journal.service';
 import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
+import { AuthService } from '../../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-journal-list',
@@ -58,6 +59,7 @@ readonly type = signal<JournalEntryType | ''>('');
     private journalService: JournalService,
     private alert: AlertService,
     private route: ActivatedRoute,
+    readonly auth: AuthService,
   ) {}
 
   ngOnInit(): void {
@@ -95,6 +97,23 @@ readonly type = signal<JournalEntryType | ''>('');
       },
       error: (error) => this.alert.error(error?.error?.message ?? 'Failed to post journal'),
     });
+  }
+
+  async submitApproval(journal: JournalEntry): Promise<void> {
+    const confirmed = await this.alert.confirm(`Submit ${journal.entryNumber} for approval?`);
+    if (!confirmed) return;
+    this.journalService.submitApproval(journal.id).subscribe({
+      next: () => { this.alert.success('Journal submitted for approval'); this.loadJournals(); },
+      error: (error) => this.alert.error(error?.error?.message ?? 'Failed to submit journal'),
+    });
+  }
+
+  isCreator(journal: JournalEntry): boolean {
+    return journal.createdBy != null && journal.createdBy === this.auth.currentUser()?.id;
+  }
+
+  isApprovalLocked(journal: JournalEntry): boolean {
+    return journal.approvalEnabled === true && (journal.approvalStatus === 'PENDING' || journal.approvalStatus === 'APPROVED');
   }
 
   async reverseJournal(journal: JournalEntry): Promise<void> {

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { APP_CONFIG } from '../../../core/config/app.config';
 import { ApiResponse } from '../../../core/models/api-response.model';
 import { JournalEntry, JournalEntryRequest } from '../models/journal.model';
+import { ApprovalRequest } from '../../approval/models/approval.model';
 
 @Injectable({
   providedIn: 'root',
@@ -31,6 +32,10 @@ export class JournalService {
 
   post(id: number): Observable<ApiResponse<JournalEntry>> {
     return this.http.post<ApiResponse<JournalEntry>>(`${this.baseUrl}/${id}/post`, {});
+  }
+
+  submitApproval(id: number): Observable<ApiResponse<ApprovalRequest>> {
+    return this.http.post<ApiResponse<ApprovalRequest>>(`${this.baseUrl}/${id}/submit-approval`, {});
   }
 
   reverse(id: number): Observable<ApiResponse<JournalEntry>> {

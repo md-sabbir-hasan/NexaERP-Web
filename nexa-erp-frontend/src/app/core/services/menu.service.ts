@@ -204,6 +204,12 @@ export class MenuService {
             permission: PERMISSIONS.VIEW_BUDGET_REPORT,
           },
           {
+            label: 'Approval Queue',
+            icon: 'bi-check2-square',
+            route: APP_ROUTES.APPROVALS,
+            permission: PERMISSIONS.VIEW_APPROVAL_QUEUE,
+          },
+          {
             label: 'Cost Center Transactions',
             icon: 'bi-list-columns-reverse',
             route: APP_ROUTES.COST_CENTER_TRANSACTIONS,

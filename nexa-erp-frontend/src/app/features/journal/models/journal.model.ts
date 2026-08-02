@@ -39,6 +39,10 @@ export interface JournalEntry {
   sourceType: JournalSourceType;
   totalAmount: number;
   lines: JournalLine[];
+  createdBy?: number | null;
+  approvalEnabled?: boolean | null;
+  approvalRequestId?: number | null;
+  approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'RETURNED' | 'CANCELLED' | null;
 }
 
 export interface JournalLineRequest {

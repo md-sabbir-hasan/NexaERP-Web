@@ -530,6 +530,9 @@ import { ShellComponent } from './core/layout/shell/shell.component';
 import { LoginComponent } from './features/auth/pages/login/login.component';
 import { DashboardComponent } from './features/dashboard/pages/dashboard/dashboard.component';
 
+const loadApprovalList = () => import('./features/approval/pages/approval-list/approval-list').then(m => m.ApprovalList);
+const loadApprovalDetail = () => import('./features/approval/pages/approval-detail/approval-detail').then(m => m.ApprovalDetail);
+
 export const routes: Routes = [
   // =========================================================
   // Public / Authentication
@@ -705,6 +708,13 @@ export const routes: Routes = [
       // =====================================================
       // Journal Entry
       // =====================================================
+
+      { path: 'approvals', children: [
+        { path: '', loadComponent: loadApprovalList, canActivate: [permissionGuard], data: { permission: PERMISSIONS.VIEW_APPROVAL_QUEUE, mode: 'pending' } },
+        { path: 'my-requests', loadComponent: loadApprovalList, data: { mode: 'requests' } },
+        { path: 'my-actions', loadComponent: loadApprovalList, data: { mode: 'actions' } },
+        { path: ':id', loadComponent: loadApprovalDetail },
+      ]},
 
       {
         path: 'journals',

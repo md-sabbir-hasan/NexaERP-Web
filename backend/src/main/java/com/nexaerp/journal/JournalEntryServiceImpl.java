@@ -1,5 +1,7 @@
 package com.nexaerp.journal;
 
+import com.nexaerp.approval.ApprovalRequest;
+import com.nexaerp.approval.ApprovalService;
 import com.nexaerp.account.Account;
 import com.nexaerp.account.AccountRepository;
 import com.nexaerp.account.AccountType;
@@ -53,6 +55,7 @@ public class JournalEntryServiceImpl implements JournalEntryService{
     private final NotificationService notificationService;
     private final BudgetAlertEmailService budgetAlertEmailService;
     private final CostCenterService costCenterService;
+    private final ApprovalService approvalService;
 
 
     @Override
@@ -115,6 +118,10 @@ public class JournalEntryServiceImpl implements JournalEntryService{
 
         if (!entry.getStatus().equals(JournalStatus.DRAFT)) {
             throw new BusinessRuleException("Only DRAFT entries can be updated");
+        }
+
+        if (entry.getSourceType() == JournalSourceType.MANUAL) {
+            approvalService.assertJournalChangeAllowed(id);
         }
 
         validateLines(request.getLines());
@@ -183,6 +190,10 @@ public class JournalEntryServiceImpl implements JournalEntryService{
             throw new BusinessRuleException("Only DRAFT entries can be posted");
         }
 
+        ApprovalRequest approvalRequest = entry.getSourceType() == JournalSourceType.MANUAL
+                ? approvalService.lockAndValidateForPosting(id)
+                : null;
+
         if (entry.getLines() == null || entry.getLines().isEmpty()) {
             throw new BusinessRuleException("Cannot post a journal entry with zero lines");
         }
@@ -225,6 +236,8 @@ public class JournalEntryServiceImpl implements JournalEntryService{
                 "DRAFT",
                 "POSTED"
         );
+
+        approvalService.consumeAfterSuccessfulPost(approvalRequest);
 
         JournalEntry completed = journalEntryRepository.save(entry);
         List<BudgetWarningDto> budgetWarnings = checkBudgets(completed);
@@ -318,6 +331,10 @@ public class JournalEntryServiceImpl implements JournalEntryService{
 
         if (!entry.getStatus().equals(JournalStatus.DRAFT)) {
             throw new BusinessRuleException("Only DRAFT entries can be deleted");
+        }
+
+        if (entry.getSourceType() == JournalSourceType.MANUAL) {
+            approvalService.assertJournalChangeAllowed(id);
         }
 
         journalEntryRepository.delete(entry);
@@ -489,6 +506,9 @@ public class JournalEntryServiceImpl implements JournalEntryService{
                                      // -- Mappers --
 
     private JournalEntryResponseDto toResponse(JournalEntry entry) {
+        ApprovalRequest activeApproval = entry.getSourceType() == JournalSourceType.MANUAL
+                ? approvalService.findLatestJournalRequest(entry.getId())
+                : null;
         JournalEntryResponseDto dto = JournalEntryResponseDto.builder()
                 .id(entry.getId())
                 .entryNumber(entry.getEntryNumber())
@@ -498,6 +518,11 @@ public class JournalEntryServiceImpl implements JournalEntryService{
                 .status(entry.getStatus())
                 .sourceType(entry.getSourceType())
                 .totalAmount(entry.getTotalAmount())
+                .createdBy(entry.getCreatedBy())
+                .approvalEnabled(entry.getSourceType() == JournalSourceType.MANUAL
+                        && approvalService.isManualJournalApprovalEnabled())
+                .approvalRequestId(activeApproval != null ? activeApproval.getId() : null)
+                .approvalStatus(activeApproval != null ? activeApproval.getStatus() : null)
                 .build();
 
         if (entry.getLines() != null) {

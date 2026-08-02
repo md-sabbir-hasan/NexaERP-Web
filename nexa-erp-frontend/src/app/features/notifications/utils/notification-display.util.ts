@@ -32,6 +32,7 @@ export function getNotificationModuleIcon(notification: NotificationResponse): s
     PAYMENT: 'bi-credit-card',
     BANKING: 'bi-bank',
     FIXED_ASSET: 'bi-building',
+    APPROVAL: 'bi-check2-square',
   };
   return icons[getNotificationModule(notification)];
 }

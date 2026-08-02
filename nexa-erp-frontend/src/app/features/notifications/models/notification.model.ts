@@ -22,7 +22,11 @@ export type NotificationType =
   | 'JOURNAL_DRAFT_PENDING'
   | 'RECURRING_EXPENSE_DRAFT_PENDING'
   | 'ACCOUNTING_PERIOD_CLOSED'
-  | 'ACCOUNTING_PERIOD_LOCKED';
+  | 'ACCOUNTING_PERIOD_LOCKED'
+  | 'APPROVAL_SUBMITTED'
+  | 'APPROVAL_APPROVED'
+  | 'APPROVAL_REJECTED'
+  | 'APPROVAL_RETURNED';
 
 export type NotificationPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
@@ -36,7 +40,8 @@ export type NotificationModule =
   | 'VENDOR_BILL'
   | 'PAYMENT'
   | 'BANKING'
-  | 'FIXED_ASSET';
+  | 'FIXED_ASSET'
+  | 'APPROVAL';
 
 export interface NotificationResponse {
   id: number;

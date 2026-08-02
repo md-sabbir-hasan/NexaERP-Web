@@ -8,6 +8,7 @@ const INVOICE_DETAIL_ROUTE = /^\/invoice\/([1-9]\d*)$/;
 const VENDOR_BILL_DETAIL_ROUTE = /^\/vendor-bill\/([1-9]\d*)$/;
 const PAYMENT_DETAIL_ROUTE = /^\/payment\/([1-9]\d*)$/;
 const ACCOUNTING_PERIOD_LIST_ROUTE = '/accounting-periods';
+const APPROVAL_DETAIL_ROUTE = /^\/approvals\/([1-9]\d*)$/;
 
 export function getSupportedNotificationRoute(
   notification: NotificationResponse,
@@ -35,6 +36,8 @@ export function getSupportedNotificationRoute(
       return route === ACCOUNTING_PERIOD_LIST_ROUTE && notification.entityId !== null
         ? route
         : null;
+    case 'APPROVAL_REQUEST':
+      return getEntityRoute(route, notification.entityId, APPROVAL_DETAIL_ROUTE);
     default:
       return null;
   }

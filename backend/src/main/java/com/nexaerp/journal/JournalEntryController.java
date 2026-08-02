@@ -1,5 +1,7 @@
 package com.nexaerp.journal;
 
+import com.nexaerp.approval.ApprovalService;
+import com.nexaerp.approval.dto.ApprovalRequestResponseDto;
 import com.nexaerp.common.response.ApiResponse;
 import com.nexaerp.journal.dto.JournalEntryRequestDto;
 import com.nexaerp.journal.dto.JournalEntryResponseDto;
@@ -17,6 +19,7 @@ import java.util.List;
 public class JournalEntryController {
 
     private final JournalEntryService journalEntryService;
+    private final ApprovalService approvalService;
 
 
     @PostMapping
@@ -50,6 +53,13 @@ public class JournalEntryController {
     public ResponseEntity<ApiResponse<JournalEntryResponseDto>> post(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success("Journal entry posted",
                 journalEntryService.post(id)));
+    }
+
+    @PostMapping("/{id}/submit-approval")
+    @PreAuthorize("hasAuthority('CREATE_JOURNAL')")
+    public ResponseEntity<ApiResponse<ApprovalRequestResponseDto>> submitApproval(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success("Journal submitted for approval",
+                approvalService.submitManualJournal(id)));
     }
 
     @PostMapping("/{id}/reverse")

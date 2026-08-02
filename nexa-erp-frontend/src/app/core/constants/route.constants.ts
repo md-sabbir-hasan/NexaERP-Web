@@ -10,6 +10,7 @@ export const APP_ROUTES = {
   ACCOUNTS: '/accounts',
   COST_CENTERS: '/cost-centers',
   JOURNAL: '/journals',
+  APPROVALS: '/approvals',
   INVOICE: '/invoice',
   VENDOR_BILL: '/vendor-bill',
   EXPENSE: '/expense',

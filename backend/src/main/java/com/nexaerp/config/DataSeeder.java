@@ -70,6 +70,8 @@ public class DataSeeder implements CommandLineRunner {
                 new Object[]{"POST_JOURNAL", "Post Journal", "JOURNAL"},
                 new Object[]{"REVERSE_JOURNAL", "Reverse Journal", "JOURNAL"},
                 new Object[]{"DELETE_JOURNAL", "Delete Journal", "JOURNAL"},
+                new Object[]{"APPROVE_JOURNAL", "Approve Journal", "JOURNAL"},
+                new Object[]{"VIEW_APPROVAL_QUEUE", "View Approval Queue", "APPROVAL"},
 
                 //credit note
                 new Object[]{"VIEW_CREDIT_NOTE", "View Credit Note", "CREDIT_NOTE"},

@@ -8,6 +8,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import com.nexaerp.approval.ApprovalStatus;
 
 @Getter
 @Setter
@@ -24,4 +25,8 @@ public class JournalEntryResponseDto {
     private JournalSourceType sourceType;
     private BigDecimal totalAmount;
     private List<JournalLineResponseDto> lines;
+    private Long createdBy;
+    private Boolean approvalEnabled;
+    private Long approvalRequestId;
+    private ApprovalStatus approvalStatus;
 }

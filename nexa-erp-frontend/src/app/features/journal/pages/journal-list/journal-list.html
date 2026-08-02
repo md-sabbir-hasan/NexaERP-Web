@@ -125,25 +125,36 @@
 
             <div class="action-stack">
               @if (journal.status === 'DRAFT') {
+                @if (journal.approvalEnabled && journal.approvalStatus) {
+                  <a class="action-btn" [routerLink]="['/approvals', journal.approvalRequestId]">
+                    <i class="bi bi-shield-check"></i>{{ journal.approvalStatus }} approval
+                  </a>
+                }
+                @if (journal.approvalEnabled && (!journal.approvalStatus || journal.approvalStatus === 'REJECTED' || journal.approvalStatus === 'RETURNED') && isCreator(journal)) {
+                  <button *appHasPermission="'CREATE_JOURNAL'" class="action-btn" type="button" (click)="submitApproval(journal)">
+                    <i class="bi bi-send"></i>Submit for approval
+                  </button>
+                }
+                @if (!isApprovalLocked(journal)) {
                 <a
-                *appHasPermission="'EDIT_JOURNAL'"
+                *appHasPermission="'CREATE_JOURNAL'"
                  class="action-btn edit" [routerLink]="['/journals', journal.id, 'edit']">
                   <i class="bi bi-pencil"></i>
                   Edit
                 </a>
 
                 <button
-                *appHasPermission="'POST_JOURNAL'"
-                 class="action-btn success" type="button" (click)="postJournal(journal)">
-                  <i class="bi bi-check-circle"></i>
-                  Post
-                </button>
-
-                <button
                 *appHasPermission="'DELETE_JOURNAL'"
                  class="action-btn danger" type="button" (click)="deleteJournal(journal)">
                   <i class="bi bi-trash"></i>
                   Delete
+                </button>
+                }
+                <button
+                *appHasPermission="'POST_JOURNAL'"
+                 [disabled]="journal.approvalEnabled === true && journal.approvalStatus !== 'APPROVED'"
+                 class="action-btn success" type="button" (click)="postJournal(journal)">
+                  <i class="bi bi-check-circle"></i>Post
                 </button>
               }
 

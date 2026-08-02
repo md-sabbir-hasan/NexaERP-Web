@@ -10,5 +10,6 @@ public enum NotificationModule {
     VENDOR_BILL,
     PAYMENT,
     BANKING,
-    FIXED_ASSET
+    FIXED_ASSET,
+    APPROVAL
 }

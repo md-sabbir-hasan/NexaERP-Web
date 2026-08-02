@@ -16,5 +16,9 @@ public enum AuditAction {
     UPLOADED,
     CLOSED,
     OPENED,
-    LOCKED
+    LOCKED,
+    SUBMITTED,
+    REJECTED,
+    RETURNED,
+    CONSUMED
 }

@@ -1,0 +1,11 @@
+<section class="approval-page">
+  <header><div><p class="eyebrow">Workflow</p><h1>{{ title() }}</h1></div><nav><a routerLink="/approvals">Queue</a><a routerLink="/approvals/my-requests">My requests</a><a routerLink="/approvals/my-actions">My actions</a></nav></header>
+  @if (loading()) { <div class="state">Loading approvals…</div> }
+  @else if (error()) { <div class="state error">{{ error() }} <button type="button" (click)="load()">Retry</button></div> }
+  @else if (mode === 'actions') {
+    <div class="cards">@for(a of actions();track a.id){<article><div><span class="badge">{{a.action}}</span><h2>Request #{{a.approvalRequestId}}</h2><p>{{a.actorName}} · {{a.createdAt|date:'medium'}}</p></div><a [routerLink]="['/approvals',a.approvalRequestId]">View</a></article>}@empty{<div class="state">No approval actions yet.</div>}</div>
+  } @else {
+    <div class="cards">@for(r of requests();track r.id){<article><div><span class="badge" [class]="'badge '+r.status.toLowerCase()">{{r.status}}</span><h2>{{r.documentNumber}}</h2><p>{{r.documentTitle||'Manual journal'}} · Submitted by {{r.makerName}}</p><small>{{r.submittedAt|date:'medium'}}</small></div><a [routerLink]="['/approvals',r.id]">Review</a></article>}@empty{<div class="state">No approvals found.</div>}</div>
+  }
+  @if(totalPages()>1){<footer><button type="button" [disabled]="page()===0" (click)="load(page()-1)">Previous</button><span>Page {{page()+1}} of {{totalPages()}}</span><button type="button" [disabled]="page()+1>=totalPages()" (click)="load(page()+1)">Next</button></footer>}
+</section>

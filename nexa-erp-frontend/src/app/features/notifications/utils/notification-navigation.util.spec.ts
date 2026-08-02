@@ -101,6 +101,13 @@ describe('notification utilities', () => {
     expect(getNotificationPriority(vendorBill)).toBe('HIGH');
   });
 
+  it.each(['APPROVAL_SUBMITTED','APPROVAL_APPROVED','APPROVAL_REJECTED','APPROVAL_RETURNED'] as const)(
+    'supports safe %s approval navigation', (type) => {
+      const value: NotificationResponse={...notification('APPROVAL_REQUEST',12,'/approvals/12'),type,module:'APPROVAL',priority:type==='APPROVAL_SUBMITTED'||type==='APPROVAL_APPROVED'?'MEDIUM':'HIGH'};
+      expect(getSupportedNotificationRoute(value)).toBe('/approvals/12');
+      expect(getNotificationModuleIcon(value)).toBe('bi-check2-square');
+    });
+
   it('defaults old payloads to MEDIUM priority and SYSTEM module', () => {
     const oldPayload = notification('SYSTEM', null, null);
 
@@ -117,6 +124,7 @@ describe('notification utilities', () => {
     [notification('ACCOUNTING_PERIOD', 14, '/accounting-periods'), '/accounting-periods'],
     [notification('BUDGET', 15, '/budget/15/variance'), '/budget/15/variance'],
     [notification('BUDGET', null, '/budget'), '/budget'],
+    [notification('APPROVAL_REQUEST', 12, '/approvals/12'), '/approvals/12'],
   ])('accepts an allowlisted internal route', (value, expected) => {
     expect(getSupportedNotificationRoute(value)).toBe(expected);
   });
@@ -149,6 +157,10 @@ describe('notification utilities', () => {
     notification('SYSTEM', null, '//example.com/path'),
     notification('SYSTEM', null, 'javascript:alert(1)'),
     notification('BANKING', 1, '/banking'),
+    notification('APPROVAL_REQUEST', 12, '/approvals/99'),
+    notification('APPROVAL_REQUEST', 12, '/approvals/12/edit'),
+    notification('APPROVAL_REQUEST', 12, '/approval/12'),
+    notification('APPROVAL_REQUEST', 12, '/approvals/12?tab=history'),
   ])('rejects mismatched, external, or unsupported routes', (value) => {
     expect(getSupportedNotificationRoute(value)).toBeNull();
   });

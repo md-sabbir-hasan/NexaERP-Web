@@ -1,6 +1,7 @@
 package com.nexaerp.journal;
 
 import com.nexaerp.account.Account;
+import com.nexaerp.approval.ApprovalService;
 import com.nexaerp.account.AccountRepository;
 import com.nexaerp.account.AccountType;
 import com.nexaerp.accountingperiod.AccountingPeriodService;
@@ -52,6 +53,7 @@ class JournalCostCenterPropagationTest {
     @Mock private NotificationService notificationService;
     @Mock private BudgetAlertEmailService budgetAlertEmailService;
     @Mock private CostCenterService costCenterService;
+    @Mock private ApprovalService approvalService;
     @InjectMocks private JournalEntryServiceImpl service;
 
     private Account debitAccount;
@@ -73,6 +75,7 @@ class JournalCostCenterPropagationTest {
         lenient().when(accountRepository.findById(2L)).thenReturn(Optional.of(creditAccount));
         lenient().when(accountRepository.existsByParentId(any())).thenReturn(false);
         lenient().when(costCenterService.resolveActive(9L)).thenReturn(costCenter);
+        lenient().when(approvalService.isManualJournalApprovalEnabled()).thenReturn(false);
     }
 
     @Test

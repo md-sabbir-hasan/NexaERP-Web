@@ -53,8 +53,6 @@ public class InvoiceServiceImpl implements InvoiceService{
     private final AccountingPeriodService accountingPeriodService;
     private final MakerCheckerService makerCheckerService;
     private final CurrentUserService currentUserService;
-    private final ExchangeRateService exchangeRateService;
-    private final CurrencyService currencyService;
     private final NotificationService notificationService;
 
     @Override

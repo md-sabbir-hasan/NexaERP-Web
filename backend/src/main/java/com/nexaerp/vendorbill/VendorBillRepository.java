@@ -37,12 +37,12 @@ public interface VendorBillRepository extends JpaRepository<VendorBill, Long> {
 
     @Query("SELECT COUNT(b) FROM VendorBill b " +
             "WHERE b.status IN (com.nexaerp.vendorbill.VendorBillStatus.POSTED, com.nexaerp.vendorbill.VendorBillStatus.PARTIAL) " +
-            "AND b.dueDate < :asOfDate")
+            "AND b.dueDate < :asOfDate AND b.dueAmount > 0")
     long countOverdue(@Param("asOfDate") LocalDate asOfDate);
 
     @Query("SELECT COALESCE(SUM(b.dueAmount), 0) FROM VendorBill b " +
             "WHERE b.status IN (com.nexaerp.vendorbill.VendorBillStatus.POSTED, com.nexaerp.vendorbill.VendorBillStatus.PARTIAL) " +
-            "AND b.dueDate < :asOfDate")
+            "AND b.dueDate < :asOfDate AND b.dueAmount > 0")
     BigDecimal sumOverdueAmount(@Param("asOfDate") LocalDate asOfDate);
 
     @Query("SELECT COALESCE(SUM(b.grandTotal), 0) FROM VendorBill b " +

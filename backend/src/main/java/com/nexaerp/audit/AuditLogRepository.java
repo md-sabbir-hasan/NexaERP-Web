@@ -16,5 +16,5 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
 
     Page<AuditLog> findByEntityNameOrderByCreatedAtDesc(String entityName, Pageable pageable);
 
-    List<AuditLog> findTop10ByOrderByCreatedAtDesc();
+    List<AuditLog> findTop5ByOrderByCreatedAtDesc();
 }

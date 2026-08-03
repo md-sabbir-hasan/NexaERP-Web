@@ -63,8 +63,19 @@ export interface BusinessSummary {
 
   revenueTrend: MonthlyTrend[];
   expenseTrend: MonthlyTrend[];
+  currentMonthRevenue: number | null;
+  currentMonthExpense: number | null;
   trendFromDate: string | null;
   trendToDate: string | null;
+}
+
+export interface DashboardWorkflowSummary {
+  approvalEnabled: boolean;
+  availablePendingCount: number | null;
+  oldestAvailableSubmittedAt: string | null;
+  myPendingCount: number | null;
+  myReturnedCount: number | null;
+  myApprovedUnconsumedCount: number | null;
 }
 
 export interface MonthlyTrend {

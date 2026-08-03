@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { APP_CONFIG } from '../../../core/config/app.config';
 import { ApiResponse } from '../../../core/models/api-response.model';
-import { DashboardSummary } from '../models/dashboard.model';
+import { DashboardSummary, DashboardWorkflowSummary } from '../models/dashboard.model';
 
 @Injectable({
   providedIn: 'root',
@@ -15,5 +15,11 @@ export class DashboardService {
 
   getSummary(): Observable<ApiResponse<DashboardSummary>> {
     return this.http.get<ApiResponse<DashboardSummary>>(`${this.baseUrl}/summary`);
+  }
+
+  getWorkflowSummary(): Observable<ApiResponse<DashboardWorkflowSummary>> {
+    return this.http.get<ApiResponse<DashboardWorkflowSummary>>(
+      `${this.baseUrl}/workflow-summary`,
+    );
   }
 }

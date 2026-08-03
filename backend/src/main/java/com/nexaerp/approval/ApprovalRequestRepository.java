@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 public interface ApprovalRequestRepository extends JpaRepository<ApprovalRequest, Long> {
     Optional<ApprovalRequest> findByEntityTypeAndEntityIdAndActiveMarker(ApprovalEntityType type, Long entityId, Integer marker);
@@ -22,6 +23,15 @@ public interface ApprovalRequestRepository extends JpaRepository<ApprovalRequest
     @Query("select count(r) from ApprovalRequest r where r.status = com.nexaerp.approval.ApprovalStatus.PENDING " +
             "and r.requiredPermission in :permissions and r.makerUserId <> :userId")
     long countPendingForUser(@Param("userId") Long userId, @Param("permissions") List<String> permissions);
+
+    @Query("select min(r.submittedAt) from ApprovalRequest r where r.status = com.nexaerp.approval.ApprovalStatus.PENDING " +
+            "and r.requiredPermission in :permissions and r.makerUserId <> :userId")
+    LocalDateTime findOldestPendingSubmittedAtForUser(@Param("userId") Long userId,
+                                                       @Param("permissions") List<String> permissions);
+
+    long countByMakerUserIdAndStatus(Long makerUserId, ApprovalStatus status);
+
+    long countByMakerUserIdAndStatusAndConsumedAtIsNull(Long makerUserId, ApprovalStatus status);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select r from ApprovalRequest r where r.id = :id")

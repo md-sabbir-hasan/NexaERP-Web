@@ -2,6 +2,7 @@ package com.nexaerp.dashboard;
 
 import com.nexaerp.common.response.ApiResponse;
 import com.nexaerp.dashboard.dto.DashboardSummaryDto;
+import com.nexaerp.dashboard.dto.DashboardWorkflowSummaryDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,5 +25,14 @@ public class DashboardController {
                         dashboardService.getSummary()
                 )
         );
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/workflow-summary")
+    public ResponseEntity<ApiResponse<DashboardWorkflowSummaryDto>> getWorkflowSummary() {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Dashboard workflow summary loaded",
+                dashboardService.getWorkflowSummary()
+        ));
     }
 }

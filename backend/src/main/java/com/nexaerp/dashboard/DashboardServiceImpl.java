@@ -4,6 +4,9 @@ import com.nexaerp.account.AccountRepository;
 import com.nexaerp.account.AccountType;
 import com.nexaerp.accountingperiod.AccountingPeriod;
 import com.nexaerp.accountingperiod.AccountingPeriodRepository;
+import com.nexaerp.approval.ApprovalProperties;
+import com.nexaerp.approval.ApprovalRequestRepository;
+import com.nexaerp.approval.ApprovalStatus;
 import com.nexaerp.audit.AuditLog;
 import com.nexaerp.audit.AuditLogRepository;
 import com.nexaerp.budget.Budget;
@@ -11,6 +14,7 @@ import com.nexaerp.budget.BudgetRepository;
 import com.nexaerp.budget.BudgetStatus;
 import com.nexaerp.common.exception.BusinessRuleException;
 import com.nexaerp.dashboard.dto.*;
+import com.nexaerp.currency.repository.CurrencyRepository;
 import com.nexaerp.expense.ExpenseRepository;
 import com.nexaerp.expense.ExpenseStatus;
 import com.nexaerp.fiscalyear.FiscalYear;
@@ -27,6 +31,7 @@ import com.nexaerp.report.CashFlowStatementService;
 import com.nexaerp.report.dto.BudgetVsActualLineDto;
 import com.nexaerp.report.dto.BudgetVsActualResponseDto;
 import com.nexaerp.role.RoleRepository;
+import com.nexaerp.security.CurrentUserService;
 import com.nexaerp.user.UserRepository;
 import com.nexaerp.user.UserStatus;
 import com.nexaerp.vendorbill.VendorBillRepository;
@@ -63,6 +68,11 @@ public class DashboardServiceImpl implements DashboardService {
     private final RecurringExpenseTemplateRepository recurringExpenseTemplateRepository;
     private final CashFlowStatementService cashFlowStatementService;
     private final BudgetVsActualReportService budgetVsActualReportService;
+    private final ApprovalProperties approvalProperties;
+    private final ApprovalRequestRepository approvalRequestRepository;
+    private final CurrentUserService currentUserService;
+    private final Clock overdueClock;
+    private final CurrencyRepository currencyRepository;
 
     @Value("${app.version:1.0.0}") private String applicationVersion;
     @Value("${spring.profiles.active:default}") private String environment;
@@ -81,6 +91,31 @@ public class DashboardServiceImpl implements DashboardService {
                 .budget(has(permissions, "VIEW_BUDGET_REPORT") ? buildBudgetSummary() : null)
                 .expense(has(permissions, "VIEW_EXPENSE") ? buildExpenseSummary(permissions) : null)
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DashboardWorkflowSummaryDto getWorkflowSummary() {
+        if (!approvalProperties.isEnabled()) {
+            return DashboardWorkflowSummaryDto.builder().approvalEnabled(false).build();
+        }
+
+        Set<String> permissions = currentPermissions();
+        Long userId = currentUserService.getCurrentUserId();
+        DashboardWorkflowSummaryDto.DashboardWorkflowSummaryDtoBuilder builder = DashboardWorkflowSummaryDto.builder()
+                .approvalEnabled(true)
+                .myPendingCount(approvalRequestRepository.countByMakerUserIdAndStatus(userId, ApprovalStatus.PENDING))
+                .myReturnedCount(approvalRequestRepository.countByMakerUserIdAndStatus(userId, ApprovalStatus.RETURNED))
+                .myApprovedUnconsumedCount(approvalRequestRepository
+                        .countByMakerUserIdAndStatusAndConsumedAtIsNull(userId, ApprovalStatus.APPROVED));
+
+        if (has(permissions, "VIEW_APPROVAL_QUEUE")) {
+            List<String> granted = new ArrayList<>(permissions);
+            builder.availablePendingCount(approvalRequestRepository.countPendingForUser(userId, granted))
+                    .oldestAvailableSubmittedAt(
+                            approvalRequestRepository.findOldestPendingSubmittedAtForUser(userId, granted));
+        }
+        return builder.build();
     }
 
     private Set<String> currentPermissions() {
@@ -124,8 +159,10 @@ public class DashboardServiceImpl implements DashboardService {
         boolean bills = has(permissions, "VIEW_VENDOR_BILL");
         boolean reports = has(permissions, "VIEW_REPORT");
         if (!banking && !invoices && !bills && !reports) return null;
-        LocalDate today = LocalDate.now();
-        BusinessSummaryDto.BusinessSummaryDtoBuilder builder = BusinessSummaryDto.builder().asOfDate(today);
+        LocalDate today = businessDate();
+        String baseCurrencyCode = currencyRepository.findByBaseCurrencyTrue().map(currency -> currency.getCode()).orElse(null);
+        BusinessSummaryDto.BusinessSummaryDtoBuilder builder = BusinessSummaryDto.builder()
+                .asOfDate(today).currencyCode(baseCurrencyCode);
         if (banking) {
             try {
                 var cashFlow = cashFlowStatementService.generate(today, today);
@@ -139,9 +176,13 @@ public class DashboardServiceImpl implements DashboardService {
         if (bills) builder.accountsPayable(vendorBillRepository.sumOutstandingPayable())
                 .overdueBillCount(vendorBillRepository.countOverdue(today)).overdueBillAmount(vendorBillRepository.sumOverdueAmount(today));
         if (reports) {
-            LocalDate from = YearMonth.now().minusMonths(5).atDay(1);
+            LocalDate from = YearMonth.from(today).minusMonths(5).atDay(1);
             Map<AccountType, Map<YearMonth, BigDecimal>> values = loadTrend(from, today);
-            builder.revenueTrend(toTrend(values.get(AccountType.REVENUE))).expenseTrend(toTrend(values.get(AccountType.EXPENSE)))
+            List<MonthlyTrendDto> revenue = toTrend(values.get(AccountType.REVENUE), YearMonth.from(today));
+            List<MonthlyTrendDto> expense = toTrend(values.get(AccountType.EXPENSE), YearMonth.from(today));
+            builder.revenueTrend(revenue).expenseTrend(expense)
+                    .currentMonthRevenue(revenue.get(revenue.size() - 1).getAmount())
+                    .currentMonthExpense(expense.get(expense.size() - 1).getAmount())
                     .trendFromDate(from).trendToDate(today);
         }
         return builder.build();
@@ -161,11 +202,10 @@ public class DashboardServiceImpl implements DashboardService {
         return result;
     }
 
-    private List<MonthlyTrendDto> toTrend(Map<YearMonth, BigDecimal> values) {
+    private List<MonthlyTrendDto> toTrend(Map<YearMonth, BigDecimal> values, YearMonth current) {
         Map<YearMonth, BigDecimal> safe = values == null ? Map.of() : values;
         DateTimeFormatter format = DateTimeFormatter.ofPattern("MMM yyyy", Locale.ENGLISH);
         List<MonthlyTrendDto> trend = new ArrayList<>();
-        YearMonth current = YearMonth.now();
         for (int i = 5; i >= 0; i--) {
             YearMonth month = current.minusMonths(i);
             trend.add(MonthlyTrendDto.builder().month(month.format(format)).amount(safe.getOrDefault(month, BigDecimal.ZERO)).build());
@@ -174,7 +214,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     private List<RecentActivityDto> buildRecentActivities() {
-        return auditLogRepository.findTop10ByOrderByCreatedAtDesc().stream().map(this::toActivity).toList();
+        return auditLogRepository.findTop5ByOrderByCreatedAtDesc().stream().map(this::toActivity).toList();
     }
 
     private RecentActivityDto toActivity(AuditLog audit) {
@@ -184,8 +224,8 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     private SystemSummaryDto buildSystemSummary() {
-        return SystemSummaryDto.builder().applicationVersion(applicationVersion).serverTime(LocalDateTime.now())
-                .serverTimezone(ZoneId.systemDefault().toString()).environment(environment)
+        return SystemSummaryDto.builder().applicationVersion(applicationVersion).serverTime(LocalDateTime.now(overdueClock))
+                .serverTimezone(overdueClock.getZone().toString()).environment(environment)
                 .javaVersion(System.getProperty("java.version")).build();
     }
 
@@ -195,8 +235,9 @@ public class DashboardServiceImpl implements DashboardService {
         Budget budget = budgetRepository.findByFiscalYearIdAndStatusAndDeletedAtIsNull(fiscalYear.getId(), BudgetStatus.ACTIVE).orElse(null);
         if (budget == null) return unavailableBudget("No active budget");
         List<AccountingPeriod> periods = accountingPeriodRepository.findByFiscalYearIdAndDeletedAtIsNullOrderByPeriodNumberAsc(fiscalYear.getId());
-        AccountingPeriod current = periods.stream().filter(p -> !LocalDate.now().isBefore(p.getStartDate())
-                && !LocalDate.now().isAfter(p.getEndDate())).findFirst().orElse(null);
+        LocalDate today = businessDate();
+        AccountingPeriod current = periods.stream().filter(p -> !today.isBefore(p.getStartDate())
+                && !today.isAfter(p.getEndDate())).findFirst().orElse(null);
         if (periods.isEmpty() || current == null) return unavailableBudget("No budget period available");
         BudgetVsActualResponseDto report = budgetVsActualReportService.generate(budget.getId(), periods.get(0).getId(), current.getId(), null);
         List<BudgetTopAccountDto> top = report.getExpenseLines().stream()
@@ -218,7 +259,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     private ExpenseDashboardDto buildExpenseSummary(Set<String> permissions) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = businessDate();
         ExpenseDashboardDto.ExpenseDashboardDtoBuilder builder = ExpenseDashboardDto.builder()
                 .draftCount(expenseRepository.countByStatus(ExpenseStatus.DRAFT)).draftTotalAmount(expenseRepository.sumAmountByStatus(ExpenseStatus.DRAFT))
                 .postedThisMonthTotal(expenseRepository.sumAmountByStatusAndDateBetween(ExpenseStatus.POSTED, today.withDayOfMonth(1), today))
@@ -229,5 +270,9 @@ public class DashboardServiceImpl implements DashboardService {
                             RecurringExpenseStatus.ACTIVE, today.plusDays(7)));
         }
         return builder.build();
+    }
+
+    private LocalDate businessDate() {
+        return LocalDate.now(overdueClock);
     }
 }

@@ -1,12 +1,14 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { PERMISSIONS, PermissionCode } from '../../../../core/constants/permission.constants';
 import { TokenService } from '../../../../core/services/token.service';
 
-import { DashboardSummary, RecentActivity } from '../../models/dashboard.model';
+import { NotificationResponse } from '../../../notifications/models/notification.model';
+import { NotificationStore } from '../../../notifications/services/notification.store';
+import { DashboardSummary, DashboardWorkflowSummary, RecentActivity } from '../../models/dashboard.model';
 import { DashboardService } from '../../services/dashboard.service';
 
 interface ChartPoint {
@@ -108,6 +110,8 @@ interface DashboardDisplayValues {
   accountsReceivable: number;
   accountsPayable: number;
   postedThisMonthTotal: number;
+  currentMonthRevenue: number;
+  currentMonthExpense: number;
 }
 
 @Component({
@@ -117,18 +121,23 @@ interface DashboardDisplayValues {
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })
-export class DashboardComponent implements OnInit, OnDestroy {
+export class DashboardComponent implements OnInit {
   private readonly dashboardService = inject(DashboardService);
   private readonly tokenService = inject(TokenService);
+  private readonly notificationStore = inject(NotificationStore);
+  private readonly router = inject(Router);
 
   readonly permissions = PERMISSIONS;
   readonly today = new Date();
 
   readonly summary = signal<DashboardSummary | null>(null);
+  readonly workflowSummary = signal<DashboardWorkflowSummary | null>(null);
 
   readonly loading = signal(true);
   readonly refreshing = signal(false);
   readonly errorMessage = signal<string | null>(null);
+  readonly workflowError = signal<string | null>(null);
+  readonly workflowLoading = signal(false);
   readonly lastUpdatedAt = signal<Date | null>(null);
 
   readonly selectedTrendIndex = signal<number | null>(null);
@@ -144,9 +153,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     accountsReceivable: 0,
     accountsPayable: 0,
     postedThisMonthTotal: 0,
+    currentMonthRevenue: 0,
+    currentMonthExpense: 0,
   });
-
-  private countAnimationFrameId: number | null = null;
 
   // =========================================================
   // Permission-based widget visibility
@@ -190,12 +199,27 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.hasPermission(PERMISSIONS.VIEW_AUDIT_LOGS),
   );
 
+  readonly canViewApprovalQueue = computed(() =>
+    this.hasPermission(PERMISSIONS.VIEW_APPROVAL_QUEUE),
+  );
+
+  readonly latestUnreadNotifications = computed(() =>
+    this.notificationStore.dashboardPreview().slice(0, 3),
+  );
+  readonly notificationError = this.notificationStore.dashboardPreviewError;
+  readonly notificationLoading = this.notificationStore.dashboardPreviewLoading;
+  readonly unreadNotificationCount = this.notificationStore.unreadCount;
+
   readonly canViewAttentionCenter = computed(
     () =>
       this.canViewReceivable() ||
       this.canViewPayable() ||
       this.canViewJournal() ||
-      this.canViewExpenseSummary(),
+      this.canViewExpenseSummary() ||
+      this.workflowSummary()?.approvalEnabled === true ||
+      this.unreadNotificationCount() > 0 ||
+      this.notificationLoading() ||
+      this.notificationError() !== null,
   );
 
   readonly hasVisibleDashboardWidget = computed(
@@ -487,6 +511,46 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     const items: AttentionItem[] = [];
 
+    const workflow = this.workflowSummary();
+    if (workflow?.approvalEnabled) {
+      if ((workflow.myPendingCount ?? 0) > 0) {
+        const count = workflow.myPendingCount ?? 0;
+        items.push({
+          id: 'my-pending-requests', type: 'info', icon: 'bi-send-check',
+          title: 'My pending requests',
+          description: `${count} submitted ${count === 1 ? 'request is' : 'requests are'} awaiting a decision`,
+          count, route: '/approvals/my-requests',
+        });
+      }
+      if (this.canViewApprovalQueue() && (workflow.availablePendingCount ?? 0) > 0) {
+        const count = workflow.availablePendingCount ?? 0;
+        items.push({
+          id: 'available-approvals', type: 'warning', icon: 'bi-check2-square',
+          title: 'Approvals waiting for you',
+          description: `${count} ${count === 1 ? 'request' : 'requests'} available${this.pendingAgeSuffix(workflow.oldestAvailableSubmittedAt)}`,
+          count, route: '/approvals',
+        });
+      }
+      if ((workflow.myReturnedCount ?? 0) > 0) {
+        const count = workflow.myReturnedCount ?? 0;
+        items.push({
+          id: 'returned-requests', type: 'critical', icon: 'bi-arrow-return-left',
+          title: 'Returned for correction',
+          description: `${count} of your ${count === 1 ? 'request requires' : 'requests require'} attention`,
+          count, route: '/approvals/my-requests',
+        });
+      }
+      if ((workflow.myApprovedUnconsumedCount ?? 0) > 0) {
+        const count = workflow.myApprovedUnconsumedCount ?? 0;
+        items.push({
+          id: 'approved-unposted', type: 'info', icon: 'bi-hourglass-split',
+          title: 'Approved, awaiting posting',
+          description: `${count} approved ${count === 1 ? 'request is' : 'requests are'} not yet consumed`,
+          count, route: '/approvals/my-requests',
+        });
+      }
+    }
+
     if (this.canViewReceivable() && (dashboard.business?.overdueInvoiceCount ?? 0) > 0) {
       const count = dashboard.business?.overdueInvoiceCount ?? 0;
 
@@ -550,7 +614,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
       });
     }
 
-    return items;
+    if (this.unreadNotificationCount() > 0) {
+      const count = this.unreadNotificationCount();
+      items.push({
+        id: 'unread-notifications', type: 'info', icon: 'bi-bell',
+        title: 'Unread notifications',
+        description: `${count} unread ${count === 1 ? 'notification' : 'notifications'}`,
+        count, route: '/notifications',
+      });
+    }
+
+    return items.slice(0, 6);
   });
 
   // =========================================================
@@ -593,6 +667,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
         icon: 'bi-credit-card',
         route: '/payment/new',
         permission: PERMISSIONS.CREATE_PAYMENT,
+        emphasis: 'standard',
+      },
+      {
+        id: 'create-expense',
+        label: 'New expense',
+        description: 'Record an expense',
+        icon: 'bi-wallet2',
+        route: '/expense/new',
+        permission: PERMISSIONS.CREATE_EXPENSE,
+        emphasis: 'standard',
+      },
+      {
+        id: 'approval-queue',
+        label: 'Approval queue',
+        description: 'Review pending approvals',
+        icon: 'bi-check2-square',
+        route: '/approvals',
+        permission: PERMISSIONS.VIEW_APPROVAL_QUEUE,
         emphasis: 'standard',
       },
       {
@@ -651,7 +743,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       },
     ];
 
-    return actions.filter((action) => this.hasPermission(action.permission));
+    return actions.filter((action) => this.hasPermission(action.permission)).slice(0, 6);
   });
 
   // =========================================================
@@ -661,10 +753,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.refreshPermissions();
     this.loadDashboard();
-  }
-
-  ngOnDestroy(): void {
-    this.cancelCountAnimation();
+    this.loadWorkflowSummary();
+    this.loadNotifications();
   }
 
   // =========================================================
@@ -705,7 +795,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           this.lastUpdatedAt.set(new Date());
           this.selectedTrendIndex.set(null);
 
-          this.animateSummaryValues(response.data);
+          this.syncSummaryValues(response.data);
         },
 
         error: (error: { status?: number }) => {
@@ -723,10 +813,61 @@ export class DashboardComponent implements OnInit, OnDestroy {
   refreshDashboard(): void {
     this.refreshPermissions();
     this.loadDashboard(true);
+    this.loadWorkflowSummary();
+    this.loadNotifications(true);
   }
 
   retryLoad(): void {
     this.loadDashboard();
+  }
+
+  retryWorkflow(): void {
+    this.loadWorkflowSummary();
+  }
+
+  retryNotifications(): void {
+    this.loadNotifications(true);
+  }
+
+  openNotification(notification: NotificationResponse): void {
+    const navigate = () => {
+      if (notification.route) void this.router.navigateByUrl(notification.route);
+    };
+    if (notification.read) {
+      navigate();
+      return;
+    }
+    this.notificationStore.markAsRead(notification).subscribe({ next: navigate });
+  }
+
+  private loadWorkflowSummary(): void {
+    if (this.workflowLoading()) return;
+    this.workflowLoading.set(true);
+    this.workflowError.set(null);
+    this.dashboardService.getWorkflowSummary().pipe(
+      finalize(() => this.workflowLoading.set(false)),
+    ).subscribe({
+      next: (response) => {
+        if (response?.data) this.workflowSummary.set(response.data);
+        else this.workflowError.set('Workflow data was not returned.');
+      },
+      error: () => this.workflowError.set('Approval summary is temporarily unavailable.'),
+    });
+  }
+
+  private loadNotifications(force = false): void {
+    this.notificationStore.loadUnreadCount();
+    if (force || this.latestUnreadNotifications().length === 0) this.notificationStore.loadDashboardPreview();
+  }
+
+  private pendingAgeSuffix(submittedAt: string | null): string {
+    if (!submittedAt) return ' to review';
+    const submitted = new Date(submittedAt).getTime();
+    if (!Number.isFinite(submitted)) return ' to review';
+    const hours = Math.max(0, Math.floor((Date.now() - submitted) / 3_600_000));
+    if (hours < 1) return '; oldest submitted less than an hour ago';
+    if (hours < 24) return `; oldest pending ${hours}h`;
+    return `; oldest pending ${Math.floor(hours / 24)}d`;
   }
 
   // =========================================================
@@ -955,11 +1096,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   // Count-up animation
   // =========================================================
 
-  private animateSummaryValues(dashboard: DashboardSummary): void {
-    this.cancelCountAnimation();
-
-    const startValues = this.displayValues();
-
+  private syncSummaryValues(dashboard: DashboardSummary): void {
     const targetValues: DashboardDisplayValues = {
       cashPosition: this.toSafeNumber(dashboard.business?.cashPosition),
 
@@ -968,82 +1105,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
       accountsPayable: this.toSafeNumber(dashboard.business?.accountsPayable),
 
       postedThisMonthTotal: this.toSafeNumber(dashboard.expense?.postedThisMonthTotal),
+      currentMonthRevenue: this.toSafeNumber(dashboard.business?.currentMonthRevenue),
+      currentMonthExpense: this.toSafeNumber(dashboard.business?.currentMonthExpense),
     };
-
-    if (
-      typeof window === 'undefined' ||
-      typeof window.requestAnimationFrame !== 'function' ||
-      this.prefersReducedMotion()
-    ) {
-      this.displayValues.set(targetValues);
-      return;
-    }
-
-    const duration = 850;
-    const startedAt = performance.now();
-
-    const animate = (currentTime: number): void => {
-      const elapsed = currentTime - startedAt;
-
-      const progress = this.clamp(elapsed / duration, 0, 1);
-
-      const easedProgress = 1 - Math.pow(1 - progress, 3);
-
-      this.displayValues.set({
-        cashPosition: this.interpolate(
-          startValues.cashPosition,
-          targetValues.cashPosition,
-          easedProgress,
-        ),
-
-        accountsReceivable: this.interpolate(
-          startValues.accountsReceivable,
-          targetValues.accountsReceivable,
-          easedProgress,
-        ),
-
-        accountsPayable: this.interpolate(
-          startValues.accountsPayable,
-          targetValues.accountsPayable,
-          easedProgress,
-        ),
-
-        postedThisMonthTotal: this.interpolate(
-          startValues.postedThisMonthTotal,
-          targetValues.postedThisMonthTotal,
-          easedProgress,
-        ),
-      });
-
-      if (progress < 1) {
-        this.countAnimationFrameId = window.requestAnimationFrame(animate);
-      } else {
-        this.displayValues.set(targetValues);
-        this.countAnimationFrameId = null;
-      }
-    };
-
-    this.countAnimationFrameId = window.requestAnimationFrame(animate);
-  }
-
-  private cancelCountAnimation(): void {
-    if (this.countAnimationFrameId !== null && typeof window !== 'undefined') {
-      window.cancelAnimationFrame(this.countAnimationFrameId);
-
-      this.countAnimationFrameId = null;
-    }
-  }
-
-  private prefersReducedMotion(): boolean {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-      return false;
-    }
-
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  }
-
-  private interpolate(start: number, end: number, progress: number): number {
-    return start + (end - start) * progress;
+    this.displayValues.set(targetValues);
   }
 
   private toSafeNumber(value: number | null | undefined): number {

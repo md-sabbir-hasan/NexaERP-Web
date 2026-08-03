@@ -31,6 +31,8 @@ public class BusinessSummaryDto {
 
     private List<MonthlyTrendDto> revenueTrend;   // last 6 months
     private List<MonthlyTrendDto> expenseTrend;   // last 6 months
+    private BigDecimal currentMonthRevenue;
+    private BigDecimal currentMonthExpense;
     private LocalDate trendFromDate;
     private LocalDate trendToDate;
 }

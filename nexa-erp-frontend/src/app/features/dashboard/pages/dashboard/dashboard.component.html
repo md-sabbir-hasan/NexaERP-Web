@@ -157,7 +157,7 @@
 
                   @if (dashboard.business?.cashConfigured) {
                     <strong class="kpi-value">
-                      ৳{{ displayValues().cashPosition | number: '1.2-2' }}
+                      {{ dashboard.business?.currencyCode }} {{ displayValues().cashPosition | number: '1.2-2' }}
                     </strong>
                     <p>Journal-derived closing cash balance.</p>
                   } @else {
@@ -194,7 +194,7 @@
                   <span class="kpi-label"> Outstanding Customer Invoices </span>
 
                   <strong class="kpi-value">
-                    ৳{{ displayValues().accountsReceivable | number: '1.2-2' }}
+                    {{ dashboard.business?.currencyCode }} {{ displayValues().accountsReceivable | number: '1.2-2' }}
                   </strong>
 
                   <p>Outstanding customer invoice balance.</p>
@@ -204,7 +204,7 @@
                   <div>
                     <span>Overdue amount</span>
                     <strong>
-                      ৳{{ dashboard.business?.overdueInvoiceAmount | number: '1.2-2' }}
+                      {{ dashboard.business?.currencyCode }} {{ dashboard.business?.overdueInvoiceAmount | number: '1.2-2' }}
                     </strong>
                   </div>
 
@@ -237,7 +237,7 @@
                   <span class="kpi-label"> Outstanding Vendor Bills </span>
 
                   <strong class="kpi-value">
-                    ৳{{ displayValues().accountsPayable | number: '1.2-2' }}
+                    {{ dashboard.business?.currencyCode }} {{ displayValues().accountsPayable | number: '1.2-2' }}
                   </strong>
 
                   <p>Outstanding vendor bill balance as of today.</p>
@@ -246,7 +246,7 @@
                 <div class="kpi-footer">
                   <div>
                     <span>Overdue bills</span>
-                    <strong> ৳{{ dashboard.business?.overdueBillAmount | number: '1.2-2' }} </strong>
+                    <strong> {{ dashboard.business?.currencyCode }} {{ dashboard.business?.overdueBillAmount | number: '1.2-2' }} </strong>
                   </div>
 
                   <a routerLink="/vendor-bill" class="kpi-link" aria-label="View vendor bills">
@@ -257,7 +257,7 @@
               </article>
             }
 
-            @if (canViewExpenseSummary()) {
+            @if (canViewTrendChart()) {
               <article class="kpi-card kpi-card-expense">
                 <div class="kpi-card-top">
                   <div class="kpi-icon">
@@ -268,26 +268,36 @@
                 </div>
 
                 <div class="kpi-content">
-                  <span class="kpi-label"> Posted Expense Claims — This Month </span>
+                  <span class="kpi-label"> Current Month Revenue </span>
 
                   <strong class="kpi-value">
-                    ৳{{ displayValues().postedThisMonthTotal | number: '1.2-2' }}
+                    {{ dashboard.business?.currencyCode }} {{ displayValues().currentMonthRevenue | number: '1.2-2' }}
                   </strong>
 
-                  <p>Total expenses posted during the current month.</p>
+                  <p>Journal-derived revenue for the current calendar month.</p>
                 </div>
 
-                <div class="kpi-footer">
-                  <div>
-                    <span>Draft amount</span>
-                    <strong> ৳{{ dashboard.expense?.draftTotalAmount | number: '1.2-2' }} </strong>
-                  </div>
-
-                  <a routerLink="/expense" class="kpi-link" aria-label="View expenses">
-                    View
+                <a routerLink="/reports/profit-loss" class="kpi-link" aria-label="View profit and loss report">
+                    View report
                     <i class="bi bi-arrow-up-right"></i>
-                  </a>
+                </a>
+              </article>
+
+              <article class="kpi-card kpi-card-expense">
+                <div class="kpi-card-top">
+                  <div class="kpi-icon"><i class="bi bi-graph-down-arrow"></i></div>
+                  <span class="kpi-status kpi-status-neutral"> This month </span>
                 </div>
+                <div class="kpi-content">
+                  <span class="kpi-label"> Current Month Expense </span>
+                  <strong class="kpi-value">
+                    {{ dashboard.business?.currencyCode }} {{ displayValues().currentMonthExpense | number: '1.2-2' }}
+                  </strong>
+                  <p>Journal-derived expense for the current calendar month.</p>
+                </div>
+                <a routerLink="/reports/profit-loss" class="kpi-link" aria-label="View profit and loss report">
+                  View report <i class="bi bi-arrow-up-right"></i>
+                </a>
               </article>
             }
           </div>
@@ -297,7 +307,7 @@
         <!-- Attention center                                -->
         <!-- =============================================== -->
 
-        @if (canViewAttentionCenter() && attentionItems().length > 0) {
+        @if (canViewAttentionCenter()) {
           <section class="dashboard-section attention-section" aria-labelledby="attention-title">
             <div class="section-heading">
               <div>
@@ -329,12 +339,63 @@
                     <span>{{ item.description }}</span>
 
                     @if (item.amount !== undefined) {
-                      <b> ৳{{ item.amount | number: '1.2-2' }} </b>
+                      <b> {{ dashboard.business?.currencyCode }} {{ item.amount | number: '1.2-2' }} </b>
                     }
                   </div>
 
                   <i class="bi bi-chevron-right attention-arrow"></i>
                 </a>
+              }
+            </div>
+
+            @if (workflowLoading() && !workflowSummary()) {
+              <div class="alert alert-light border mt-3 mb-0 d-flex align-items-center gap-2" aria-live="polite">
+                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                Loading approval summary…
+              </div>
+            } @else if (workflowError(); as workflowMessage) {
+              <div class="alert alert-danger mt-3 mb-0 d-flex align-items-center gap-2" role="alert">
+                <span>{{ workflowMessage }}</span>
+                <button class="btn btn-sm btn-outline-danger ms-auto" type="button" (click)="retryWorkflow()">Retry</button>
+              </div>
+            } @else if (workflowSummary()?.approvalEnabled === false && canViewApprovalQueue()) {
+              <div class="alert alert-light border mt-3 mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-info-circle" aria-hidden="true"></i>
+                Approval workflow is currently disabled.
+              </div>
+            }
+
+            <div class="mt-3 pt-3 border-top">
+              <div class="d-flex align-items-center justify-content-between gap-3 mb-2">
+                <div>
+                  <span class="section-kicker">Latest updates</span>
+                  <h3>Actionable notifications</h3>
+                </div>
+                <a routerLink="/notifications">View all</a>
+              </div>
+
+              @if (notificationLoading() && latestUnreadNotifications().length === 0) {
+                <div class="alert alert-light border mb-0" aria-live="polite">Loading notifications…</div>
+              } @else if (notificationError(); as notificationMessage) {
+                <div class="alert alert-danger mb-0 d-flex align-items-center gap-2" role="alert">
+                  <span>{{ notificationMessage }}</span>
+                  <button class="btn btn-sm btn-outline-danger ms-auto" type="button" (click)="retryNotifications()">Retry</button>
+                </div>
+              } @else if (latestUnreadNotifications().length === 0) {
+                <div class="alert alert-light border mb-0 d-flex align-items-center gap-2">
+                  <i class="bi bi-check-circle" aria-hidden="true"></i>
+                  No actionable unread notifications.
+                </div>
+              } @else {
+                <div class="attention-grid">
+                  @for (notification of latestUnreadNotifications(); track notification.id) {
+                    <button type="button" class="attention-card attention-info text-start" (click)="openNotification(notification)">
+                      <span class="attention-icon"><i class="bi bi-bell" aria-hidden="true"></i></span>
+                      <span class="attention-content"><strong>{{ notification.title }}</strong><span>{{ notification.message }}</span></span>
+                      <i class="bi bi-chevron-right attention-arrow" aria-hidden="true"></i>
+                    </button>
+                  }
+                </div>
               }
             </div>
           </section>
@@ -382,12 +443,12 @@
                       <div class="chart-summary">
                         <div>
                           <span>Total revenue</span>
-                          <strong> ৳{{ chart.totalRevenue | number: '1.2-2' }} </strong>
+                          <strong> {{ dashboard.business?.currencyCode }} {{ chart.totalRevenue | number: '1.2-2' }} </strong>
                         </div>
 
                         <div>
                           <span>Total expense</span>
-                          <strong> ৳{{ chart.totalExpense | number: '1.2-2' }} </strong>
+                          <strong> {{ dashboard.business?.currencyCode }} {{ chart.totalExpense | number: '1.2-2' }} </strong>
                         </div>
 
                         <div>
@@ -395,7 +456,7 @@
                           <strong
                             [class.negative-value]="chart.totalRevenue - chart.totalExpense < 0"
                           >
-                            ৳{{ chart.totalRevenue - chart.totalExpense | number: '1.2-2' }}
+                            {{ dashboard.business?.currencyCode }} {{ chart.totalRevenue - chart.totalExpense | number: '1.2-2' }}
                           </strong>
                         </div>
                       </div>
@@ -538,12 +599,12 @@
 
                             <span>
                               Revenue
-                              <b> ৳{{ selected.revenue | number: '1.2-2' }} </b>
+                              <b> {{ dashboard.business?.currencyCode }} {{ selected.revenue | number: '1.2-2' }} </b>
                             </span>
 
                             <span>
                               Expense
-                              <b> ৳{{ selected.expense | number: '1.2-2' }} </b>
+                              <b> {{ dashboard.business?.currencyCode }} {{ selected.expense | number: '1.2-2' }} </b>
                             </span>
                           </div>
                         }
@@ -617,12 +678,12 @@
                         <div class="budget-amount-pair">
                           <span>
                             Actual
-                            <b> ৳{{ budget.totalExpenseActualYtd | number: '1.2-2' }} </b>
+                            <b> {{ dashboard.budget?.currencyCode }} {{ budget.totalExpenseActualYtd | number: '1.2-2' }} </b>
                           </span>
 
                           <span>
                             Budget
-                            <b> ৳{{ budget.totalExpenseBudget | number: '1.2-2' }} </b>
+                            <b> {{ dashboard.budget?.currencyCode }} {{ budget.totalExpenseBudget | number: '1.2-2' }} </b>
                           </span>
                         </div>
                       </div>
@@ -655,12 +716,12 @@
                         <div class="budget-amount-pair">
                           <span>
                             Actual
-                            <b> ৳{{ budget.totalRevenueActualYtd | number: '1.2-2' }} </b>
+                            <b> {{ dashboard.budget?.currencyCode }} {{ budget.totalRevenueActualYtd | number: '1.2-2' }} </b>
                           </span>
 
                           <span>
                             Target
-                            <b> ৳{{ budget.totalRevenueBudget | number: '1.2-2' }} </b>
+                            <b> {{ dashboard.budget?.currencyCode }} {{ budget.totalRevenueBudget | number: '1.2-2' }} </b>
                           </span>
                         </div>
                       </div>
@@ -712,9 +773,9 @@
                               </div>
 
                               <div class="budget-account-values">
-                                <span> Actual: ৳{{ account.actualAmount | number: '1.2-2' }} </span>
+                                <span> Actual: {{ dashboard.budget?.currencyCode }} {{ account.actualAmount | number: '1.2-2' }} </span>
 
-                                <span> Budget: ৳{{ account.budgetAmount | number: '1.2-2' }} </span>
+                                <span> Budget: {{ dashboard.budget?.currencyCode }} {{ account.budgetAmount | number: '1.2-2' }} </span>
                               </div>
                             </div>
                           }

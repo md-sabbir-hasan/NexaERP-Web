@@ -39,12 +39,12 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
 
     @Query("SELECT COUNT(i) FROM Invoice i " +
             "WHERE i.status IN (com.nexaerp.invoice.InvoiceStatus.POSTED, com.nexaerp.invoice.InvoiceStatus.PARTIAL) " +
-            "AND i.dueDate < :asOfDate")
+            "AND i.dueDate < :asOfDate AND i.dueAmount > 0")
     long countOverdue(@Param("asOfDate") LocalDate asOfDate);
 
     @Query("SELECT COALESCE(SUM(i.dueAmount), 0) FROM Invoice i " +
             "WHERE i.status IN (com.nexaerp.invoice.InvoiceStatus.POSTED, com.nexaerp.invoice.InvoiceStatus.PARTIAL) " +
-            "AND i.dueDate < :asOfDate")
+            "AND i.dueDate < :asOfDate AND i.dueAmount > 0")
     BigDecimal sumOverdueAmount(@Param("asOfDate") LocalDate asOfDate);
 
     @Query("SELECT COALESCE(SUM(i.grandTotal), 0) FROM Invoice i " +

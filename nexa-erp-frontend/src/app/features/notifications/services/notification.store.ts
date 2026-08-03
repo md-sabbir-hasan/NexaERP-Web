@@ -21,6 +21,9 @@ export class NotificationStore {
   readonly unreadOnly = signal(false);
   readonly markingReadIds = signal<ReadonlySet<number>>(new Set<number>());
   readonly markingAllRead = signal(false);
+  readonly dashboardPreview = signal<NotificationResponse[]>([]);
+  readonly dashboardPreviewLoading = signal(false);
+  readonly dashboardPreviewError = signal<string | null>(null);
 
   readonly hasUnread = computed(() => this.unreadCount() > 0);
   readonly canLoadMore = computed(
@@ -56,6 +59,25 @@ export class NotificationStore {
       },
       error: () => {
         this.unreadCountLoading = false;
+      },
+    });
+  }
+
+  loadDashboardPreview(): void {
+    if (this.dashboardPreviewLoading()) {
+      return;
+    }
+
+    this.dashboardPreviewLoading.set(true);
+    this.dashboardPreviewError.set(null);
+    this.notificationApi.getNotifications(0, 3, true).subscribe({
+      next: (response) => {
+        this.dashboardPreview.set(response.data.content.filter((item) => Boolean(item.route)).slice(0, 3));
+        this.dashboardPreviewLoading.set(false);
+      },
+      error: (error: unknown) => {
+        this.dashboardPreviewError.set(this.getErrorMessage(error, 'Failed to load notifications'));
+        this.dashboardPreviewLoading.set(false);
       },
     });
   }
@@ -218,6 +240,9 @@ export class NotificationStore {
     this.unreadOnly.set(false);
     this.markingReadIds.set(new Set<number>());
     this.markingAllRead.set(false);
+    this.dashboardPreview.set([]);
+    this.dashboardPreviewLoading.set(false);
+    this.dashboardPreviewError.set(null);
     this.unreadCountLoading = false;
   }
 

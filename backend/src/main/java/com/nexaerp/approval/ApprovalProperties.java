@@ -16,6 +16,7 @@ public class ApprovalProperties {
     private ManualJournal manualJournal = new ManualJournal();
     private VendorBill vendorBill = new VendorBill();
     private Invoice invoice = new Invoice();
+    private Payment payment = new Payment();
 
     @Getter
     @Setter
@@ -32,6 +33,12 @@ public class ApprovalProperties {
     @Getter
     @Setter
     public static class Invoice {
+        private boolean enabled = true;
+    }
+
+    @Getter
+    @Setter
+    public static class Payment {
         private boolean enabled = true;
     }
 }

@@ -133,6 +133,7 @@ public class DataSeeder implements CommandLineRunner {
 
                 new Object[]{"VIEW_PAYMENT", "View Payment", "PAYMENT"},
                 new Object[]{"CREATE_PAYMENT", "Create Payment", "PAYMENT"},
+                new Object[]{"APPROVE_PAYMENT", "Approve Payment", "PAYMENT"},
                 new Object[]{"POST_PAYMENT", "Post Payment", "PAYMENT"},
                 new Object[]{"CANCEL_PAYMENT", "Cancel Payment", "PAYMENT"},
 

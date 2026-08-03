@@ -6,6 +6,7 @@ import { AlertService } from '../../../../core/services/alert.service';
 import { PaymentResponse } from '../../models/payment.model';
 import { PaymentService } from '../../services/payment.service';
 import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
+import { AuthService } from '../../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-payment-details',
@@ -26,9 +27,11 @@ export class PaymentDetails implements OnInit {
 
   readonly payment = signal<PaymentResponse | null>(null);
 
-  readonly canPost = computed(() =>
-    this.payment()?.status === 'DRAFT'
-  );
+  readonly canPost = computed(() => {
+    const payment = this.payment();
+    return payment?.status === 'DRAFT' && (payment.approvalFeatureEnabled !== true
+      || (payment.approvalStatus === 'APPROVED' && !payment.approvalConsumed));
+  });
 
   readonly canCancel = computed(() =>
     this.payment()?.status === 'POSTED'
@@ -38,7 +41,8 @@ export class PaymentDetails implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private paymentService: PaymentService,
-    private alert: AlertService
+    private alert: AlertService,
+    private authService: AuthService,
   ) {}
 
   ngOnInit(): void {
@@ -48,6 +52,40 @@ export class PaymentDetails implements OnInit {
     );
 
     this.loadPayment(id);
+  }
+
+  submitForApproval(): void {
+    const payment = this.payment();
+    if (!payment) return;
+
+    this.paymentService.submitForApproval(payment.id).subscribe({
+      next: (response) => {
+        this.alert.success('Payment submitted for approval.');
+        this.payment.update((current) => current ? {
+          ...current,
+          latestApprovalId: response.data.id,
+          activeApprovalId: response.data.id,
+          approvalStatus: response.data.status,
+          approvalConsumed: false,
+        } : current);
+      },
+      error: (error) => this.alert.error(error?.error?.message ?? 'Failed to submit payment'),
+    });
+  }
+
+  canSubmitApproval(payment: PaymentResponse): boolean {
+    const permissions = this.authService.currentUser()?.permissions ?? [];
+    return payment.approvalFeatureEnabled === true
+      && payment.status === 'DRAFT'
+      && this.authService.currentUser()?.id === payment.createdBy
+      && !this.hasActiveApproval(payment)
+      && permissions.includes('CREATE_PAYMENT');
+  }
+
+  hasActiveApproval(payment: PaymentResponse): boolean {
+    return payment.activeApprovalId != null
+      && (payment.approvalStatus === 'PENDING' || payment.approvalStatus === 'APPROVED')
+      && !payment.approvalConsumed;
   }
 
   loadPayment(id: number): void {

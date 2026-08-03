@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { APP_CONFIG } from '../../../core/config/app.config';
 import { ApiResponse } from '../../../core/models/api-response.model';
 import { PartyOutstandingSummary, PaymentRequest, PaymentResponse, PaymentType } from '../models/payment.model';
+import { ApprovalRequest } from '../../approval/models/approval.model';
 
 @Injectable({
   providedIn: 'root',
@@ -32,6 +33,10 @@ export class PaymentService {
 
   post(id: number): Observable<ApiResponse<PaymentResponse>> {
     return this.http.post<ApiResponse<PaymentResponse>>(`${this.baseUrl}/${id}/post`, {});
+  }
+
+  submitForApproval(id: number): Observable<ApiResponse<ApprovalRequest>> {
+    return this.http.post<ApiResponse<ApprovalRequest>>(`${this.baseUrl}/${id}/submit-approval`, {});
   }
 
   cancel(id: number): Observable<ApiResponse<PaymentResponse>> {

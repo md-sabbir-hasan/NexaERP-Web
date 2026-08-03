@@ -3,6 +3,7 @@ package com.nexaerp.payment.dto;
 import com.nexaerp.payment.PaymentMethod;
 import com.nexaerp.payment.PaymentStatus;
 import com.nexaerp.payment.PaymentType;
+import com.nexaerp.approval.ApprovalStatus;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -41,6 +42,12 @@ public class PaymentResponseDto {
     private LocalDateTime postedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long createdBy;
+    private Boolean approvalFeatureEnabled;
+    private Long latestApprovalId;
+    private Long activeApprovalId;
+    private ApprovalStatus approvalStatus;
+    private Boolean approvalConsumed;
 
     private List<PaymentAllocationResponseDto> allocations;
 }

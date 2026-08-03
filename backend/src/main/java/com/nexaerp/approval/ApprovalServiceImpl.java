@@ -49,6 +49,11 @@ public class ApprovalServiceImpl implements ApprovalService {
     }
 
     @Override
+    public boolean isPaymentApprovalEnabled() {
+        return adapter(ApprovalEntityType.PAYMENT).isEnabled();
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public ApprovalRequest findLatestJournalRequest(Long id) {
         return findLatest(ApprovalEntityType.MANUAL_JOURNAL, id);
@@ -64,6 +69,12 @@ public class ApprovalServiceImpl implements ApprovalService {
     @Transactional(readOnly = true)
     public ApprovalRequest findLatestInvoiceRequest(Long id) {
         return findLatest(ApprovalEntityType.INVOICE, id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApprovalRequest findLatestPaymentRequest(Long id) {
+        return findLatest(ApprovalEntityType.PAYMENT, id);
     }
 
     private ApprovalRequest findLatest(ApprovalEntityType type, Long id) {
@@ -87,6 +98,12 @@ public class ApprovalServiceImpl implements ApprovalService {
     @Transactional
     public ApprovalRequestResponseDto submitInvoice(Long id) {
         return submit(ApprovalEntityType.INVOICE, id);
+    }
+
+    @Override
+    @Transactional
+    public ApprovalRequestResponseDto submitPayment(Long id) {
+        return submit(ApprovalEntityType.PAYMENT, id);
     }
 
     private ApprovalRequestResponseDto submit(ApprovalEntityType type, Long entityId) {
@@ -267,6 +284,14 @@ public class ApprovalServiceImpl implements ApprovalService {
             throw rule("Document cannot be changed while approval is pending or approved");
     }
 
+    @Override
+    @Transactional
+    public void assertPaymentChangeAllowed(Long id) {
+        if (adapter(ApprovalEntityType.PAYMENT).isEnabled()
+                && requestRepository.findActiveForUpdate(ApprovalEntityType.PAYMENT, id).isPresent())
+            throw rule("Document cannot be changed while approval is pending or approved");
+    }
+
     private void assertChangeAllowed(ApprovalEntityType type, Long id) {
         if (adapter(type).isEnabled() && requestRepository.findByEntityTypeAndEntityIdAndActiveMarker(type, id, ACTIVE).isPresent())
             throw rule("Document cannot be changed while approval is pending or approved");
@@ -285,6 +310,11 @@ public class ApprovalServiceImpl implements ApprovalService {
     @Override
     public ApprovalRequest lockAndValidateInvoiceForPosting(Long id) {
         return lockAndValidateForPosting(ApprovalEntityType.INVOICE, id);
+    }
+
+    @Override
+    public ApprovalRequest lockAndValidatePaymentForPosting(Long id) {
+        return lockAndValidateForPosting(ApprovalEntityType.PAYMENT, id);
     }
 
     private ApprovalRequest lockAndValidateForPosting(ApprovalEntityType type, Long id) {
@@ -313,6 +343,14 @@ public class ApprovalServiceImpl implements ApprovalService {
         if (!adapter.isEnabled()) return null;
         adapter.lockDocument(id);
         return requestRepository.findActiveForUpdate(ApprovalEntityType.INVOICE, id).orElse(null);
+    }
+
+    @Override
+    public ApprovalRequest lockActivePaymentForCancellation(Long id) {
+        ApprovalDocumentAdapter adapter = adapter(ApprovalEntityType.PAYMENT);
+        if (!adapter.isEnabled()) return null;
+        adapter.lockDocument(id);
+        return requestRepository.findActiveForUpdate(ApprovalEntityType.PAYMENT, id).orElse(null);
     }
 
     @Override
@@ -420,6 +458,7 @@ public class ApprovalServiceImpl implements ApprovalService {
             case MANUAL_JOURNAL -> "Manual Journal";
             case VENDOR_BILL -> "Vendor Bill";
             case INVOICE -> "Invoice";
+            case PAYMENT -> "Payment";
         };
         return ApprovalRequestResponseDto.builder().id(r.getId()).entityType(r.getEntityType()).entityId(r.getEntityId()).documentNumber(r.getDocumentNumber()).documentTitle(r.getDocumentTitle()).entityLabel(entityLabel).documentUrl(adapter.documentUrl(r.getEntityId())).makerUserId(r.getMakerUserId()).makerName(maker).status(r.getStatus()).requiredPermission(r.getRequiredPermission()).submittedAt(r.getSubmittedAt()).decidedAt(r.getDecidedAt()).decidedBy(r.getDecidedBy()).decisionComment(r.getDecisionComment()).consumedAt(r.getConsumedAt()).consumedBy(r.getConsumedBy()).supersedesRequestId(r.getSupersedesRequestId()).canDecide(r.getStatus() == ApprovalStatus.PENDING && !r.getMakerUserId().equals(currentUserService.getCurrentUserId()) && authorities().contains(r.getRequiredPermission())).actions(actions ? actionRepository.findByApprovalRequestIdOrderByCreatedAtAscIdAsc(r.getId()).stream().map(this::toAction).toList() : List.of()).build();
     }

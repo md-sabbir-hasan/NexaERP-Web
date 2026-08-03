@@ -1,4 +1,4 @@
-export type ApprovalEntityType = 'MANUAL_JOURNAL' | 'VENDOR_BILL' | 'INVOICE';
+export type ApprovalEntityType = 'MANUAL_JOURNAL' | 'VENDOR_BILL' | 'INVOICE' | 'PAYMENT';
 export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'RETURNED' | 'CANCELLED';
 export type ApprovalActionType = 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'RETURNED' | 'CONSUMED' | 'CANCELLED';
 

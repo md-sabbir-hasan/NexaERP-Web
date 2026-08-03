@@ -4,6 +4,8 @@ import com.nexaerp.account.Account;
 import com.nexaerp.account.AccountRepository;
 import com.nexaerp.account.AccountType;
 import com.nexaerp.accountingperiod.AccountingPeriodService;
+import com.nexaerp.approval.ApprovalService;
+import com.nexaerp.approval.ApprovalRequest;
 import com.nexaerp.audit.AuditAction;
 import com.nexaerp.audit.AuditLogService;
 import com.nexaerp.banking.entity.BankAccount;
@@ -76,6 +78,7 @@ class PaymentNotificationTest {
     @Mock private BankTransactionRepository bankTransactionRepository;
     @Mock private ExpenseRepository expenseRepository;
     @Mock private NotificationService notificationService;
+    @Mock private ApprovalService approvalService;
 
     @InjectMocks private PaymentServiceImpl service;
 
@@ -107,9 +110,16 @@ class PaymentNotificationTest {
         lenient().when(paymentRepository.save(any(Payment.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         lenient().when(paymentAllocationRepository.findByPaymentId(1L)).thenReturn(List.of());
+        lenient().when(approvalService.lockAndValidatePaymentForPosting(1L)).thenReturn(null);
+        lenient().when(approvalService.isPaymentApprovalEnabled()).thenReturn(false);
         lenient().when(bankAccountRepository.findByCoaAccountId(10L))
                 .thenReturn(Optional.of(BankAccount.builder()
-                        .id(40L).coaAccountId(10L).currentBalance(new BigDecimal("1000.00")).build()));
+                        .id(40L).coaAccountId(10L).currency("BDT").isActive(true)
+                        .currentBalance(new BigDecimal("1000.00")).build()));
+        lenient().when(bankAccountRepository.findByCoaAccountIdForUpdate(10L))
+                .thenReturn(Optional.of(BankAccount.builder()
+                        .id(40L).coaAccountId(10L).currency("BDT").isActive(true)
+                        .currentBalance(new BigDecimal("1000.00")).build()));
         lenient().when(bankTransactionRepository.findByReferenceNumber(any())).thenReturn(Optional.empty());
         lenient().when(bankTransactionRepository.save(any(BankTransaction.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -118,11 +128,27 @@ class PaymentNotificationTest {
     @Test
     void receiptPostSchedulesCreatorAndActorWithExactMetadata() {
         Payment payment = postablePayment(PaymentType.RECEIPT, 55L);
+        ApprovalRequest approval = ApprovalRequest.builder().id(70L).build();
+        when(approvalService.lockAndValidatePaymentForPosting(1L)).thenReturn(approval);
 
         service.post(1L);
 
         assertEquals(PaymentStatus.POSTED, payment.getStatus());
         verifyPostedNotification(55L, 99L);
+        verify(approvalService).consumeAfterSuccessfulPost(approval);
+    }
+
+    @Test
+    void draftCancellationCancelsActiveApprovalAfterPaymentAudit() {
+        Payment payment = postablePayment(PaymentType.RECEIPT, 55L);
+        ApprovalRequest approval = ApprovalRequest.builder().id(71L).build();
+        when(approvalService.lockActivePaymentForCancellation(1L)).thenReturn(approval);
+
+        service.cancel(1L);
+
+        assertEquals(PaymentStatus.CANCELLED, payment.getStatus());
+        verify(auditLogService).log(AuditAction.CANCELLED, "PAYMENT", 1L, "DRAFT", "CANCELLED");
+        verify(approvalService).cancelAfterSuccessfulDocumentCancellation(approval);
     }
 
     @Test
@@ -179,8 +205,10 @@ class PaymentNotificationTest {
                 .referenceId(7L)
                 .allocatedAmount(new BigDecimal("25.00"))
                 .build();
+        payment.setAllocatedAmount(new BigDecimal("25.00"));
+        payment.setUnallocatedAmount(new BigDecimal("75.00"));
         when(paymentAllocationRepository.findByPaymentId(1L)).thenReturn(List.of(allocation));
-        when(invoiceRepository.findById(7L)).thenReturn(Optional.of(draft));
+        when(invoiceRepository.findByIdForUpdate(7L)).thenReturn(Optional.of(draft));
 
         assertThrows(BusinessRuleException.class, () -> service.post(1L));
 
@@ -190,8 +218,6 @@ class PaymentNotificationTest {
     @Test
     void sameCreatorAndActorAndUnallocatedRemainderArePassedSafely() {
         Payment payment = postablePayment(PaymentType.RECEIPT, 99L);
-        payment.setAllocatedAmount(new BigDecimal("20.00"));
-        payment.setUnallocatedAmount(new BigDecimal("80.00"));
 
         service.post(1L);
 
@@ -233,14 +259,15 @@ class PaymentNotificationTest {
     @Test
     void insufficientBalanceAndLinkedBankFailuresScheduleNothing() {
         postablePayment(PaymentType.PAYMENT, 55L);
-        when(bankAccountRepository.findByCoaAccountId(10L))
+        when(bankAccountRepository.findByCoaAccountIdForUpdate(10L))
                 .thenReturn(Optional.of(BankAccount.builder()
-                        .id(40L).coaAccountId(10L).currentBalance(new BigDecimal("10.00")).build()));
+                        .id(40L).coaAccountId(10L).currency("BDT").isActive(true)
+                        .currentBalance(new BigDecimal("10.00")).build()));
         assertThrows(BusinessRuleException.class, () -> service.post(1L));
         verifyNoPostedNotification();
 
         postablePayment(PaymentType.RECEIPT, 55L);
-        when(bankAccountRepository.findByCoaAccountId(10L)).thenReturn(Optional.empty());
+        when(bankAccountRepository.findByCoaAccountIdForUpdate(10L)).thenReturn(Optional.empty());
         assertThrows(BusinessRuleException.class, () -> service.post(1L));
         verifyNoPostedNotification();
     }
@@ -252,6 +279,7 @@ class PaymentNotificationTest {
                 .when(accountRepository).save(any(Account.class));
         assertThrows(IllegalStateException.class, () -> service.post(1L));
         verifyNoPostedNotification();
+        verify(approvalService, never()).consumeAfterSuccessfulPost(any());
 
         org.mockito.Mockito.reset(accountRepository);
         postablePayment(PaymentType.RECEIPT, 55L);
@@ -268,8 +296,11 @@ class PaymentNotificationTest {
                 .referenceId(999L)
                 .allocatedAmount(BigDecimal.ONE)
                 .build();
+        Payment stalePayment = paymentRepository.findById(1L).orElseThrow();
+        stalePayment.setAllocatedAmount(BigDecimal.ONE);
+        stalePayment.setUnallocatedAmount(new BigDecimal("99.00"));
         when(paymentAllocationRepository.findByPaymentId(1L)).thenReturn(List.of(stale));
-        when(invoiceRepository.findById(999L)).thenReturn(Optional.empty());
+        when(invoiceRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
         assertThrows(RuntimeException.class, () -> service.post(1L));
         verifyNoPostedNotification();
 
@@ -284,7 +315,7 @@ class PaymentNotificationTest {
     private Payment postablePayment(PaymentType type, Long createdBy) {
         Payment payment = payment(type, PaymentStatus.DRAFT, createdBy);
         when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
-        when(journalEntryRepository.findBySourceTypeAndSourceId(JournalSourceType.PAYMENT, 1L))
+        lenient().when(journalEntryRepository.findBySourceTypeAndSourceId(JournalSourceType.PAYMENT, 1L))
                 .thenReturn(Optional.empty());
         return payment;
     }
@@ -301,6 +332,8 @@ class PaymentNotificationTest {
                 .amount(new BigDecimal("100.00"))
                 .allocatedAmount(BigDecimal.ZERO)
                 .unallocatedAmount(new BigDecimal("100.00"))
+                .currencyCode("BDT")
+                .exchangeRate(BigDecimal.ONE)
                 .paymentMethod(PaymentMethod.BANK_TRANSFER)
                 .status(status)
                 .build();

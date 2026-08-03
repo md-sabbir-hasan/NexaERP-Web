@@ -14,6 +14,16 @@
     </span>
   </section>
 
+  @if (payment()!.approvalFeatureEnabled && payment()!.approvalStatus === 'PENDING') {
+  <div class="alert alert-warning" role="status">This Payment is pending approval. Editing and posting are locked.</div>
+  }
+  @if (payment()!.approvalFeatureEnabled && payment()!.approvalStatus === 'APPROVED' && !payment()!.approvalConsumed) {
+  <div class="alert alert-success" role="status">This Payment is approved and ready for an authorized checker to post.</div>
+  }
+  @if (payment()!.latestApprovalId) {
+  <a class="btn btn-sm btn-outline-secondary mb-3" [routerLink]="['/approvals', payment()!.latestApprovalId]">View approval history</a>
+  }
+
   <section class="action-bar">
     <a routerLink="/payment" class="btn-secondary">
       <i class="bi bi-arrow-left"></i>
@@ -31,6 +41,13 @@
     <button *appHasPermission="'POST_PAYMENT'" type="button" class="btn-post" (click)="postPayment()">
       <i class="bi bi-check-circle"></i>
       Post
+    </button>
+    }
+
+    @if (canSubmitApproval(payment()!)) {
+    <button type="button" class="btn-post" (click)="submitForApproval()">
+      <i class="bi bi-send"></i>
+      Submit for Approval
     </button>
     }
 

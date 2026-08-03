@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -12,6 +14,9 @@ import java.util.Optional;
 
 @Repository
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select e from Expense e where e.id = :id")
+    Optional<Expense> findByIdForUpdate(@Param("id") Long id);
     Optional<Expense> findTopByOrderByIdDesc(); // for EXP-0001 number generation
     long countByStatus(ExpenseStatus status);
 

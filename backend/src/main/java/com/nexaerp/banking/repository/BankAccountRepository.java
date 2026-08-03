@@ -6,6 +6,9 @@ import com.nexaerp.banking.enums.BankAccountType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.repository.query.Param;
+import jakarta.persistence.LockModeType;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -21,6 +24,10 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
     Optional<BankAccount> findTopByOrderByIdDesc();
 
     Optional<BankAccount> findByCoaAccountId(Long coaAccountId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select a from BankAccount a where a.coaAccountId = :coaAccountId")
+    Optional<BankAccount> findByCoaAccountIdForUpdate(@Param("coaAccountId") Long coaAccountId);
 
     @Query("""
         SELECT COALESCE(SUM(a.currentBalance), 0)

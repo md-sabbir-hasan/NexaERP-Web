@@ -1,6 +1,8 @@
 package com.nexaerp.payment;
 
 import com.nexaerp.common.response.ApiResponse;
+import com.nexaerp.approval.ApprovalService;
+import com.nexaerp.approval.dto.ApprovalRequestResponseDto;
 import com.nexaerp.payment.dto.PartyOutstandingSummaryDto;
 import com.nexaerp.payment.dto.PaymentRequestDto;
 import com.nexaerp.payment.dto.PaymentResponseDto;
@@ -17,6 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PaymentController {
     private final PaymentService paymentService;
+    private final ApprovalService approvalService;
 
     @PostMapping
     @PreAuthorize("hasAuthority('CREATE_PAYMENT')")
@@ -65,6 +68,14 @@ public class PaymentController {
             @PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success("Payment posted",
                 paymentService.post(id)));
+    }
+
+    @PostMapping("/{id}/submit-approval")
+    @PreAuthorize("hasAuthority('CREATE_PAYMENT')")
+    public ResponseEntity<ApiResponse<ApprovalRequestResponseDto>> submitApproval(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success("Payment submitted for approval",
+                approvalService.submitPayment(id)));
     }
 
     @PostMapping("/{id}/cancel")

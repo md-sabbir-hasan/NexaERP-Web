@@ -82,6 +82,18 @@ export interface PaymentResponse {
 
   updatedAt: string;
 
+  createdBy?: number | null;
+
+  approvalFeatureEnabled?: boolean;
+
+  latestApprovalId?: number | null;
+
+  activeApprovalId?: number | null;
+
+  approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'RETURNED' | 'CANCELLED' | null;
+
+  approvalConsumed?: boolean | null;
+
   allocations: PaymentAllocationResponse[];
 }
 

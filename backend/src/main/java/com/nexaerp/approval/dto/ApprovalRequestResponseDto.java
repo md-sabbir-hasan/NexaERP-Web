@@ -14,6 +14,8 @@ public class ApprovalRequestResponseDto {
     private Long entityId;
     private String documentNumber;
     private String documentTitle;
+    private String entityLabel;
+    private String documentUrl;
     private Long makerUserId;
     private String makerName;
     private ApprovalStatus status;

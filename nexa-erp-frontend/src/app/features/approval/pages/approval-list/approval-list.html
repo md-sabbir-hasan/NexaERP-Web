@@ -5,7 +5,7 @@
   @else if (mode === 'actions') {
     <div class="cards">@for(a of actions();track a.id){<article><div><span class="badge">{{a.action}}</span><h2>Request #{{a.approvalRequestId}}</h2><p>{{a.actorName}} · {{a.createdAt|date:'medium'}}</p></div><a [routerLink]="['/approvals',a.approvalRequestId]">View</a></article>}@empty{<div class="state">No approval actions yet.</div>}</div>
   } @else {
-    <div class="cards">@for(r of requests();track r.id){<article><div><span class="badge" [class]="'badge '+r.status.toLowerCase()">{{r.status}}</span><h2>{{r.documentNumber}}</h2><p>{{r.entityType==='VENDOR_BILL'?'Vendor Bill':'Manual journal'}} · {{r.documentTitle||'No description'}} · Submitted by {{r.makerName}}</p><small>{{r.submittedAt|date:'medium'}}</small></div><a [routerLink]="['/approvals',r.id]">Review</a></article>}@empty{<div class="state">No approvals found.</div>}</div>
+    <div class="cards">@for(r of requests();track r.id){<article><div><span class="badge" [class]="'badge '+r.status.toLowerCase()">{{r.status}}</span><h2>{{r.documentNumber}}</h2><p>{{r.entityLabel}} · {{r.documentTitle||'No description'}} · Submitted by {{r.makerName}}</p><small>{{r.submittedAt|date:'medium'}}</small></div><a [routerLink]="['/approvals',r.id]">Review</a></article>}@empty{<div class="state">No approvals found.</div>}</div>
   }
   @if(totalPages()>1){<footer><button type="button" [disabled]="page()===0" (click)="load(page()-1)">Previous</button><span>Page {{page()+1}} of {{totalPages()}}</span><button type="button" [disabled]="page()+1>=totalPages()" (click)="load(page()+1)">Next</button></footer>}
 </section>

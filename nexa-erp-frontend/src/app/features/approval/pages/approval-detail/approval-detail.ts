@@ -16,6 +16,6 @@ export class ApprovalDetail implements OnInit {
   open(action:'approve'|'reject'|'return'){this.decision=action;this.comment='';}
   close(){if(!this.deciding())this.decision=null;}
   submit(){if(!this.decision)return;if(this.decision!=='approve'&&!this.comment.trim()){this.alert.error('A comment is required');return;}this.deciding.set(true);this.service.decide(this.id,this.decision,this.comment.trim()||null).subscribe({next:r=>{this.request.set(r.data);this.decision=null;this.deciding.set(false);this.alert.success('Approval decision saved');},error:e=>{this.deciding.set(false);this.alert.error(e?.error?.message??'Decision failed');}});}
-  entityLabel(request:ApprovalRequest){return request.entityType==='VENDOR_BILL'?'Vendor Bill':'Manual journal';}
-  documentLink(request:ApprovalRequest){return request.entityType==='VENDOR_BILL'?['/vendor-bill',request.entityId]:['/journals',request.entityId,'edit'];}
+  entityLabel(request:ApprovalRequest){return request.entityLabel;}
+  documentLink(request:ApprovalRequest){return request.documentUrl;}
 }

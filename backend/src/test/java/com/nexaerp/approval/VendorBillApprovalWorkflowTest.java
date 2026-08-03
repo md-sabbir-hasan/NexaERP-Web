@@ -51,6 +51,8 @@ class VendorBillApprovalWorkflowTest {
 
         assertThat(result.getEntityType()).isEqualTo(ApprovalEntityType.VENDOR_BILL);
         assertThat(result.getRequiredPermission()).isEqualTo("APPROVE_VENDOR_BILL");
+        assertThat(result.getEntityLabel()).isEqualTo("Vendor Bill");
+        assertThat(result.getDocumentUrl()).isEqualTo("/vendor-bill/10");
         verify(notifications).scheduleUniqueForUsersAfterCommit(eq(List.of(2L)), eq(NotificationType.APPROVAL_SUBMITTED),
                 eq(NotificationPriority.MEDIUM), eq(NotificationModule.APPROVAL), eq("Vendor bill approval requested"),
                 eq("Vendor bill BILL-0010 is waiting for approval."), eq("/approvals/80"), eq("APPROVAL_REQUEST"), eq(80L));

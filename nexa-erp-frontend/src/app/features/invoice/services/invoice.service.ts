@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { APP_CONFIG } from '../../../core/config/app.config';
 import { ApiResponse } from '../../../core/models/api-response.model';
 import { CancelledReason, Invoice, InvoiceRequest, InvoiceStatus } from '../models/invoice.model';
+import { ApprovalRequest } from '../../approval/models/approval.model';
 
 @Injectable({
   providedIn: 'root',
@@ -40,6 +41,10 @@ export class InvoiceService {
 
   post(id: number): Observable<ApiResponse<Invoice>> {
     return this.http.post<ApiResponse<Invoice>>(`${this.baseUrl}/${id}/post`, {});
+  }
+
+  submitForApproval(id: number): Observable<ApiResponse<ApprovalRequest>> {
+    return this.http.post<ApiResponse<ApprovalRequest>>(`${this.baseUrl}/${id}/submit-approval`, {});
   }
 
   cancel(id: number, reason: CancelledReason): Observable<ApiResponse<Invoice>> {

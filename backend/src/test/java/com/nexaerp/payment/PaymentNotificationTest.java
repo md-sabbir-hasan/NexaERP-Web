@@ -13,6 +13,8 @@ import com.nexaerp.banking.repository.BankTransactionRepository;
 import com.nexaerp.common.exception.BusinessRuleException;
 import com.nexaerp.expense.ExpenseRepository;
 import com.nexaerp.invoice.InvoiceRepository;
+import com.nexaerp.invoice.Invoice;
+import com.nexaerp.invoice.InvoiceStatus;
 import com.nexaerp.journal.JournalEntry;
 import com.nexaerp.journal.JournalEntryRepository;
 import com.nexaerp.journal.JournalLine;
@@ -30,6 +32,8 @@ import com.nexaerp.security.MakerCheckerService;
 import com.nexaerp.settings.SettingKey;
 import com.nexaerp.settings.SystemSettingsService;
 import com.nexaerp.vendorbill.VendorBillRepository;
+import com.nexaerp.payment.dto.PaymentAllocationRequestDto;
+import com.nexaerp.payment.dto.PaymentRequestDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -129,6 +133,58 @@ class PaymentNotificationTest {
 
         assertEquals(PaymentStatus.POSTED, payment.getStatus());
         verifyPostedNotification(55L, 99L);
+    }
+
+    @Test
+    void manualAllocationRejectsDraftInvoice() {
+        Party party = Party.builder().id(5L).name("Customer").type(PartyType.CUSTOMER).isActive(true).build();
+        Invoice invoice = Invoice.builder().id(7L).party(party).status(InvoiceStatus.DRAFT)
+                .grandTotal(new BigDecimal("100.00")).dueAmount(new BigDecimal("100.00")).build();
+        when(partyRepository.findById(5L)).thenReturn(Optional.of(party));
+        when(accountRepository.findById(10L)).thenReturn(Optional.of(paymentAccount));
+        when(invoiceRepository.findById(7L)).thenReturn(Optional.of(invoice));
+        PaymentRequestDto request = new PaymentRequestDto(5L, 10L, LocalDate.of(2026, 8, 3),
+                PaymentType.RECEIPT, new BigDecimal("25.00"), "BDT", PaymentMethod.CASH,
+                null, null, false, List.of(new PaymentAllocationRequestDto(
+                PaymentReferenceType.INVOICE, 7L, new BigDecimal("25.00"))));
+
+        assertThrows(BusinessRuleException.class, () -> service.create(request));
+    }
+
+    @Test
+    void fifoUsesOnlyPostedAndPartialInvoiceStatuses() {
+        Party party = Party.builder().id(5L).name("Customer").type(PartyType.CUSTOMER).isActive(true).build();
+        when(partyRepository.findById(5L)).thenReturn(Optional.of(party));
+        when(accountRepository.findById(10L)).thenReturn(Optional.of(paymentAccount));
+        when(invoiceRepository.findByPartyIdAndDueAmountGreaterThanAndStatusInOrderByDueDateAsc(
+                5L, BigDecimal.ZERO, List.of(InvoiceStatus.POSTED, InvoiceStatus.PARTIAL))).thenReturn(List.of());
+        PaymentRequestDto request = new PaymentRequestDto(5L, 10L, LocalDate.of(2026, 8, 3),
+                PaymentType.RECEIPT, new BigDecimal("25.00"), "BDT", PaymentMethod.CASH,
+                null, null, true, List.of());
+
+        service.create(request);
+
+        verify(invoiceRepository).findByPartyIdAndDueAmountGreaterThanAndStatusInOrderByDueDateAsc(
+                5L, BigDecimal.ZERO, List.of(InvoiceStatus.POSTED, InvoiceStatus.PARTIAL));
+    }
+
+    @Test
+    void postingRejectsStoredAllocationWhenInvoiceIsNoLongerEligible() {
+        Payment payment = postablePayment(PaymentType.RECEIPT, 55L);
+        Invoice draft = Invoice.builder().id(7L).status(InvoiceStatus.DRAFT)
+                .dueAmount(new BigDecimal("100.00")).build();
+        PaymentAllocation allocation = PaymentAllocation.builder()
+                .payment(payment)
+                .referenceType(PaymentReferenceType.INVOICE)
+                .referenceId(7L)
+                .allocatedAmount(new BigDecimal("25.00"))
+                .build();
+        when(paymentAllocationRepository.findByPaymentId(1L)).thenReturn(List.of(allocation));
+        when(invoiceRepository.findById(7L)).thenReturn(Optional.of(draft));
+
+        assertThrows(BusinessRuleException.class, () -> service.post(1L));
+
+        verifyNoPostedNotification();
     }
 
     @Test

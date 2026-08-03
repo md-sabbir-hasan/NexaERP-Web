@@ -2,6 +2,7 @@ package com.nexaerp.invoice.dto;
 
 import com.nexaerp.invoice.CancelledReason;
 import com.nexaerp.invoice.InvoiceStatus;
+import com.nexaerp.approval.ApprovalStatus;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -41,6 +42,12 @@ public class InvoiceResponseDto {
     private LocalDateTime postedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long createdBy;
+    private Boolean approvalFeatureEnabled;
+    private Long latestApprovalId;
+    private Long activeApprovalId;
+    private ApprovalStatus approvalStatus;
+    private Boolean approvalConsumed;
 
     private String currencyCode;
 

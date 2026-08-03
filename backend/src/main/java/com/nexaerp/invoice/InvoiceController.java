@@ -1,7 +1,8 @@
 package com.nexaerp.invoice;
 
 import com.nexaerp.common.response.ApiResponse;
-import com.nexaerp.fileupload.FileUploadService;
+import com.nexaerp.approval.ApprovalService;
+import com.nexaerp.approval.dto.ApprovalRequestResponseDto;
 import com.nexaerp.fileupload.dto.FileUploadResponseDto;
 import com.nexaerp.invoice.dto.InvoiceRequestDto;
 import com.nexaerp.invoice.dto.InvoiceResponseDto;
@@ -19,8 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class InvoiceController {
     private final InvoiceService invoiceService;
-    private final FileUploadService fileUploadService;
-    private final InvoiceRepository invoiceRepository;
+    private final ApprovalService approvalService;
 
     @PostMapping
     @PreAuthorize("hasAuthority('CREATE_INVOICE')")
@@ -83,20 +83,22 @@ public class InvoiceController {
 
 
     @PostMapping("/{id}/attachment")
+    @PreAuthorize("hasAuthority('EDIT_INVOICE')")
     public ResponseEntity<ApiResponse<FileUploadResponseDto>> uploadAttachment(
             @PathVariable Long id,
             @RequestParam("file") MultipartFile file) {
 
-        FileUploadResponseDto response =
-                fileUploadService.upload(file, "INVOICE", id);
-
-        // Update invoice attachment URL
-        invoiceRepository.findById(id).ifPresent(invoice -> {
-            invoice.setAttachmentUrl(response.getFileUrl());
-            invoiceRepository.save(invoice);
-        });
+        FileUploadResponseDto response = invoiceService.uploadAttachment(id, file);
 
         return ResponseEntity.ok(ApiResponse.success(
                 "Attachment uploaded", response));
+    }
+
+    @PostMapping("/{id}/submit-approval")
+    @PreAuthorize("hasAnyAuthority('CREATE_INVOICE','EDIT_INVOICE')")
+    public ResponseEntity<ApiResponse<ApprovalRequestResponseDto>> submitApproval(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success("Invoice submitted for approval",
+                approvalService.submitInvoice(id)));
     }
 }

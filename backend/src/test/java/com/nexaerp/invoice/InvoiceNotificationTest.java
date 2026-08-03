@@ -4,6 +4,8 @@ import com.nexaerp.account.Account;
 import com.nexaerp.account.AccountRepository;
 import com.nexaerp.account.AccountType;
 import com.nexaerp.accountingperiod.AccountingPeriodService;
+import com.nexaerp.approval.ApprovalService;
+import com.nexaerp.fileupload.FileUploadService;
 import com.nexaerp.audit.AuditLogService;
 import com.nexaerp.common.exception.BusinessRuleException;
 import com.nexaerp.currency.service.CurrencyService;
@@ -62,6 +64,8 @@ class InvoiceNotificationTest {
     @Mock private ExchangeRateService exchangeRateService;
     @Mock private CurrencyService currencyService;
     @Mock private NotificationService notificationService;
+    @Mock private ApprovalService approvalService;
+    @Mock private FileUploadService fileUploadService;
 
     @InjectMocks private InvoiceServiceImpl service;
 

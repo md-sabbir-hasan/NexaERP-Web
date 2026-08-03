@@ -2,6 +2,8 @@ package com.nexaerp.invoice;
 
 import com.nexaerp.invoice.dto.InvoiceRequestDto;
 import com.nexaerp.invoice.dto.InvoiceResponseDto;
+import com.nexaerp.fileupload.dto.FileUploadResponseDto;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -14,4 +16,5 @@ public interface InvoiceService {
     List<InvoiceResponseDto> getByStatus(InvoiceStatus status);
     InvoiceResponseDto post(Long id);
     InvoiceResponseDto cancel(Long id, CancelledReason reason);
+    FileUploadResponseDto uploadAttachment(Long id, MultipartFile file);
 }

@@ -8,6 +8,7 @@ import java.util.List;
 public interface ApprovalService {
     ApprovalRequestResponseDto submitManualJournal(Long journalId);
     ApprovalRequestResponseDto submitVendorBill(Long vendorBillId);
+    ApprovalRequestResponseDto submitInvoice(Long invoiceId);
     ApprovalRequestResponseDto approveVendorBillCompatibility(Long vendorBillId);
     ApprovalRequestResponseDto approve(Long requestId, ApprovalDecisionDto decision);
     ApprovalRequestResponseDto reject(Long requestId, ApprovalDecisionDto decision);
@@ -20,13 +21,18 @@ public interface ApprovalService {
     List<ApprovalRequestResponseDto> history(ApprovalEntityType type, Long entityId);
     void assertJournalChangeAllowed(Long journalId);
     void assertVendorBillChangeAllowed(Long vendorBillId);
+    void assertInvoiceChangeAllowed(Long invoiceId);
     ApprovalRequest lockAndValidateForPosting(Long journalId);
     ApprovalRequest lockAndValidateVendorBillForPosting(Long vendorBillId);
+    ApprovalRequest lockAndValidateInvoiceForPosting(Long invoiceId);
     ApprovalRequest lockActiveVendorBillForCancellation(Long vendorBillId);
+    ApprovalRequest lockActiveInvoiceForCancellation(Long invoiceId);
     void cancelAfterSuccessfulDocumentCancellation(ApprovalRequest request);
     void consumeAfterSuccessfulPost(ApprovalRequest request);
     boolean isManualJournalApprovalEnabled();
     boolean isVendorBillApprovalEnabled();
+    boolean isInvoiceApprovalEnabled();
     ApprovalRequest findLatestJournalRequest(Long journalId);
     ApprovalRequest findLatestVendorBillRequest(Long vendorBillId);
+    ApprovalRequest findLatestInvoiceRequest(Long invoiceId);
 }

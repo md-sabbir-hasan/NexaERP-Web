@@ -459,8 +459,8 @@ public class PaymentServiceImpl implements PaymentService {
 
             // Customer payment to allocate against Invoices
             List<Invoice> dueInvoices = invoiceRepository
-                    .findByPartyIdAndDueAmountGreaterThanAndStatusNotOrderByDueDateAsc(
-                            partyId, BigDecimal.ZERO, InvoiceStatus.CANCELLED);
+                    .findByPartyIdAndDueAmountGreaterThanAndStatusInOrderByDueDateAsc(
+                            partyId, BigDecimal.ZERO, List.of(InvoiceStatus.POSTED, InvoiceStatus.PARTIAL));
 
 
             for (Invoice invoice : dueInvoices) {
@@ -540,9 +540,7 @@ public class PaymentServiceImpl implements PaymentService {
                 if (!invoice.getParty().getId().equals(payment.getParty().getId())) {
                     throw new BusinessRuleException("Allocated invoice does not belong to the selected party");
                 }
-                if (invoice.getStatus() == InvoiceStatus.CANCELLED) {
-                    throw new BusinessRuleException("Cannot allocate payment to a cancelled invoice");
-                }
+                validateInvoiceAllocationStatus(invoice);
                 if (invoice.getDueAmount().compareTo(BigDecimal.ZERO) <= 0) {
                     throw new BusinessRuleException("Invoice due amount must be greater than zero");
                 }
@@ -614,6 +612,8 @@ public class PaymentServiceImpl implements PaymentService {
 
             Invoice invoice = invoiceRepository.findById(allocation.getReferenceId())
                     .orElseThrow(() -> new ResourceNotFoundException("Invoice not found"));
+
+            validateInvoiceAllocationStatus(invoice);
 
             invoice.setPaidAmount(invoice.getPaidAmount().add(allocation.getAllocatedAmount()));
             invoice.setDueAmount(invoice.getGrandTotal().subtract(invoice.getPaidAmount()));
@@ -700,6 +700,12 @@ public class PaymentServiceImpl implements PaymentService {
                     : com.nexaerp.expense.ExpensePaymentStatus.PARTIAL);
 
             expenseRepository.save(exp);
+        }
+    }
+
+    private void validateInvoiceAllocationStatus(Invoice invoice) {
+        if (invoice.getStatus() != InvoiceStatus.POSTED && invoice.getStatus() != InvoiceStatus.PARTIAL) {
+            throw new BusinessRuleException("Payment allocation requires a POSTED or PARTIAL invoice");
         }
     }
 

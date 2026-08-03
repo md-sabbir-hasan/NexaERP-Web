@@ -7,6 +7,7 @@ import { CancelledReason, Invoice, InvoiceStatus } from '../../models/invoice.mo
 import { InvoiceService } from '../../services/invoice.service';
 import { HasPermissionDirective } from '../../../../shared/directives/has-permission.directive';
 import { AuditTimeline } from '../../../audit/components/audit-timeline/audit-timeline';
+import { AuthService } from '../../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-invoice-details',
@@ -25,16 +26,20 @@ import { AuditTimeline } from '../../../audit/components/audit-timeline/audit-ti
 export class InvoiceDetails implements OnInit {
   readonly invoice = signal<Invoice | null>(null);
   readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
+  private invoiceId = 0;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private invoiceService: InvoiceService,
     private alert: AlertService,
+    private authService: AuthService,
   ) {}
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
+    this.invoiceId = id;
 
     if (!id) {
       this.router.navigate(['/invoice']);
@@ -46,6 +51,7 @@ export class InvoiceDetails implements OnInit {
 
   loadInvoice(id: number): void {
     this.loading.set(true);
+    this.error.set(null);
 
     this.invoiceService.getById(id).subscribe({
       next: (res) => {
@@ -54,10 +60,53 @@ export class InvoiceDetails implements OnInit {
       },
       error: () => {
         this.loading.set(false);
-        this.alert.error('Failed to load invoice');
-        this.router.navigate(['/invoice']);
+        this.error.set('Failed to load invoice');
       },
     });
+  }
+
+  retry(): void {
+    if (this.invoiceId) this.loadInvoice(this.invoiceId);
+  }
+
+  submitForApproval(): void {
+    const invoice = this.invoice();
+    if (!invoice) return;
+    this.invoiceService.submitForApproval(invoice.id).subscribe({
+      next: (response) => {
+        this.alert.success('Invoice submitted for approval');
+        this.invoice.update((current) => current ? {
+          ...current,
+          latestApprovalId: response.data.id,
+          activeApprovalId: response.data.id,
+          approvalStatus: response.data.status,
+          approvalConsumed: false,
+        } : current);
+      },
+      error: (error) => this.alert.error(error?.error?.message ?? 'Failed to submit invoice'),
+    });
+  }
+
+  isCreator(invoice: Invoice): boolean {
+    return this.authService.currentUser()?.id === invoice.createdBy;
+  }
+
+  canSubmitApproval(invoice: Invoice): boolean {
+    const permissions = this.authService.currentUser()?.permissions ?? [];
+    return invoice.approvalFeatureEnabled === true && invoice.status === 'DRAFT'
+      && this.isCreator(invoice) && !this.hasActiveApproval(invoice)
+      && (permissions.includes('CREATE_INVOICE') || permissions.includes('EDIT_INVOICE'));
+  }
+
+  hasActiveApproval(invoice: Invoice): boolean {
+    return invoice.activeApprovalId != null
+      && (invoice.approvalStatus === 'PENDING' || invoice.approvalStatus === 'APPROVED')
+      && !invoice.approvalConsumed;
+  }
+
+  canPost(invoice: Invoice): boolean {
+    return invoice.approvalFeatureEnabled !== true
+      || (invoice.approvalStatus === 'APPROVED' && !invoice.approvalConsumed);
   }
 
   async postInvoice(): Promise<void> {

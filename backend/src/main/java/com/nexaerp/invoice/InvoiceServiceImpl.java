@@ -3,6 +3,8 @@ package com.nexaerp.invoice;
 import com.nexaerp.account.Account;
 import com.nexaerp.account.AccountRepository;
 import com.nexaerp.accountingperiod.AccountingPeriodService;
+import com.nexaerp.approval.ApprovalRequest;
+import com.nexaerp.approval.ApprovalService;
 import com.nexaerp.audit.AuditAction;
 import com.nexaerp.audit.AuditLogService;
 import com.nexaerp.common.exception.BusinessRuleException;
@@ -13,6 +15,8 @@ import com.nexaerp.invoice.dto.InvoiceItemRequestDto;
 import com.nexaerp.invoice.dto.InvoiceItemResponseDto;
 import com.nexaerp.invoice.dto.InvoiceRequestDto;
 import com.nexaerp.invoice.dto.InvoiceResponseDto;
+import com.nexaerp.fileupload.FileUploadService;
+import com.nexaerp.fileupload.dto.FileUploadResponseDto;
 import com.nexaerp.journal.*;
 import com.nexaerp.notification.NotificationModule;
 import com.nexaerp.notification.NotificationPriority;
@@ -27,6 +31,7 @@ import com.nexaerp.settings.SystemSettingsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -54,6 +59,8 @@ public class InvoiceServiceImpl implements InvoiceService{
     private final MakerCheckerService makerCheckerService;
     private final CurrentUserService currentUserService;
     private final NotificationService notificationService;
+    private final ApprovalService approvalService;
+    private final FileUploadService fileUploadService;
 
     @Override
     @Transactional
@@ -125,11 +132,11 @@ public class InvoiceServiceImpl implements InvoiceService{
     @Override
     @Transactional
     public InvoiceResponseDto update(Long id, InvoiceRequestDto request) {
-
-        Invoice invoice = invoiceRepository.findById(id)
+        Invoice invoice = invoiceRepository.findByIdForUpdate(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Invoice not found")
                 );
+        approvalService.assertInvoiceChangeAllowed(id);
 
         if (!InvoiceStatus.DRAFT.equals(invoice.getStatus())) {
             throw new BusinessRuleException(
@@ -203,7 +210,7 @@ public class InvoiceServiceImpl implements InvoiceService{
     public InvoiceResponseDto getById(Long id) {
         Invoice invoice = invoiceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice not found"));
-        return toResponse(invoice);
+        return toResponse(invoice, true);
     }
 
     @Override
@@ -233,6 +240,7 @@ public class InvoiceServiceImpl implements InvoiceService{
     @Override
     @Transactional
     public InvoiceResponseDto post(Long id) {
+        ApprovalRequest approvalRequest = approvalService.lockAndValidateInvoiceForPosting(id);
         Invoice invoice = invoiceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice not found"));
 
@@ -301,13 +309,15 @@ public class InvoiceServiceImpl implements InvoiceService{
                 saved.getId()
         );
 
+        approvalService.consumeAfterSuccessfulPost(approvalRequest);
+
         return toResponse(saved);
     }
 
     @Override
     @Transactional
     public InvoiceResponseDto cancel(Long id, CancelledReason reason) {
-
+        ApprovalRequest approvalRequest = approvalService.lockActiveInvoiceForCancellation(id);
         Invoice invoice = invoiceRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Invoice not found")
@@ -371,7 +381,25 @@ public class InvoiceServiceImpl implements InvoiceService{
                 saved.getId()
         );
 
+        approvalService.cancelAfterSuccessfulDocumentCancellation(approvalRequest);
+
         return toResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public FileUploadResponseDto uploadAttachment(Long id, MultipartFile file) {
+        Invoice invoice = invoiceRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice not found"));
+        approvalService.assertInvoiceChangeAllowed(id);
+        if (invoice.getStatus() != InvoiceStatus.DRAFT) {
+            throw new BusinessRuleException("Only DRAFT invoices can be updated");
+        }
+        FileUploadResponseDto response = fileUploadService.upload(file, "INVOICE", id);
+        invoice.setAttachmentUrl(response.getFileUrl());
+        invoiceRepository.save(invoice);
+        auditLogService.log(AuditAction.UPLOADED, "INVOICE", id, null, response.getOriginalName());
+        return response;
     }
 
 
@@ -668,7 +696,14 @@ public class InvoiceServiceImpl implements InvoiceService{
                                                     //---Mapper---
 
     private InvoiceResponseDto toResponse(Invoice invoice) {
+        return toResponse(invoice, false);
+    }
+
+    private InvoiceResponseDto toResponse(Invoice invoice, boolean includeApproval) {
         List<InvoiceItem> items = invoiceItemRepository.findByInvoiceId(invoice.getId());
+        ApprovalRequest latestApproval = includeApproval
+                ? approvalService.findLatestInvoiceRequest(invoice.getId())
+                : null;
 
         return InvoiceResponseDto.builder()
                 .id(invoice.getId())
@@ -695,6 +730,12 @@ public class InvoiceServiceImpl implements InvoiceService{
                 .postedAt(invoice.getPostedAt())
                 .createdAt(invoice.getCreatedAt())
                 .updatedAt(invoice.getUpdatedAt())
+                .createdBy(invoice.getCreatedBy())
+                .approvalFeatureEnabled(approvalService.isInvoiceApprovalEnabled())
+                .latestApprovalId(latestApproval != null ? latestApproval.getId() : null)
+                .activeApprovalId(latestApproval != null && latestApproval.getActiveMarker() != null ? latestApproval.getId() : null)
+                .approvalStatus(latestApproval != null ? latestApproval.getStatus() : null)
+                .approvalConsumed(latestApproval != null ? latestApproval.getConsumedAt() != null : null)
                 .items(items.stream().map(this::toItemResponse).collect(Collectors.toList()))
                 .build();
     }

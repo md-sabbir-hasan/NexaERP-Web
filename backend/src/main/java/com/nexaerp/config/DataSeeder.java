@@ -101,6 +101,7 @@ public class DataSeeder implements CommandLineRunner {
                 new Object[]{"VIEW_INVOICE", "View Invoice", "INVOICE"},
                 new Object[]{"CREATE_INVOICE", "Create Invoice", "INVOICE"},
                 new Object[]{"EDIT_INVOICE", "Edit Invoice", "INVOICE"},
+                new Object[]{"APPROVE_INVOICE", "Approve Invoice", "INVOICE"},
                 new Object[]{"POST_INVOICE", "Post Invoice", "INVOICE"},
                 new Object[]{"CANCEL_INVOICE", "Cancel Invoice", "INVOICE"},
 

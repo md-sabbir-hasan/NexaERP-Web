@@ -215,7 +215,7 @@
 
                 </a>
 
-                @if (invoice.status === 'DRAFT') {
+                @if (invoice.status === 'DRAFT' && !invoice.approvalFeatureEnabled) {
 
                 <a *appHasPermission="'EDIT_INVOICE'" [routerLink]="['/invoice', invoice.id, 'edit']" class="btn-edit">
 

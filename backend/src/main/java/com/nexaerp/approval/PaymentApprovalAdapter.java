@@ -35,13 +35,40 @@ public class PaymentApprovalAdapter implements ApprovalDocumentAdapter {
     private final VendorBillRepository vendorBillRepository;
     private final ExpenseRepository expenseRepository;
 
-    @Override public ApprovalEntityType entityType() { return ApprovalEntityType.PAYMENT; }
-    @Override public boolean isEnabled() { return properties.isEnabled() && properties.getPayment().isEnabled(); }
-    @Override public String requiredPermission() { return "APPROVE_PAYMENT"; }
-    @Override public String viewPermission() { return "VIEW_PAYMENT"; }
-    @Override public String displayName() { return "Payment"; }
-    @Override public Object lockDocument(Long id) { return paymentRepository.findByIdForUpdate(id).orElseThrow(() -> new ResourceNotFoundException("Payment not found")); }
-    @Override public Object loadDocument(Long id) { return paymentRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Payment not found")); }
+    @Override
+    public ApprovalEntityType entityType() {
+        return ApprovalEntityType.PAYMENT;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return properties.isEnabled() && properties.getPayment().isEnabled();
+    }
+
+    @Override
+    public String requiredPermission() {
+        return "APPROVE_PAYMENT";
+    }
+
+    @Override
+    public String viewPermission() {
+        return "VIEW_PAYMENT";
+    }
+
+    @Override
+    public String displayName() {
+        return "Payment";
+    }
+
+    @Override
+    public Object lockDocument(Long id) {
+        return paymentRepository.findByIdForUpdate(id).orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
+    }
+
+    @Override
+    public Object loadDocument(Long id) {
+        return paymentRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
+    }
 
     @Override
     public void validateForSubmission(Object value) {
@@ -92,7 +119,8 @@ public class PaymentApprovalAdapter implements ApprovalDocumentAdapter {
         if (payment.getPaymentMethod() == null) throw rule("Payment method is required");
         if (payment.getExchangeRate() == null || payment.getExchangeRate().compareTo(BigDecimal.ZERO) <= 0)
             throw rule("Payment exchange rate must be greater than zero");
-        if (payment.getCurrencyCode() == null || payment.getCurrencyCode().isBlank()) throw rule("Payment currency is required");
+        if (payment.getCurrencyCode() == null || payment.getCurrencyCode().isBlank())
+            throw rule("Payment currency is required");
         if (bank.getCurrency() == null || !payment.getCurrencyCode().equalsIgnoreCase(bank.getCurrency()))
             throw rule("Payment currency must match the linked bank account currency");
     }
@@ -107,33 +135,42 @@ public class PaymentApprovalAdapter implements ApprovalDocumentAdapter {
     }
 
     private void validateInvoice(Payment payment, Long id, BigDecimal amount) {
-        if (payment.getPaymentType() != PaymentType.RECEIPT) throw rule("Invoice allocation requires a RECEIPT payment");
+        if (payment.getPaymentType() != PaymentType.RECEIPT)
+            throw rule("Invoice allocation requires a RECEIPT payment");
         Invoice invoice = invoiceRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Invoice not found"));
-        if (invoice.getParty() == null || !Objects.equals(invoice.getParty().getId(), payment.getParty().getId())) throw rule("Allocated invoice does not belong to the payment party");
-        if (invoice.getStatus() != InvoiceStatus.POSTED && invoice.getStatus() != InvoiceStatus.PARTIAL) throw rule("Allocated invoice must be POSTED or PARTIAL");
+        if (invoice.getParty() == null || !Objects.equals(invoice.getParty().getId(), payment.getParty().getId()))
+            throw rule("Allocated invoice does not belong to the payment party");
+        if (invoice.getStatus() != InvoiceStatus.POSTED && invoice.getStatus() != InvoiceStatus.PARTIAL)
+            throw rule("Allocated invoice must be POSTED or PARTIAL");
         validateDue(amount, invoice.getDueAmount(), "invoice");
         validateCurrency(payment.getCurrencyCode(), invoice.getCurrencyCode(), "invoice");
     }
 
     private void validateVendorBill(Payment payment, Long id, BigDecimal amount) {
-        if (payment.getPaymentType() != PaymentType.PAYMENT) throw rule("Vendor bill allocation requires a PAYMENT payment");
+        if (payment.getPaymentType() != PaymentType.PAYMENT)
+            throw rule("Vendor bill allocation requires a PAYMENT payment");
         VendorBill bill = vendorBillRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Vendor bill not found"));
-        if (bill.getParty() == null || !Objects.equals(bill.getParty().getId(), payment.getParty().getId())) throw rule("Allocated vendor bill does not belong to the payment party");
-        if (bill.getStatus() != VendorBillStatus.POSTED && bill.getStatus() != VendorBillStatus.PARTIAL) throw rule("Allocated vendor bill must be POSTED or PARTIAL");
+        if (bill.getParty() == null || !Objects.equals(bill.getParty().getId(), payment.getParty().getId()))
+            throw rule("Allocated vendor bill does not belong to the payment party");
+        if (bill.getStatus() != VendorBillStatus.POSTED && bill.getStatus() != VendorBillStatus.PARTIAL)
+            throw rule("Allocated vendor bill must be POSTED or PARTIAL");
         validateDue(amount, bill.getDueAmount(), "vendor bill");
         validateCurrency(payment.getCurrencyCode(), bill.getCurrencyCode(), "vendor bill");
     }
 
     private void validateExpense(Payment payment, Long id, BigDecimal amount) {
-        if (payment.getPaymentType() != PaymentType.PAYMENT) throw rule("Expense allocation requires a PAYMENT payment");
+        if (payment.getPaymentType() != PaymentType.PAYMENT)
+            throw rule("Expense allocation requires a PAYMENT payment");
         Expense expense = expenseRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Expense not found"));
-        if (expense.getParty() == null || !Objects.equals(expense.getParty().getId(), payment.getParty().getId())) throw rule("Allocated expense does not belong to the payment party");
+        if (expense.getParty() == null || !Objects.equals(expense.getParty().getId(), payment.getParty().getId()))
+            throw rule("Allocated expense does not belong to the payment party");
         if (expense.getStatus() != ExpenseStatus.POSTED) throw rule("Allocated expense must be POSTED");
         validateDue(amount, expense.getDueAmount(), "expense");
     }
 
     private void validateDue(BigDecimal allocated, BigDecimal due, String label) {
-        if (due == null || due.compareTo(BigDecimal.ZERO) <= 0) throw rule("Allocated " + label + " must have an outstanding amount");
+        if (due == null || due.compareTo(BigDecimal.ZERO) <= 0)
+            throw rule("Allocated " + label + " must have an outstanding amount");
         if (allocated.compareTo(due) > 0) throw rule("Allocation exceeds the outstanding " + label + " amount");
     }
 
@@ -142,20 +179,58 @@ public class PaymentApprovalAdapter implements ApprovalDocumentAdapter {
             throw rule("Payment currency must match the allocated " + label + " currency");
     }
 
-    @Override public void validatePending(Object value, ApprovalRequest request) {
+    @Override
+    public void validatePending(Object value, ApprovalRequest request) {
         Payment payment = cast(value);
         if (payment.getStatus() != PaymentStatus.DRAFT) throw rule("Payment is no longer an eligible DRAFT");
-        if (!Objects.equals(payment.getUpdatedAt(), request.getDocumentUpdatedAt())) throw rule("Payment changed after submission; submit it again");
+        if (!Objects.equals(payment.getUpdatedAt(), request.getDocumentUpdatedAt()))
+            throw rule("Payment changed after submission; submit it again");
     }
-    @Override public LocalDateTime approve(Object document, Long actorId) { return cast(document).getUpdatedAt(); }
-    @Override public Long creatorId(Object document) { return cast(document).getCreatedBy(); }
-    @Override public LocalDateTime updatedAt(Object document) { return cast(document).getUpdatedAt(); }
-    @Override public String documentNumber(Object document) { return cast(document).getPaymentNumber(); }
-    @Override public String documentTitle(Object document) { return cast(document).getParty() == null ? null : cast(document).getParty().getName(); }
-    @Override public String documentUrl(Long id) { return "/payment/" + id; }
 
-    private Payment cast(Object value) { return (Payment) value; }
-    private BigDecimal addRequired(BigDecimal left, BigDecimal right) { if (right == null) throw rule("Payment contains an incomplete allocation"); return left.add(right); }
-    private boolean same(BigDecimal left, BigDecimal right) { return left != null && left.compareTo(right) == 0; }
-    private BusinessRuleException rule(String message) { return new BusinessRuleException(message); }
+    @Override
+    public LocalDateTime approve(Object document, Long actorId) {
+        return cast(document).getUpdatedAt();
+    }
+
+    @Override
+    public Long creatorId(Object document) {
+        return cast(document).getCreatedBy();
+    }
+
+    @Override
+    public LocalDateTime updatedAt(Object document) {
+        return cast(document).getUpdatedAt();
+    }
+
+    @Override
+    public String documentNumber(Object document) {
+        return cast(document).getPaymentNumber();
+    }
+
+    @Override
+    public String documentTitle(Object document) {
+        return cast(document).getParty() == null ? null : cast(document).getParty().getName();
+    }
+
+    @Override
+    public String documentUrl(Long id) {
+        return "/payment/" + id;
+    }
+
+    private Payment cast(Object value) {
+        return (Payment) value;
+    }
+
+    private BigDecimal addRequired(BigDecimal left, BigDecimal right) {
+        if (right == null) throw rule("Payment contains an incomplete allocation");
+        return left.add(right);
+    }
+
+    private boolean same(BigDecimal left, BigDecimal right) {
+        return left != null && left.compareTo(right) == 0;
+    }
+
+    private BusinessRuleException rule(String message) {
+        return new BusinessRuleException(message);
+    }
 }

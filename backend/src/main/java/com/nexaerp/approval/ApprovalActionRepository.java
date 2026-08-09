@@ -8,5 +8,6 @@ import java.util.List;
 
 public interface ApprovalActionRepository extends JpaRepository<ApprovalAction, Long> {
     List<ApprovalAction> findByApprovalRequestIdOrderByCreatedAtAscIdAsc(Long requestId);
+
     Page<ApprovalAction> findByActorUserIdOrderByCreatedAtDesc(Long actorUserId, Pageable pageable);
 }

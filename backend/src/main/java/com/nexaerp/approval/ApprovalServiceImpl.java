@@ -236,7 +236,10 @@ public class ApprovalServiceImpl implements ApprovalService {
     @Transactional(readOnly = true)
     public PageResponseDto<ApprovalRequestResponseDto> myRequests(int p, int s) {
         requireMasterEnabled();
-        return PageResponseDto.from(requestRepository.findByMakerUserIdOrderBySubmittedAtDesc(currentUserService.getCurrentUserId(), PageRequest.of(p, s)).map(r -> toResponse(r, false)));
+        return PageResponseDto.from(requestRepository.
+                findByMakerUserIdOrderBySubmittedAtDesc(currentUserService.
+                        getCurrentUserId(), PageRequest.of(p, s)).
+                map(r -> toResponse(r, false)));
     }
 
     @Override
@@ -402,7 +405,10 @@ public class ApprovalServiceImpl implements ApprovalService {
 
     private void addAction(ApprovalRequest r, ApprovalActionType type, ApprovalStatus from, ApprovalStatus to, String comment, Long actorId) {
         User actor = userRepository.findById(actorId).orElseThrow(() -> rule("Approval actor was not found"));
-        actionRepository.save(ApprovalAction.builder().approvalRequest(r).action(type).actorUserId(actorId).actorNameSnapshot(actor.getName()).fromStatus(from).toStatus(to).comment(comment).build());
+        actionRepository.save(ApprovalAction.builder()
+                .approvalRequest(r).action(type)
+                .actorUserId(actorId).actorNameSnapshot(actor.getName())
+                .fromStatus(from).toStatus(to).comment(comment).build());
     }
 
     private User activeActor() {
@@ -460,10 +466,37 @@ public class ApprovalServiceImpl implements ApprovalService {
             case INVOICE -> "Invoice";
             case PAYMENT -> "Payment";
         };
-        return ApprovalRequestResponseDto.builder().id(r.getId()).entityType(r.getEntityType()).entityId(r.getEntityId()).documentNumber(r.getDocumentNumber()).documentTitle(r.getDocumentTitle()).entityLabel(entityLabel).documentUrl(adapter.documentUrl(r.getEntityId())).makerUserId(r.getMakerUserId()).makerName(maker).status(r.getStatus()).requiredPermission(r.getRequiredPermission()).submittedAt(r.getSubmittedAt()).decidedAt(r.getDecidedAt()).decidedBy(r.getDecidedBy()).decisionComment(r.getDecisionComment()).consumedAt(r.getConsumedAt()).consumedBy(r.getConsumedBy()).supersedesRequestId(r.getSupersedesRequestId()).canDecide(r.getStatus() == ApprovalStatus.PENDING && !r.getMakerUserId().equals(currentUserService.getCurrentUserId()) && authorities().contains(r.getRequiredPermission())).actions(actions ? actionRepository.findByApprovalRequestIdOrderByCreatedAtAscIdAsc(r.getId()).stream().map(this::toAction).toList() : List.of()).build();
+        return ApprovalRequestResponseDto
+                .builder().id(r.getId())
+                .entityType(r.getEntityType())
+                .entityId(r.getEntityId())
+                .documentNumber(r.getDocumentNumber())
+                .documentTitle(r.getDocumentTitle())
+                .entityLabel(entityLabel)
+                .documentUrl(adapter.documentUrl(r.getEntityId()))
+                .makerUserId(r.getMakerUserId()).makerName(maker)
+                .status(r.getStatus())
+                .requiredPermission(r.getRequiredPermission())
+                .submittedAt(r.getSubmittedAt())
+                .decidedAt(r.getDecidedAt())
+                .decidedBy(r.getDecidedBy())
+                .decisionComment(r.getDecisionComment())
+                .consumedAt(r.getConsumedAt())
+                .consumedBy(r.getConsumedBy())
+                .supersedesRequestId(r.getSupersedesRequestId())
+                .canDecide(r.getStatus() == ApprovalStatus.PENDING && !r.getMakerUserId()
+                        .equals(currentUserService.getCurrentUserId()) && authorities()
+                        .contains(r.getRequiredPermission()))
+                .actions(actions ? actionRepository.findByApprovalRequestIdOrderByCreatedAtAscIdAsc(r.getId())
+                                   .stream().map(this::toAction).toList() : List.of()).build();
     }
 
     private ApprovalActionResponseDto toAction(ApprovalAction a) {
-        return ApprovalActionResponseDto.builder().id(a.getId()).approvalRequestId(a.getApprovalRequest().getId()).action(a.getAction()).actorUserId(a.getActorUserId()).actorName(a.getActorNameSnapshot()).fromStatus(a.getFromStatus()).toStatus(a.getToStatus()).comment(a.getComment()).createdAt(a.getCreatedAt()).build();
+        return ApprovalActionResponseDto.builder()
+                .id(a.getId()).approvalRequestId(a.getApprovalRequest()
+                        .getId()).action(a.getAction()).actorUserId(a.getActorUserId())
+                .actorName(a.getActorNameSnapshot()).fromStatus(a.getFromStatus())
+                .toStatus(a.getToStatus()).comment(a.getComment())
+                .createdAt(a.getCreatedAt()).build();
     }
 }

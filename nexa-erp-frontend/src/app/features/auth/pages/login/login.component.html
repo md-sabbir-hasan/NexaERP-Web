@@ -1,114 +1,93 @@
 <div class="auth-shell">
-  <section class="brand-pane">
-    <div class="brand-pane-glow"></div>
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div>
+  <div class="bg-grid"></div>
 
-    <div class="brand-mark">
-      <div class="brand-mark-icon">
+  <div class="glass-card">
+    <div class="brand-row">
+      <div class="brand-icon">
         <i class="bi bi-hexagon-fill"></i>
       </div>
-      <span>NexaERP</span>
+      <span>NexaERP Finance</span>
     </div>
 
-    <div class="brand-copy">
-      <h1>Financial clarity,<br />built in.</h1>
-      <p>
-        One ledger for every transaction — invoices, bills, banking and
-        reconciliation, always in balance.
-      </p>
+    <div class="heading">
+      <span class="eyebrow">Welcome back</span>
+      <h2>Sign in to your workspace</h2>
+      <p>Enter your credentials to continue.</p>
     </div>
 
-    <ul class="brand-highlights">
-      <li>
-        <i class="bi bi-journal-check"></i>
-        <div>
-          <strong>Double-entry accounting</strong>
-          <span>Every posting is validated against your chart of accounts</span>
+    <form [formGroup]="loginForm" (ngSubmit)="submit()" class="login-form">
+      <div class="field">
+        <label for="email">Email address</label>
+        <div class="input-shell">
+          <i class="bi bi-envelope"></i>
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            placeholder="you@company.com"
+            autocomplete="username"
+          />
         </div>
-      </li>
-      <li>
-        <i class="bi bi-bank2"></i>
-        <div>
-          <strong>Bank reconciliation</strong>
-          <span>Match statements against your books with confidence</span>
-        </div>
-      </li>
-      <li>
-        <i class="bi bi-shield-check"></i>
-        <div>
-          <strong>Role-based access</strong>
-          <span>Fine-grained permissions across every module</span>
-        </div>
-      </li>
-    </ul>
-
-    <div class="brand-footer">© {{ currentYear }} NexaERP</div>
-  </section>
-
-  <section class="form-pane">
-    <div class="form-pane-inner">
-      <div class="form-heading">
-        <span class="eyebrow">Welcome back</span>
-        <h2>Sign in to your workspace</h2>
-        <p>Enter your credentials to continue.</p>
+        @if (loginForm.controls.email.touched && loginForm.controls.email.invalid) {
+          <small>A valid email address is required</small>
+        }
       </div>
 
-      <form [formGroup]="loginForm" (ngSubmit)="submit()" class="login-form">
-        <div class="field">
-          <label for="email">Email address</label>
-          <div class="input-shell">
-            <i class="bi bi-envelope"></i>
-            <input
-              id="email"
-              type="email"
-              formControlName="email"
-              placeholder="you@company.com"
-              autocomplete="username"
-            />
-          </div>
-          @if (loginForm.controls.email.touched && loginForm.controls.email.invalid) {
-            <small>A valid email address is required</small>
-          }
+      <div class="field">
+        <div class="field-label-row">
+          <label for="password">Password</label>
+          <a routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
         </div>
-
-        <div class="field">
-          <div class="field-label-row">
-            <label for="password">Password</label>
-            <a routerLink="/forgot-password" class="forgot-link">Forgot password?</a>
-          </div>
-          <div class="input-shell">
-            <i class="bi bi-lock"></i>
-            <input
-              id="password"
-              [type]="showPassword() ? 'text' : 'password'"
-              formControlName="password"
-              placeholder="Enter your password"
-              autocomplete="current-password"
-            />
-            <button type="button" class="ghost-toggle" (click)="togglePassword()" tabindex="-1">
-              <i class="bi" [ngClass]="showPassword() ? 'bi-eye-slash' : 'bi-eye'"></i>
-            </button>
-          </div>
-          @if (loginForm.controls.password.touched && loginForm.controls.password.invalid) {
-            <small>Password is required</small>
-          }
+        <div class="input-shell">
+          <i class="bi bi-lock"></i>
+          <input
+            id="password"
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+          />
+          <button type="button" class="ghost-toggle" (click)="togglePassword()" tabindex="-1">
+            <i class="bi" [ngClass]="showPassword() ? 'bi-eye-slash' : 'bi-eye'"></i>
+          </button>
         </div>
-
-        <button type="submit" class="submit-btn" [disabled]="loading()">
-          @if (!loading()) {
-            <span>Sign in</span>
-            <i class="bi bi-arrow-right"></i>
-          } @else {
-            <span>
-              <i class="bi bi-arrow-repeat spin"></i>
-              Signing in...
-            </span>
-          }
-        </button>
-      </form>
-
-      <div class="form-footnote">
-        Having trouble signing in? Contact your workspace administrator.
+        @if (loginForm.controls.password.touched && loginForm.controls.password.invalid) {
+          <small>Password is required</small>
+        }
       </div>
+
+      <label class="remember-row">
+        <input type="checkbox" formControlName="rememberMe" />
+        <span>Keep me signed in on this device</span>
+      </label>
+
+      <button type="submit" class="submit-btn" [disabled]="loading()">
+        @if (!loading()) {
+          <span>Sign in</span>
+          <i class="bi bi-arrow-right"></i>
+        } @else {
+          <span>
+            <i class="bi bi-arrow-repeat spin"></i>
+            Signing in...
+          </span>
+        }
+      </button>
+    </form>
+
+    <div class="feature-chips">
+      <span><i class="bi bi-journal-check"></i> Double-entry</span>
+      <span><i class="bi bi-bank2"></i> Reconciliation</span>
+      <span><i class="bi bi-shield-check"></i> Role-based access</span>
     </div>
-  </section>
+
+    <div class="form-footnote">
+      <i class="bi bi-shield-lock"></i>
+      Your session is encrypted. Trouble signing in? Contact your workspace administrator.
+    </div>
+  </div>
+
+  <div class="page-footer">© {{ currentYear }} NexaERP</div>
 </div>

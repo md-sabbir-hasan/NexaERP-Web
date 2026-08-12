@@ -27,6 +27,7 @@ export class LoginComponent {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required]],
+      rememberMe: [false],
     });
   }
 
@@ -37,7 +38,8 @@ export class LoginComponent {
     }
 
     this.loading.set(true);
-    this.authService.login(this.loginForm.getRawValue()).subscribe({
+    const { rememberMe, ...credentials } = this.loginForm.getRawValue();
+    this.authService.login(credentials).subscribe({
       next: () => {
         this.loading.set(false);
         void this.router.navigate(['/dashboard']);

@@ -157,7 +157,7 @@
 
                   @if (dashboard.business?.cashConfigured) {
                     <strong class="kpi-value">
-                      {{ dashboard.business?.currencyCode }} {{ displayValues().cashPosition | number: '1.2-2' }}
+                      {{ dashboard.business.currencyCode }} {{ displayValues().cashPosition | number: '1.2-2' }}
                     </strong>
                     <p>Journal-derived closing cash balance.</p>
                   } @else {
@@ -297,6 +297,47 @@
                 </div>
                 <a routerLink="/reports/profit-loss" class="kpi-link" aria-label="View profit and loss report">
                   View report <i class="bi bi-arrow-up-right"></i>
+                </a>
+              </article>
+            }
+
+            @if (canViewCashPosition() && visibleCashAccounts().length > 0) {
+              <article class="kpi-card kpi-card-cash-list">
+                <div class="kpi-card-top">
+                  <div class="kpi-icon">
+                    <i class="bi bi-piggy-bank"></i>
+                  </div>
+
+                  <span class="kpi-status kpi-status-neutral">
+                    {{ visibleCashAccounts().length }}
+                    {{ visibleCashAccounts().length === 1 ? 'account' : 'accounts' }}
+                  </span>
+                </div>
+
+                <div class="kpi-content">
+                  <span class="kpi-label">Cash Position by Account</span>
+
+                  <ul class="cash-account-list">
+                    @for (account of visibleCashAccounts(); track account.id) {
+                      <li>
+                        <span class="cash-account-name">
+                          <i
+                            class="bi"
+                            [ngClass]="account.accountType === 'CASH' ? 'bi-cash-stack' : 'bi-bank'"
+                          ></i>
+                          {{ account.accountName }}
+                        </span>
+                        <span class="cash-account-balance">
+                          {{ account.currency }} {{ account.currentBalance | number: '1.2-2' }}
+                        </span>
+                      </li>
+                    }
+                  </ul>
+                </div>
+
+                <a routerLink="/banking" class="kpi-link" aria-label="View banking">
+                  View banking
+                  <i class="bi bi-arrow-up-right"></i>
                 </a>
               </article>
             }

@@ -8,6 +8,8 @@ import { TokenService } from '../../../../core/services/token.service';
 
 import { NotificationResponse } from '../../../notifications/models/notification.model';
 import { NotificationStore } from '../../../notifications/services/notification.store';
+import { BankAccount } from '../../../banking/models/bank-account.model';
+import { BankAccountService } from '../../../banking/services/bank-account.service';
 import { DashboardSummary, DashboardWorkflowSummary, RecentActivity } from '../../models/dashboard.model';
 import { DashboardService } from '../../services/dashboard.service';
 
@@ -124,6 +126,7 @@ interface DashboardDisplayValues {
 export class DashboardComponent implements OnInit {
   private readonly dashboardService = inject(DashboardService);
   private readonly tokenService = inject(TokenService);
+  private readonly bankAccountService = inject(BankAccountService);
   private readonly notificationStore = inject(NotificationStore);
   private readonly router = inject(Router);
 
@@ -141,11 +144,10 @@ export class DashboardComponent implements OnInit {
   readonly lastUpdatedAt = signal<Date | null>(null);
 
   readonly selectedTrendIndex = signal<number | null>(null);
+  readonly cashAccounts = signal<BankAccount[]>([]);
+  readonly cashAccountsLoading = signal(false);
 
-  /*
-   * Permission values JWT token থেকে load করা হবে।
-   * Dashboard কোথাও role name check করবে না।
-   */
+  
   readonly grantedPermissions = signal<ReadonlySet<string>>(new Set<string>());
 
   readonly displayValues = signal<DashboardDisplayValues>({
@@ -161,7 +163,14 @@ export class DashboardComponent implements OnInit {
   // Permission-based widget visibility
   // =========================================================
 
-  readonly canViewCashPosition = computed(() => this.hasPermission(PERMISSIONS.VIEW_BANKING));
+  readonly canViewCashPosition = computed(() => 
+    this.hasPermission(PERMISSIONS.VIEW_BANKING));
+
+  readonly visibleCashAccounts = computed(() =>
+    this.cashAccounts()
+      .filter((account) => account.isActive)
+      .sort((a, b) => b.currentBalance - a.currentBalance),
+  );
 
   readonly canViewReceivable = computed(() => this.hasPermission(PERMISSIONS.VIEW_INVOICE));
 
@@ -755,6 +764,7 @@ export class DashboardComponent implements OnInit {
     this.loadDashboard();
     this.loadWorkflowSummary();
     this.loadNotifications();
+    this.loadCashAccounts();
   }
 
   // =========================================================
@@ -815,6 +825,7 @@ export class DashboardComponent implements OnInit {
     this.loadDashboard(true);
     this.loadWorkflowSummary();
     this.loadNotifications(true);
+    this.loadCashAccounts();
   }
 
   retryLoad(): void {
@@ -853,6 +864,19 @@ export class DashboardComponent implements OnInit {
       },
       error: () => this.workflowError.set('Approval summary is temporarily unavailable.'),
     });
+  }
+
+
+  private loadCashAccounts(): void {
+    if (!this.canViewCashPosition() || this.cashAccountsLoading()) return;
+    this.cashAccountsLoading.set(true);
+    this.bankAccountService
+      .getAll()
+      .pipe(finalize(() => this.cashAccountsLoading.set(false)))
+      .subscribe({
+        next: (response) => this.cashAccounts.set(response?.data ?? []),
+        error: () => this.cashAccounts.set([]),
+      });
   }
 
   private loadNotifications(force = false): void {

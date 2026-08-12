@@ -449,6 +449,71 @@
   background: rgba(124, 58, 237, 0.1);
 }
 
+.kpi-card-cash-list {
+  grid-column: span 3;
+}
+
+.kpi-card-cash-list::after {
+  background: rgba(8, 145, 178, 0.12);
+}
+
+.kpi-card-cash-list .kpi-icon {
+  color: var(--dashboard-cyan);
+  background: rgba(8, 145, 178, 0.12);
+}
+
+.cash-account-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(148, 163, 184, 0.08);
+  }
+}
+
+.cash-account-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--dashboard-text);
+
+  i {
+    color: var(--dashboard-cyan);
+    font-size: 14px;
+  }
+}
+
+.cash-account-balance {
+  font-size: 13.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--dashboard-text);
+}
+
+@media (max-width: 1199.98px) {
+  .kpi-card-cash-list {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .kpi-card-cash-list {
+    grid-column: span 1;
+  }
+}
+
 .kpi-card-top {
   position: relative;
   z-index: 1;

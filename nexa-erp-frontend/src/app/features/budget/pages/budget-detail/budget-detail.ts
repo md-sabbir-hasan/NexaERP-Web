@@ -84,10 +84,19 @@ export class BudgetDetail implements OnInit {
       next: (res1) => {
         this.accountService.search('', 'REVENUE', true).subscribe({
           next: (res2) => {
-            const merged = [...res1.data, ...res2.data].sort((a, b) => a.code.localeCompare(b.code));
+            const merged = [...res1.data, ...res2.data]
+              .filter((account) => !account.hasChildren)
+              .sort((a, b) => a.code.localeCompare(b.code));
+
             this.budgetableAccounts.set(merged);
           },
+          error: () => {
+            this.alert.error('Failed to load revenue accounts');
+          },
         });
+      },
+      error: () => {
+        this.alert.error('Failed to load expense accounts');
       },
     });
   }
@@ -227,7 +236,9 @@ export class BudgetDetail implements OnInit {
     const budget = this.budget();
     if (!budget) return;
 
-    const confirmed = await this.alert.confirm(`Activate ${budget.budgetNumber}? This will apply spending checks.`);
+    const confirmed = await this.alert.confirm(
+      `Activate ${budget.budgetNumber}? This will apply spending checks.`,
+    );
     if (!confirmed) return;
 
     this.budgetService.activate(budget.id).subscribe({
@@ -259,7 +270,9 @@ export class BudgetDetail implements OnInit {
     const budget = this.budget();
     if (!budget) return;
 
-    const confirmed = await this.alert.confirm(`Delete ${budget.budgetNumber}? This cannot be undone.`);
+    const confirmed = await this.alert.confirm(
+      `Delete ${budget.budgetNumber}? This cannot be undone.`,
+    );
     if (!confirmed) return;
 
     this.budgetService.delete(budget.id).subscribe({

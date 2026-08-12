@@ -6,9 +6,7 @@
       <p>Manage customers, vendors, financial terms and documents.</p>
     </div>
 
-    <a
-    *appHasPermission="'CREATE_PARTY'"
-     routerLink="/party/new" class="new-btn">
+    <a *appHasPermission="'CREATE_PARTY'" routerLink="/party/new" class="new-btn">
       <i class="bi bi-plus-circle-fill"></i>
       New Party
     </a>
@@ -121,27 +119,53 @@
                   </span>
                 </td>
 
-                <td>
+                <td class="actions-cell">
                   <div class="action-group">
+                    <!-- View -->
                     <a
-                    *appHasPermission="'VIEW_PARTY'"
-                     [routerLink]="['/party', party.id]" class="btn-view"> View </a>
+                      *appHasPermission="'VIEW_PARTY'"
+                      [routerLink]="['/party', party.id]"
+                      class="action-btn action-view"
+                      title="View Party"
+                      aria-label="View Party"
+                    >
+                      <i class="bi bi-eye"></i>
+                    </a>
 
                     @if (party.isActive) {
+                      <!-- Edit -->
                       <a
-                       *appHasPermission="'EDIT_PARTY'"
-                       [routerLink]="['/party', party.id, 'edit']" class="btn-edit"> Edit </a>
+                        *appHasPermission="'EDIT_PARTY'"
+                        [routerLink]="['/party', party.id, 'edit']"
+                        class="action-btn action-edit"
+                        title="Edit Party"
+                        aria-label="Edit Party"
+                      >
+                        <i class="bi bi-pencil"></i>
+                      </a>
 
+                      <!-- Disable -->
                       <button
-                       *appHasPermission="'DEACTIVATE_PARTY'"
-                       type="button" class="btn-danger" (click)="deactivate(party)">
-                        Disable
+                        *appHasPermission="'DEACTIVATE_PARTY'"
+                        type="button"
+                        class="action-btn action-disable"
+                        title="Disable Party"
+                        aria-label="Disable Party"
+                        (click)="deactivate(party)"
+                      >
+                        <i class="bi bi-slash-circle"></i>
                       </button>
                     } @else {
+                      <!-- Activate -->
                       <button
-                       *appHasPermission="'DEACTIVATE_PARTY'"
-                       type="button" class="btn-success" (click)="activate(party)">
-                        Activate
+                        *appHasPermission="'DEACTIVATE_PARTY'"
+                        type="button"
+                        class="action-btn action-activate"
+                        title="Activate Party"
+                        aria-label="Activate Party"
+                        (click)="activate(party)"
+                      >
+                        <i class="bi bi-check-circle"></i>
                       </button>
                     }
                   </div>

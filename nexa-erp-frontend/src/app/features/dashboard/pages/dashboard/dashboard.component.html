@@ -157,7 +157,7 @@
 
                   @if (dashboard.business?.cashConfigured) {
                     <strong class="kpi-value">
-                      {{ dashboard.business.currencyCode }} {{ displayValues().cashPosition | number: '1.2-2' }}
+                      {{ dashboard.business?.currencyCode }} {{ displayValues().cashPosition | number: '1.2-2' }}
                     </strong>
                     <p>Journal-derived closing cash balance.</p>
                   } @else {

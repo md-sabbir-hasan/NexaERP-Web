@@ -4,9 +4,17 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 import { AuthService } from '../../auth/auth.service';
+
+import { AuthStore } from '../../auth/auth.store';
+import {
+  QUICK_CREATE_ITEMS,
+  QuickCreateItem,
+} from '../../constants/quick-create.constants';
+
 import { CurrentUser } from '../../models/current-user.model';
 import { NotificationBell } from '../../../features/notifications/components/notification-bell/notification-bell';
 import { GlobalSearch } from '../../../features/global-search/components/global-search/global-search';
+
 
 const PAGE_TITLES: Record<string, string> = {
   dashboard: 'Financial Overview', accounts: 'Chart of Accounts', journals: 'Journal Entries', invoice: 'Invoices',
@@ -30,6 +38,15 @@ export class HeaderComponent {
   readonly pageTitle = signal('Financial Overview');
   readonly breadcrumb = signal<string[]>(['NexaERP', 'Financial Overview']);
   readonly profileOpen = signal(false);
+
+  private readonly authStore = inject(AuthStore);
+  readonly quickCreateOpen = signal(false);
+
+readonly quickCreateItems = computed(() =>
+  QUICK_CREATE_ITEMS.filter(item =>
+    this.authStore.hasPermission(item.permission)
+  )
+);
 
   constructor(private authService: AuthService, private router: Router) {
     this.currentUser = this.authService.currentUser;
@@ -76,6 +93,21 @@ export class HeaderComponent {
     return segment.split('-').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   }
 
-  private closeOverlays(): void { this.profileOpen.set(false); this.globalSearch?.close(); }
+  private closeOverlays(): void {
+  this.profileOpen.set(false);
+  this.quickCreateOpen.set(false);
+  this.globalSearch?.close();
+}
+
+  toggleQuickCreate(): void {
+  this.globalSearch?.close();
+  this.profileOpen.set(false);
+  this.quickCreateOpen.update(open => !open);
+}
+
+openQuickCreate(item: QuickCreateItem): void {
+  this.quickCreateOpen.set(false);
+  void this.router.navigateByUrl(item.route);
+}
 }
 

@@ -11,9 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -84,26 +81,5 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("User activated", null));
     }
 
-    @PostMapping(
-            value = "/profile/image",
-            consumes = "multipart/form-data"
-    )
-    public ResponseEntity<ApiResponse<UserResponseDto>> uploadProfileImage(
-            @RequestPart("file") MultipartFile file,
-            Authentication authentication
-    ) {
 
-        UserResponseDto response =
-                userService.uploadProfileImage(
-                        file,
-                        authentication.getName()
-                );
-
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        "Profile image updated",
-                        response
-                )
-        );
-    }
 }

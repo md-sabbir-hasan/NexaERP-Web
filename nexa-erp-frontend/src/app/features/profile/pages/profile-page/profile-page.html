@@ -1,0 +1,91 @@
+<div class="profile-page">
+  <div class="profile-card">
+    <h1>Profile</h1>
+
+    <div class="avatar-section">
+      <span class="avatar">
+        @if (avatarUrl()) {
+          <img [src]="avatarUrl()" alt="" class="avatar-img" />
+        } @else {
+          <span class="avatar-initials">{{ initials() || '?' }}</span>
+        }
+      </span>
+
+      <input
+        #fileInput
+        type="file"
+        accept="image/jpeg,image/png"
+        class="visually-hidden"
+        (change)="onFileSelected($event)"
+      />
+
+      @if (isPreviewing()) {
+        <div class="photo-actions">
+          <button type="button" class="btn-ghost" (click)="cancelPhotoSelection()">Cancel</button>
+          <button
+            type="button"
+            class="btn-primary"
+            [disabled]="uploadingPhoto()"
+            (click)="confirmUploadPhoto()"
+          >
+            {{ uploadingPhoto() ? 'Uploading...' : 'Upload' }}
+          </button>
+        </div>
+      } @else if (currentUser()?.profileImageUrl) {
+        <div class="photo-actions">
+          <button type="button" class="link-btn" (click)="triggerFileSelect()">
+            <i class="bi bi-camera" aria-hidden="true"></i> Change photo
+          </button>
+          <button
+            type="button"
+            class="link-btn danger"
+            [disabled]="removingPhoto()"
+            (click)="removePhoto()"
+          >
+            {{ removingPhoto() ? 'Removing...' : 'Remove photo' }}
+          </button>
+        </div>
+      } @else {
+        <button type="button" class="link-btn" (click)="triggerFileSelect()">
+          <i class="bi bi-camera" aria-hidden="true"></i> Change photo
+        </button>
+      }
+    </div>
+
+    <div class="identity">
+      <strong>{{ currentUser()?.name }}</strong>
+      <span>{{ currentUser()?.email }}</span>
+    </div>
+
+    <div class="form-fields">
+      <label>
+        <span>Name</span>
+        <input
+          type="text"
+          [ngModel]="name()"
+          (ngModelChange)="onNameChange($event)"
+          placeholder="Your name"
+        />
+      </label>
+
+      <label>
+        <span>Email</span>
+        <input type="text" [value]="currentUser()?.email" disabled />
+      </label>
+
+      <label>
+        <span>Role</span>
+        <input type="text" [value]="displayRole()" disabled />
+      </label>
+    </div>
+
+    <button
+      type="button"
+      class="btn-primary save-btn"
+      [disabled]="!isNameDirty() || savingName()"
+      (click)="saveName()"
+    >
+      {{ savingName() ? 'Saving...' : 'Save Changes' }}
+    </button>
+  </div>
+</div>

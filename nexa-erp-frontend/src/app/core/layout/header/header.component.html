@@ -1,86 +1,100 @@
 ﻿<header class="erp-header">
   <div class="header-primary">
     <div class="context-area">
-      <button type="button" class="sidebar-trigger" aria-label="Toggle navigation menu"
-        (click)="toggleSidebar.emit()"><i class="bi bi-layout-sidebar-inset" aria-hidden="true"></i></button>
+      <button
+        type="button"
+        class="sidebar-trigger"
+        aria-label="Toggle navigation menu"
+        (click)="toggleSidebar.emit()"
+      >
+        <i class="bi bi-layout-sidebar-inset" aria-hidden="true"></i>
+      </button>
       <div class="page-context">
         <nav class="breadcrumb-trail" aria-label="Breadcrumb">
           @for (item of breadcrumb(); track $index; let last = $last) {
-          <span [class.current]="last">{{ item }}</span>@if (!last) { <i class="bi bi-chevron-right"
-            aria-hidden="true"></i> }
+            <span [class.current]="last">{{ item }}</span>
+            @if (!last) {
+              <i class="bi bi-chevron-right" aria-hidden="true"></i>
+            }
           }
         </nav>
         <div class="title-line">
-          <h1>{{ pageTitle() }}</h1><span class="workspace-status"><span class="status-dot"></span>Live workspace</span>
+          <h1>{{ pageTitle() }}</h1>
+          <span class="workspace-status"><span class="status-dot"></span>Live workspace</span>
         </div>
       </div>
     </div>
 
     <div class="command-area">
-      <button #desktopSearchTrigger type="button" class="global-search" aria-label="Open global search"
-        (click)="openGlobalSearch(desktopSearchTrigger)"><i class="bi bi-search" aria-hidden="true"></i><span
-          class="search-placeholder">Search documents, parties, accounts...</span><span class="search-shortcut">Ctrl
-          K</span></button>
-      <button #mobileSearchTrigger type="button" class="mobile-search-trigger" aria-label="Open global search"
-        (click)="openGlobalSearch(mobileSearchTrigger)"><i class="bi bi-search" aria-hidden="true"></i></button>
-
+      <button
+        #desktopSearchTrigger
+        type="button"
+        class="global-search"
+        aria-label="Open global search"
+        (click)="openGlobalSearch(desktopSearchTrigger)"
+      >
+        <i class="bi bi-search" aria-hidden="true"></i
+        ><span class="search-placeholder">Search documents, parties, accounts...</span
+        ><span class="search-shortcut">Ctrl K</span>
+      </button>
+      <button
+        #mobileSearchTrigger
+        type="button"
+        class="mobile-search-trigger"
+        aria-label="Open global search"
+        (click)="openGlobalSearch(mobileSearchTrigger)"
+      >
+        <i class="bi bi-search" aria-hidden="true"></i>
+      </button>
 
       <div class="quick-create">
-  <button
-    type="button"
-    class="quick-action"
-    aria-label="Open quick create menu"
-    aria-haspopup="menu"
-    [attr.aria-expanded]="quickCreateOpen()"
-    (click)="toggleQuickCreate()"
-  >
-    <i class="bi bi-plus-lg" aria-hidden="true"></i>
+        <button
+          type="button"
+          class="quick-action"
+          aria-label="Open quick create menu"
+          aria-haspopup="menu"
+          [attr.aria-expanded]="quickCreateOpen()"
+          (click)="toggleQuickCreate()"
+        >
+          <i class="bi bi-plus-lg" aria-hidden="true"></i>
 
-    <span>Quick create</span>
+          <span>Quick create</span>
 
-    <i
-      class="bi bi-chevron-down action-chevron"
-      [class.rotated]="quickCreateOpen()"
-      aria-hidden="true"
-    ></i>
-  </button>
+          <i
+            class="bi bi-chevron-down action-chevron"
+            [class.rotated]="quickCreateOpen()"
+            aria-hidden="true"
+          ></i>
+        </button>
 
-  @if (quickCreateOpen()) {
-    <div
-      class="quick-create-menu"
-      role="menu"
-      aria-label="Quick create"
-    >
-      @if (quickCreateItems().length > 0) {
-        @for (item of quickCreateItems(); track item.permission) {
-          <button
-            type="button"
-            class="quick-create-item"
-            role="menuitem"
-            (click)="openQuickCreate(item)"
-          >
-            <span class="quick-create-item-icon">
-              <i
-                [class]="'bi ' + item.icon"
-                aria-hidden="true"
-              ></i>
-            </span>
+        @if (quickCreateOpen()) {
+          <div class="quick-create-menu" role="menu" aria-label="Quick create">
+            @if (quickCreateItems().length > 0) {
+              @for (item of quickCreateItems(); track item.permission) {
+                <button
+                  type="button"
+                  class="quick-create-item"
+                  role="menuitem"
+                  (click)="openQuickCreate(item)"
+                >
+                  <span class="quick-create-item-icon">
+                    <i [class]="'bi ' + item.icon" aria-hidden="true"></i>
+                  </span>
 
-            <span class="quick-create-item-label">
-              {{ item.label }}
-            </span>
-          </button>
+                  <span class="quick-create-item-label">
+                    {{ item.label }}
+                  </span>
+                </button>
+              }
+            } @else {
+              <div class="quick-create-empty">
+                <i class="bi bi-lock" aria-hidden="true"></i>
+                <span>No create permissions available</span>
+              </div>
+            }
+          </div>
         }
-      } @else {
-        <div class="quick-create-empty">
-          <i class="bi bi-lock" aria-hidden="true"></i>
-          <span>No create permissions available</span>
-        </div>
-      }
-    </div>
-  }
-</div>
-
+      </div>
 
       <div class="utility-cluster">
         <!-- <button type="button" class="utility-button" title="Theme controls coming soon"><i class="bi bi-brightness-high"
@@ -89,25 +103,65 @@
       </div>
       <span class="header-divider" aria-hidden="true"></span>
       <div class="profile">
-        <button type="button" class="profile-trigger" aria-label="Open user menu" aria-controls="header-profile-menu"
-          [attr.aria-expanded]="profileOpen()" (click)="toggleProfile()">
-          <span class="avatar">@if (initials()) { {{ initials() }} } @else { <i class="bi bi-person"
-              aria-hidden="true"></i> }<span class="presence-dot" aria-hidden="true"></span></span>
-          <span class="profile-copy"><strong>{{ displayName() }}</strong><small>{{ displayRole() }}</small></span>
-          <i class="bi bi-chevron-down profile-chevron" [class.rotated]="profileOpen()" aria-hidden="true"></i>
+        <button
+          type="button"
+          class="profile-trigger"
+          aria-label="Open user menu"
+          aria-controls="header-profile-menu"
+          [attr.aria-expanded]="profileOpen()"
+          (click)="toggleProfile()"
+        >
+          <span class="avatar">
+            @if (avatarUrl()) {
+              <img [src]="avatarUrl()" alt="" class="avatar-img" />
+            } @else if (initials()) {
+              {{ initials() }}
+            } @else {
+              <i class="bi bi-person" aria-hidden="true"></i>
+            }
+            <span class="presence-dot" aria-hidden="true"></span
+          ></span>
+          <span class="profile-copy"
+            ><strong>{{ displayName() }}</strong
+            ><small>{{ displayRole() }}</small></span
+          >
+          <i
+            class="bi bi-chevron-down profile-chevron"
+            [class.rotated]="profileOpen()"
+            aria-hidden="true"
+          ></i>
         </button>
         @if (profileOpen()) {
-        <div id="header-profile-menu" class="profile-menu">
-          <div class="profile-summary"><span class="avatar avatar-large">{{ initials() }}</span>
-            <div><strong>{{ displayName() }}</strong><span>{{ currentUser()?.email }}</span></div>
+          <div id="header-profile-menu" class="profile-menu">
+            <div class="profile-summary">
+              <span class="avatar avatar-large">
+                @if (avatarUrl()) {
+                  <img [src]="avatarUrl()" alt="" class="avatar-img" />
+                } @else {
+                  {{ initials() }}
+                }
+              </span>
+              <div>
+                <strong>{{ displayName() }}</strong
+                ><span>{{ currentUser()?.email }}</span>
+              </div>
+            </div>
+            <div class="role-chip">
+              <i class="bi bi-shield-check" aria-hidden="true"></i>{{ displayRole() }}
+            </div>
+            <div class="menu-section">
+              <button type="button" (click)="goToProfileSettings()">
+                <i class="bi bi-person-gear"></i>Profile settings</button
+              >
+              
+              <!-- <button type="button">
+                <i class="bi bi-sliders"></i>Preferences<span>Coming soon</span>
+              </button> -->
+            </div>
+            <button type="button" class="sign-out" (click)="logout()">
+              <i class="bi bi-box-arrow-right"></i>Sign out
+            </button>
           </div>
-          <div class="role-chip"><i class="bi bi-shield-check" aria-hidden="true"></i>{{ displayRole() }}</div>
-          <div class="menu-section"><button type="button"><i class="bi bi-person-gear"></i>Profile settings<span>Coming
-                soon</span></button><button type="button"><i class="bi bi-sliders"></i>Preferences<span>Coming
-                soon</span></button></div>
-          <button type="button" class="sign-out" (click)="logout()"><i class="bi bi-box-arrow-right"></i>Sign
-            out</button>
-        </div>
         }
       </div>
     </div>

@@ -18,6 +18,7 @@ public class CurrentUserResponseDto {
     private String name;
     private String email;
     private String status;
+    private String profileImageUrl;
     private Set<String> roles;
     private Set<String> permissions;
 }

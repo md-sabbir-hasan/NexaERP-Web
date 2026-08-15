@@ -157,6 +157,7 @@ export class AuthService {
       name: profile.name,
       email: profile.email,
       status: profile.status,
+      profileImageUrl: profile.profileImageUrl ?? null,
       roles: profile.roles,
       permissions: profile.permissions,
     };

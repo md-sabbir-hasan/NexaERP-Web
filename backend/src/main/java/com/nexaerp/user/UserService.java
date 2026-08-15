@@ -26,9 +26,4 @@ public interface UserService {
 
     void deactivate(Long id, String currentUserEmail);
     void activate(Long id);
-
-    UserResponseDto uploadProfileImage(
-            MultipartFile file,
-            String currentUserEmail
-    );
 }

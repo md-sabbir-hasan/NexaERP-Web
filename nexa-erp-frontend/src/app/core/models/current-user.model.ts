@@ -3,6 +3,7 @@ export interface CurrentUser {
   name: string;
   email: string;
   status: string;
+  profileImageUrl: string | null;
   roles: string[];
   permissions: string[];
 }

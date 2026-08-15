@@ -46,6 +46,11 @@ public class User extends BaseEntity {
     private String inviteToken;
     private LocalDateTime inviteExpiry;
 
+    // Profile
+    @Column(name = "profile_image_url", length = 500)
+    private String profileImageUrl;
+
+
     // Future multi-company support
     private Long companyId;
 

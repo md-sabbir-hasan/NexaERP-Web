@@ -9,6 +9,7 @@ import com.nexaerp.role.Role;
 import com.nexaerp.role.RoleRepository;
 import com.nexaerp.user.dto.UserRequestDto;
 import com.nexaerp.user.dto.UserResponseDto;
+import com.nexaerp.user.profile.ProfileImageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +34,7 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private final AuditLogService auditLogService;
     private final AuthService authService;
+    private final ProfileImageService profileImageService;
 
 
     @Override
@@ -249,6 +252,44 @@ public class UserServiceImpl implements UserService {
     }
 
 
+    @Override
+    @Transactional
+    public UserResponseDto uploadProfileImage(
+            MultipartFile file,
+            String currentUserEmail
+    ) {
+
+        User user = userRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found")
+                );
+
+        String oldImageUrl = user.getProfileImageUrl();
+
+        String newImageUrl =
+                profileImageService.upload(user.getId(), file);
+
+        user.setProfileImageUrl(newImageUrl);
+
+        User saved = userRepository.save(user);
+
+        // Delete old image after successful update
+        if (oldImageUrl != null && !oldImageUrl.isBlank()) {
+            profileImageService.delete(oldImageUrl);
+        }
+
+        auditLogService.log(
+                AuditAction.UPDATED,
+                "USER",
+                user.getId(),
+                oldImageUrl,
+                newImageUrl
+        );
+
+        return toResponse(saved);
+    }
+
+
                                       // --Private Helper---++++##
 
 
@@ -283,6 +324,7 @@ public class UserServiceImpl implements UserService {
                 .createdAt(user.getCreatedAt())
                 .roles(roleNames)
                 .permissions(permissions)
+                .profileImageUrl(user.getProfileImageUrl())
                 .build();
     }
 

@@ -23,4 +23,5 @@ public class UserResponseDto {
     private LocalDateTime createdAt;
     private Set<String> roles;        // Role names
     private Set<String> permissions;  // Permission codes
+    private String profileImageUrl;
 }

@@ -3,6 +3,7 @@ package com.nexaerp.user;
 import com.nexaerp.common.response.PageResponseDto;
 import com.nexaerp.user.dto.UserRequestDto;
 import com.nexaerp.user.dto.UserResponseDto;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -25,4 +26,9 @@ public interface UserService {
 
     void deactivate(Long id, String currentUserEmail);
     void activate(Long id);
+
+    UserResponseDto uploadProfileImage(
+            MultipartFile file,
+            String currentUserEmail
+    );
 }

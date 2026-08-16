@@ -1,11 +1,11 @@
 export type DebitNoteStatus = 'DRAFT' | 'APPROVED' | 'POSTED' | 'CANCELLED';
 
 export type DebitNoteReason =
-  | 'PURCHASE_RETURN'
+  | 'SALES_RETURN'
   | 'PRICE_ADJUSTMENT'
-  | 'BILL_CORRECTION'
+  | 'POST_INVOICE_DISCOUNT'
+  | 'BILLING_ERROR'
   | 'VAT_ADJUSTMENT'
-  | 'QUALITY_REJECTION'
   | 'OTHER';
 
 export type DebitNoteCancelledReason =

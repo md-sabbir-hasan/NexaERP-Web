@@ -46,27 +46,39 @@
     </button>
 
     @if (invoice()!.status === 'DRAFT' && !hasActiveApproval(invoice()!)) {
-    <a *appHasPermission="'EDIT_INVOICE'" [routerLink]="['/invoice', invoice()!.id, 'edit']" class="btn-edit">
 
-      <i class="bi bi-pencil"></i>
-      Edit
-    </a>
+  <a
+    *appHasPermission="'EDIT_INVOICE'"
+    [routerLink]="['/invoice', invoice()!.id, 'edit']"
+    class="btn-edit"
+  >
+    <i class="bi bi-pencil"></i>
+    Edit
+  </a>
 
-    @if (canSubmitApproval(invoice()!)) {
-    <button type="button" class="btn-post" (click)="submitForApproval()">
+  @if (canSubmitApproval(invoice()!)) {
+    <button
+      type="button"
+      class="btn-post"
+      (click)="submitForApproval()"
+    >
       <i class="bi bi-send"></i>
       Submit for Approval
     </button>
-    }
+  }
+}
 
-    @if (canPost(invoice()!)) {
-    <button *appHasPermission="'POST_INVOICE'" type="button" class="btn-post" (click)="postInvoice()">
-
-      <i class="bi bi-check-circle"></i>
-      Post
-    </button>
-    }
-    }
+@if (invoice()!.status === 'DRAFT' && canPost(invoice()!)) {
+  <button
+    *appHasPermission="'POST_INVOICE'"
+    type="button"
+    class="btn-post"
+    (click)="postInvoice()"
+  >
+    <i class="bi bi-check-circle"></i>
+    Post
+  </button>
+}
 
     @if (invoice()!.status === 'DRAFT' || invoice()!.status === 'POSTED' || invoice()!.status === 'PARTIAL') {
     <button *appHasPermission="'CANCEL_INVOICE'" type="button" class="btn-danger" (click)="cancelInvoice()">

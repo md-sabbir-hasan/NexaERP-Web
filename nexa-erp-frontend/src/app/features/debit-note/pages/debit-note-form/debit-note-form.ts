@@ -45,11 +45,11 @@ export class DebitNoteForm implements OnInit {
   readonly editingId = signal<number | null>(null);
 
   readonly reasons: DebitNoteReason[] = [
-    'PURCHASE_RETURN',
+    'SALES_RETURN',
     'PRICE_ADJUSTMENT',
-    'BILL_CORRECTION',
+    'POST_INVOICE_DISCOUNT',
+    'BILLING_ERROR',
     'VAT_ADJUSTMENT',
-    'QUALITY_REJECTION',
     'OTHER',
   ];
 
@@ -57,7 +57,7 @@ export class DebitNoteForm implements OnInit {
     vendorBillId: [0, [Validators.required, Validators.min(1)]],
     debitNoteDate: [this.today(), Validators.required],
     postingDate: [this.today(), Validators.required],
-    reason: ['PURCHASE_RETURN' as DebitNoteReason, Validators.required],
+    reason: ['SALES_RETURN' as DebitNoteReason, Validators.required],
     reference: [''],
     notes: [''],
     items: this.fb.array<DebitItemForm>([]),

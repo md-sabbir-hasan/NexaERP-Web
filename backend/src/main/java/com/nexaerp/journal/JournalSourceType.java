@@ -2,6 +2,7 @@ package com.nexaerp.journal;
 
 public enum JournalSourceType {
     MANUAL,
+    OPENING_BALANCE,
     INVOICE,
     VENDOR_BILL,
     PAYMENT,

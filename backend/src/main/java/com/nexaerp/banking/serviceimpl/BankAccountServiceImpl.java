@@ -2,6 +2,8 @@ package com.nexaerp.banking.serviceimpl;
 
 import com.nexaerp.account.Account;
 import com.nexaerp.account.AccountRepository;
+import com.nexaerp.account.AccountType;
+import com.nexaerp.accountingperiod.AccountingPeriodService;
 import com.nexaerp.banking.dto.BankAccountRequestDto;
 import com.nexaerp.banking.dto.BankAccountResponseDto;
 import com.nexaerp.banking.entity.BankAccount;
@@ -11,6 +13,8 @@ import com.nexaerp.banking.services.BankAccountService;
 import com.nexaerp.common.exception.BusinessRuleException;
 import com.nexaerp.common.exception.ResourceNotFoundException;
 import com.nexaerp.journal.*;
+import com.nexaerp.settings.SettingKey;
+import com.nexaerp.settings.SystemSettingsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,10 +32,37 @@ public class BankAccountServiceImpl implements BankAccountService {
     private final AccountRepository accountRepository;
     private final JournalEntryRepository journalEntryRepository;
     private final JournalLineRepository journalLineRepository;
+    private final SystemSettingsService systemSettingsService;
+    private final AccountingPeriodService accountingPeriodService;
 
     @Override
     @Transactional
     public BankAccountResponseDto create(BankAccountRequestDto request) {
+
+        BigDecimal openingBalance = request.getOpeningBalance() != null
+                ? request.getOpeningBalance()
+                : BigDecimal.ZERO;
+
+        if (openingBalance.compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessRuleException(
+                    "Opening balance cannot be negative for a bank/cash account"
+            );
+        }
+
+        if (request.getCoaAccountId() == null) {
+            throw new BusinessRuleException(
+                    "Linked COA account is required"
+            );
+        }
+
+        // Validate linked COA before creating BankAccount
+        Account coaAccount = accountRepository.findById(request.getCoaAccountId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("COA account not found"));
+
+        validateBankCoaAccount(coaAccount);
+
+
         BankAccount account = BankAccount.builder()
                 .accountName(request.getAccountName())
                 .accountNumber(request.getAccountNumber())
@@ -143,9 +174,9 @@ public class BankAccountServiceImpl implements BankAccountService {
         Account coaAccount = accountRepository.findById(bankAccount.getCoaAccountId())
                 .orElseThrow(() -> new ResourceNotFoundException("COA account not found"));
 
-        Account openingEquity = accountRepository.findByCode("3100")
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Opening Balance Equity account not found"));
+        Account openingEquity = systemSettingsService.getAccount(
+                SettingKey.DEFAULT_OPENING_EQUITY
+        );
 
         JournalEntry entry = new JournalEntry();
         entry.setEntryNumber(generateJournalNumber());
@@ -153,7 +184,7 @@ public class BankAccountServiceImpl implements BankAccountService {
         entry.setDescription("Opening Balance - " + bankAccount.getAccountName());
         entry.setType(JournalEntryType.GENERAL);
         entry.setStatus(JournalStatus.POSTED);
-        entry.setSourceType(JournalSourceType.MANUAL);
+        entry.setSourceType(JournalSourceType.OPENING_BALANCE);
         entry.setReferenceNumber(entry.getEntryNumber());
         entry.setTotalAmount(bankAccount.getOpeningBalance());
 
@@ -188,6 +219,7 @@ public class BankAccountServiceImpl implements BankAccountService {
         accountRepository.save(openingEquity);
     }
 
+
     private String generateJournalNumber() {
         return journalEntryRepository.findTopByOrderByIdDesc()
                 .map(last -> {
@@ -196,6 +228,21 @@ public class BankAccountServiceImpl implements BankAccountService {
                     return String.format("JE-%04d", next);
                 })
                 .orElse("JE-0001");
+    }
+
+    private void validateBankCoaAccount(Account account) {
+
+        if (!Boolean.TRUE.equals(account.getIsActive())) {
+            throw new BusinessRuleException(
+                    "Linked COA account is inactive"
+            );
+        }
+
+        if (account.getType() != AccountType.ASSET) {
+            throw new BusinessRuleException(
+                    "Bank/Cash account must be linked to an ASSET account"
+            );
+        }
     }
 
     private BankAccountResponseDto toResponse(BankAccount account) {

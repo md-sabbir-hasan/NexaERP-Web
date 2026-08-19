@@ -15,6 +15,7 @@ public class InvoiceItemResponseDto {
     private String description;
     private BigDecimal quantity;
     private BigDecimal unitPrice;
+    private String unit;
     private BigDecimal discountPercent;
     private BigDecimal discountAmount;
     private BigDecimal vatRate;

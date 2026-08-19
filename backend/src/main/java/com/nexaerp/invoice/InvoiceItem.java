@@ -33,6 +33,8 @@ public class InvoiceItem {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal unitPrice;
 
+    private String unit;
+
     @Column(precision = 19, scale = 2)
     private BigDecimal discountPercent = BigDecimal.ZERO;
 

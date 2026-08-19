@@ -4,6 +4,13 @@
       <span class="eyebrow">Sales Invoice</span>
       <h1>{{ invoiceId ? 'Edit Invoice' : 'New Invoice' }}</h1>
       <p>Create customer invoices with live VAT, discount and total calculation.</p>
+
+      @if (invoiceNumber()) {
+        <span class="invoice-number-badge">
+          <i class="bi bi-hash"></i>
+          {{ invoiceNumber() }}
+        </span>
+      }
     </div>
 
     <a routerLink="/invoice" class="back-btn">
@@ -33,11 +40,32 @@
             <select formControlName="partyId" (change)="onCustomerChange()">
               <option [ngValue]="null">Select customer</option>
               @for (customer of customers(); track customer.id) {
-                <option [ngValue]="customer.id">
-                  {{ customer.code }} - {{ customer.name }}
-                </option>
+                <option [ngValue]="customer.id">{{ customer.code }} - {{ customer.name }}</option>
               }
             </select>
+
+            @if (selectedCustomer(); as customer) {
+              <div class="customer-preview">
+                <div class="customer-preview-row">
+                  <i class="bi bi-geo-alt"></i>
+                  <span>{{ getCustomerAddress(customer) }}</span>
+                </div>
+                <div class="customer-preview-row">
+                  <i class="bi bi-telephone"></i>
+                  <span>{{ customer.phone || customer.mobile || 'No phone on file' }}</span>
+                </div>
+                <div class="customer-preview-stats">
+                  <div>
+                    <span>Credit Limit</span>
+                    <strong>{{ customer.creditLimit | number: '1.2-2' }}</strong>
+                  </div>
+                  <div>
+                    <span>Opening Balance</span>
+                    <strong>{{ customer.openingBalance | number: '1.2-2' }}</strong>
+                  </div>
+                </div>
+              </div>
+            }
           </div>
 
           <div class="form-group">
@@ -47,22 +75,46 @@
 
           <div class="form-group">
             <label>Payment Terms</label>
-            <input type="number" formControlName="paymentTerms" min="0" />
+
+            <div class="input-with-suffix">
+              <input type="number" formControlName="paymentTerms" min="0" step="1" />
+              <span>Days</span>
+            </div>
+
+            <span class="field-hint"> Number of days allowed for payment </span>
+          </div>
+
+          <div class="form-group">
+            <label>Due Date</label>
+            <input type="date" [value]="getDueDate()" disabled />
+            <span class="field-hint">Auto-calculated from invoice date + payment terms</span>
           </div>
 
           <div class="form-group">
             <label>Currency</label>
-            <input type="text" formControlName="currencyCode" />
+            <select formControlName="currencyCode">
+              <option value="BDT">BDT - Bangladeshi Taka</option>
+              <option value="USD">USD - US Dollar</option>
+              <option value="EUR">EUR - Euro</option>
+            </select>
           </div>
 
           <div class="form-group full">
             <label>Reference</label>
-            <input type="text" formControlName="reference" placeholder="PO / Contract / Reference no" />
+            <input
+              type="text"
+              formControlName="reference"
+              placeholder="PO / Contract / Reference no"
+            />
           </div>
 
           <div class="form-group full">
             <label>Notes</label>
-            <textarea formControlName="notes" rows="3" placeholder="Internal or customer-facing notes"></textarea>
+            <textarea
+              formControlName="notes"
+              rows="3"
+              placeholder="Internal or customer-facing notes"
+            ></textarea>
           </div>
         </div>
       </section>
@@ -84,6 +136,7 @@
           <div class="item-head">
             <span>Description</span>
             <span>Qty</span>
+            <span>Unit</span>
             <span>Unit Price</span>
             <span>Disc %</span>
             <span>VAT %</span>
@@ -93,42 +146,20 @@
 
           @for (item of items.controls; track $index) {
             <div class="item-row" [formGroupName]="$index">
-              <input
-                type="text"
-                formControlName="description"
-                placeholder="Item description"
-              />
+              <input type="text" formControlName="description" placeholder="Item description" />
 
-              <input
-                type="number"
-                formControlName="quantity"
-                min="0.01"
-                step="0.01"
-              />
+              <input type="number" formControlName="quantity" min="0.01" step="0.01" />
 
-              <input
-                type="number"
-                formControlName="unitPrice"
-                min="0"
-                step="0.01"
-              />
+              <input type="text" formControlName="unit" placeholder="pcs" list="unit-suggestions" />
 
-              <input
-                type="number"
-                formControlName="discountPercent"
-                min="0"
-                step="0.01"
-              />
+              <input type="number" formControlName="unitPrice" min="0" step="0.01" />
 
-              <input
-                type="number"
-                formControlName="vatRate"
-                min="0"
-                step="0.01"
-              />
+              <input type="number" formControlName="discountPercent" min="0" step="0.01" />
+
+              <input type="number" formControlName="vatRate" min="0" step="0.01" />
 
               <div class="line-total">
-                {{ getLineTotal($index) | number:'1.2-2' }}
+                {{ getLineTotal($index) | number: '1.2-2' }}
               </div>
 
               <button class="remove-btn" type="button" (click)="removeItem($index)">
@@ -137,6 +168,64 @@
             </div>
           }
         </div>
+
+        <datalist id="unit-suggestions">
+          <option value="pcs"></option>
+          <option value="hrs"></option>
+          <option value="days"></option>
+          <option value="month"></option>
+          <option value="session"></option>
+          <option value="kg"></option>
+          <option value="unit"></option>
+        </datalist>
+      </section>
+
+      <section class="header-section attachment-section">
+        <div class="section-title">
+          <div>
+            <h2>Attachment</h2>
+            <p>Attach a PO, contract or reference document (PDF, JPEG, PNG, max 10MB)</p>
+          </div>
+        </div>
+
+        <div class="attachment-row">
+          <label class="attachment-upload-btn">
+            <i class="bi bi-paperclip"></i>
+
+            {{
+              uploadingAttachment()
+                ? 'Uploading...'
+                : attachmentName()
+                  ? 'Replace file'
+                  : 'Choose file'
+            }}
+
+            <input
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              [disabled]="uploadingAttachment()"
+              (change)="onAttachmentSelected($event)"
+            />
+          </label>
+
+          @if (attachmentName()) {
+            <span class="attachment-file">
+              <i class="bi bi-file-earmark-check"></i>
+
+              {{ attachmentName() }}
+
+              @if (attachmentUrl()) {
+                <a [href]="attachmentUrl()" target="_blank" rel="noopener"> View </a>
+              }
+            </span>
+          }
+        </div>
+
+        @if (!invoiceId && pendingAttachment) {
+          <span class="field-hint">
+            Attachment will be uploaded automatically when the invoice is saved.
+          </span>
+        }
       </section>
 
       <section class="bottom-section">
@@ -144,29 +233,31 @@
           <i class="bi bi-info-circle"></i>
           <div>
             <strong>Accounting Note</strong>
-            <span>Posting will create Accounts Receivable, Sales Revenue and VAT journal entries.</span>
+            <span
+              >Posting will create Accounts Receivable, Sales Revenue and VAT journal entries.</span
+            >
           </div>
         </div>
 
         <div class="summary-card">
           <div>
             <span>Subtotal</span>
-            <strong>{{ getSubTotal() | number:'1.2-2' }}</strong>
+            <strong>{{ getSubTotal() | number: '1.2-2' }}</strong>
           </div>
 
           <div>
             <span>Discount</span>
-            <strong>{{ getDiscountTotal() | number:'1.2-2' }}</strong>
+            <strong>{{ getDiscountTotal() | number: '1.2-2' }}</strong>
           </div>
 
           <div>
             <span>VAT</span>
-            <strong>{{ getVatTotal() | number:'1.2-2' }}</strong>
+            <strong>{{ getVatTotal() | number: '1.2-2' }}</strong>
           </div>
 
           <div class="grand-total">
             <span>Grand Total</span>
-            <strong>{{ getGrandTotal() | number:'1.2-2' }}</strong>
+            <strong>{{ getGrandTotal() | number: '1.2-2' }}</strong>
           </div>
         </div>
       </section>

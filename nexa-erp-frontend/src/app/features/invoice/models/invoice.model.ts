@@ -8,6 +8,7 @@ export interface InvoiceItem {
   description: string;
   quantity: number;
   unitPrice: number;
+  unit: string | null;
   discountPercent: number;
   discountAmount: number;
   vatRate: number;
@@ -40,6 +41,7 @@ export interface Invoice {
   cancelledReason: CancelledReason | null;
   pdfGenerated: boolean;
   printCount: number;
+  attachmentUrl: string | null;
 
   subTotal: number;
   discountAmount: number;
@@ -66,6 +68,7 @@ export interface InvoiceItemRequest {
   description: string;
   quantity: number;
   unitPrice: number;
+  unit: string | null;
   discountPercent: number;
   vatRate: number;
 }

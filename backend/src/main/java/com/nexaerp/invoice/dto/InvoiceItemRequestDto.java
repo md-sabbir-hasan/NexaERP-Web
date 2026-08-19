@@ -3,6 +3,7 @@ package com.nexaerp.invoice.dto;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,6 +29,9 @@ public class InvoiceItemRequestDto {
     @NotNull(message = "Unit price is required")
     @DecimalMin(value = "0.0")
     private BigDecimal unitPrice;
+
+    @Size(max = 20, message = "Unit must be at most 20 characters")
+    private String unit;
 
     private BigDecimal discountPercent = BigDecimal.ZERO;
     private BigDecimal vatRate = BigDecimal.ZERO;

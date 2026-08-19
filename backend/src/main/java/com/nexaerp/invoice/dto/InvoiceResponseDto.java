@@ -29,6 +29,7 @@ public class InvoiceResponseDto {
     private CancelledReason cancelledReason;
     private Boolean pdfGenerated;
     private Integer printCount;
+    private String attachmentUrl;
 
     // Totals
     private BigDecimal subTotal;

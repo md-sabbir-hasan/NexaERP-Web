@@ -44,12 +44,28 @@ export class InvoiceService {
   }
 
   submitForApproval(id: number): Observable<ApiResponse<ApprovalRequest>> {
-    return this.http.post<ApiResponse<ApprovalRequest>>(`${this.baseUrl}/${id}/submit-approval`, {});
+    return this.http.post<ApiResponse<ApprovalRequest>>(
+      `${this.baseUrl}/${id}/submit-approval`,
+      {},
+    );
   }
 
   cancel(id: number, reason: CancelledReason): Observable<ApiResponse<Invoice>> {
     const params = new HttpParams().set('reason', reason);
 
     return this.http.post<ApiResponse<Invoice>>(`${this.baseUrl}/${id}/cancel`, {}, { params });
+  }
+
+  uploadAttachment(
+    id: number,
+    file: File,
+  ): Observable<ApiResponse<{ fileUrl: string; originalName: string }>> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.post<ApiResponse<{ fileUrl: string; originalName: string }>>(
+      `${this.baseUrl}/${id}/attachment`,
+      formData,
+    );
   }
 }

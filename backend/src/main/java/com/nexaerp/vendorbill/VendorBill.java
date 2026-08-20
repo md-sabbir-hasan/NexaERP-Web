@@ -53,6 +53,7 @@ public class VendorBill extends BaseEntity {
 
     private String referenceId;
     private String notes;
+    private String attachmentUrl;
 
     @Enumerated(EnumType.STRING)
     private VendorBillCancelledReason cancelledReason;

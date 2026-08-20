@@ -365,3 +365,123 @@
     width: 100%;
   }
 }
+
+
+
+// new styles for vendor bill form
+.bill-number-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, .14);
+  border-radius: 10px;
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: .04em;
+}
+
+.field-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.vendor-preview {
+  margin-top: 12px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+
+  .vendor-preview-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #475569;
+    font-size: 13.5px;
+    margin-bottom: 6px;
+
+    i {
+      color: #64748b;
+    }
+  }
+
+  .vendor-preview-stats {
+    display: flex;
+    gap: 24px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #e2e8f0;
+
+    div {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    span {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: #94a3b8;
+      font-weight: 700;
+    }
+
+    strong {
+      color: #0f172a;
+      font-size: 15px;
+      font-weight: 900;
+    }
+  }
+}
+
+.attachment-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .attachment-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .attachment-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 16px;
+    border-radius: 12px;
+    border: 1px dashed #94a3b8;
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 800;
+    cursor: pointer;
+
+    input[type="file"] {
+      display: none;
+    }
+  }
+
+  .attachment-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border-radius: 12px;
+    background: #ecfdf5;
+    color: #065f46;
+    font-weight: 800;
+    text-decoration: none;
+    font-size: 13.5px;
+  }
+
+  .attachment-locked {
+    color: #94a3b8;
+    font-size: 13.5px;
+  }
+}

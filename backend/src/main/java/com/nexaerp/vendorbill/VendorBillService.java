@@ -1,7 +1,9 @@
 package com.nexaerp.vendorbill;
 
+import com.nexaerp.fileupload.dto.FileUploadResponseDto;
 import com.nexaerp.vendorbill.dto.VendorBillRequestDto;
 import com.nexaerp.vendorbill.dto.VendorBillResponseDto;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -25,5 +27,8 @@ public interface VendorBillService {
     VendorBillResponseDto post(Long id);
 
     VendorBillResponseDto cancel(Long id, VendorBillCancelledReason reason);
+
+    FileUploadResponseDto uploadAttachment(Long id, MultipartFile file);
+
 
 }

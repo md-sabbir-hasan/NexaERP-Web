@@ -54,20 +54,32 @@ export class VendorBillService {
   }
 
   submitForApproval(id: number): Observable<ApiResponse<ApprovalRequest>> {
-    return this.http.post<ApiResponse<ApprovalRequest>>(`${this.baseUrl}/${id}/submit-approval`, {});
+    return this.http.post<ApiResponse<ApprovalRequest>>(
+      `${this.baseUrl}/${id}/submit-approval`,
+      {},
+    );
   }
 
   post(id: number): Observable<ApiResponse<VendorBill>> {
     return this.http.post<ApiResponse<VendorBill>>(`${this.baseUrl}/${id}/post`, {});
   }
 
+  uploadAttachment(
+    id: number,
+    file: File,
+  ): Observable<ApiResponse<{ fileUrl: string; originalName: string }>> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.post<ApiResponse<{ fileUrl: string; originalName: string }>>(
+      `${this.baseUrl}/${id}/attachment`,
+      formData,
+    );
+  }
+
   cancel(id: number, reason: VendorBillCancelledReason): Observable<ApiResponse<VendorBill>> {
     const params = new HttpParams().set('reason', reason);
 
-    return this.http.post<ApiResponse<VendorBill>>(
-      `${this.baseUrl}/${id}/cancel`,
-      {},
-      { params },
-    );
+    return this.http.post<ApiResponse<VendorBill>>(`${this.baseUrl}/${id}/cancel`, {}, { params });
   }
 }

@@ -1,22 +1,10 @@
-export type VendorBillStatus =
-  | 'DRAFT'
-  | 'APPROVED'
-  | 'POSTED'
-  | 'PARTIAL'
-  | 'PAID'
-  | 'CANCELLED';
+export type VendorBillStatus = 'DRAFT' | 'APPROVED' | 'POSTED' | 'PARTIAL' | 'PAID' | 'CANCELLED';
 
 export type VendorBillType = 'EXPENSE' | 'PURCHASE' | 'SERVICE' | 'ASSET';
 
-export type VendorBillReferenceType =
-  | 'PURCHASE_ORDER'
-  | 'GOODS_RECEIPT'
-  | 'MANUAL';
+export type VendorBillReferenceType = 'PURCHASE_ORDER' | 'GOODS_RECEIPT' | 'MANUAL';
 
-export type VendorBillCancelledReason =
-  | 'VENDOR_REQUESTED'
-  | 'WRONG_ENTRY'
-  | 'DUPLICATE_ENTRY';
+export type VendorBillCancelledReason = 'VENDOR_REQUESTED' | 'WRONG_ENTRY' | 'DUPLICATE_ENTRY';
 
 export interface BudgetWarning {
   budgetId: number;
@@ -45,6 +33,7 @@ export interface VendorBillItem {
   description: string;
   quantity: number;
   unitPrice: number;
+  unit: string | null;
   discountPercent: number;
   discountAmount: number;
   vatRate: number;
@@ -72,6 +61,7 @@ export interface VendorBill {
   referenceType: VendorBillReferenceType;
   referenceId: string | null;
   notes: string | null;
+  attachmentUrl: string | null;
   cancelledReason: VendorBillCancelledReason | null;
   subTotal: number;
   discountAmount: number;
@@ -101,6 +91,7 @@ export interface VendorBillItemRequest {
   description: string;
   quantity: number;
   unitPrice: number;
+  unit: string | null;
   discountPercent: number;
   vatRate: number;
   tdsRate: number;

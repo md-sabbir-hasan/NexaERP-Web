@@ -51,6 +51,7 @@ public class VendorBillResponseDto {
 
     // Additional info
     private String notes;
+    private String attachmentUrl;
     private VendorBillCancelledReason cancelledReason;
 
     private BigDecimal subTotal;

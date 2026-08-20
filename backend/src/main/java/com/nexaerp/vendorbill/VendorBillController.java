@@ -2,6 +2,7 @@ package com.nexaerp.vendorbill;
 
 
 import com.nexaerp.common.response.ApiResponse;
+import com.nexaerp.fileupload.dto.FileUploadResponseDto;
 import com.nexaerp.vendorbill.dto.VendorBillRequestDto;
 import com.nexaerp.vendorbill.dto.VendorBillResponseDto;
 import com.nexaerp.approval.ApprovalService;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -112,5 +114,18 @@ public class VendorBillController {
             @RequestParam VendorBillCancelledReason reason) {
         return ResponseEntity.ok(ApiResponse.success("Vendor bill cancelled",
                 vendorBillService.cancel(id, reason)));
+    }
+
+
+    @PostMapping("/{id}/attachment")
+    @PreAuthorize("hasAuthority('EDIT_VENDOR_BILL')")
+    public ResponseEntity<ApiResponse<FileUploadResponseDto>> uploadAttachment(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file) {
+
+        FileUploadResponseDto response = vendorBillService.uploadAttachment(id, file);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Attachment uploaded", response));
     }
 }

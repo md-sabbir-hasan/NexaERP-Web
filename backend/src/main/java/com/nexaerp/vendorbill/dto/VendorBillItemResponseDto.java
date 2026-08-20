@@ -26,6 +26,7 @@ public class VendorBillItemResponseDto {
     private String description;
     private BigDecimal quantity;
     private BigDecimal unitPrice;
+    private String unit;
 
     // Discount
     private BigDecimal discountPercent;

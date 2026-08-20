@@ -14,6 +14,8 @@ import com.nexaerp.common.exception.ResourceNotFoundException;
 import com.nexaerp.costcenter.CostCenter;
 import com.nexaerp.costcenter.CostCenterService;
 import com.nexaerp.email.BudgetAlertEmailService;
+import com.nexaerp.fileupload.FileUploadService;
+import com.nexaerp.fileupload.dto.FileUploadResponseDto;
 import com.nexaerp.journal.*;
 import com.nexaerp.notification.NotificationService;
 import com.nexaerp.notification.NotificationModule;
@@ -34,6 +36,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -69,6 +72,7 @@ public class VendorBillServiceImpl implements VendorBillService {
     private final BudgetAlertEmailService budgetAlertEmailService;
     private final CostCenterService costCenterService;
     private final ApprovalService approvalService;
+    private final FileUploadService fileUploadService;
 
 
     @Override
@@ -432,6 +436,22 @@ public class VendorBillServiceImpl implements VendorBillService {
     }
 
 
+    @Override
+    @Transactional
+    public FileUploadResponseDto uploadAttachment(Long id, MultipartFile file) {
+        VendorBill bill = vendorBillRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Vendor bill not found"));
+        approvalService.assertVendorBillChangeAllowed(id);
+        if (bill.getStatus() != VendorBillStatus.DRAFT) {
+            throw new BusinessRuleException("Only DRAFT vendor bills can be updated");
+        }
+        FileUploadResponseDto response = fileUploadService.upload(file, "VENDOR_BILL", id);
+        bill.setAttachmentUrl(response.getFileUrl());
+        vendorBillRepository.save(bill);
+        return response;
+    }
+
+
     // ---Privet Helpers---
     private VendorBillItem buildItem(VendorBillItemRequestDto dto, VendorBill bill) {
 
@@ -474,6 +494,7 @@ public class VendorBillServiceImpl implements VendorBillService {
                 .description(dto.getDescription())
                 .quantity(dto.getQuantity())
                 .unitPrice(dto.getUnitPrice())
+                .unit(dto.getUnit())
                 .discountPercent(dto.getDiscountPercent())
                 .discountAmount(discountAmount)
                 .vatRate(dto.getVatRate())
@@ -857,6 +878,7 @@ private void validateVendorParty(Party party) {
                 .referenceType(bill.getReferenceType())
                 .referenceId(bill.getReferenceId())
                 .notes(bill.getNotes())
+                .attachmentUrl(bill.getAttachmentUrl())
                 .cancelledReason(bill.getCancelledReason())
                 .subTotal(bill.getSubTotal())
                 .discountAmount(bill.getDiscountAmount())
@@ -895,6 +917,7 @@ private void validateVendorParty(Party party) {
                 .description(item.getDescription())
                 .quantity(item.getQuantity())
                 .unitPrice(item.getUnitPrice())
+                .unit(item.getUnit())
                 .discountPercent(item.getDiscountPercent())
                 .discountAmount(item.getDiscountAmount())
                 .vatRate(item.getVatRate())

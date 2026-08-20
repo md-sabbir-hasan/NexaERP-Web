@@ -10,6 +10,7 @@ import {
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AlertService } from '../../../../core/services/alert.service';
+import { APP_CONFIG } from '../../../../core/config/app.config';
 import { Account } from '../../../accounts/models/account.model';
 import { AccountService } from '../../../accounts/services/account.service';
 import { Party } from '../../../party/models/party.model';
@@ -37,10 +38,20 @@ export class VendorBillForm implements OnInit {
   readonly loading = signal(false);
   readonly submitting = signal(false);
 
+  readonly selectedVendor = signal<Party | null>(null);
+  readonly billNumber = signal<string | null>(null);
+  readonly attachmentUrl = signal<string | null>(null);
+  readonly attachmentName = signal<string | null>(null);
+  readonly uploadingAttachment = signal(false);
+
   billId: number | null = null;
 
   readonly billTypes: VendorBillType[] = ['EXPENSE', 'PURCHASE', 'SERVICE', 'ASSET'];
-  readonly referenceTypes: VendorBillReferenceType[] = ['MANUAL', 'PURCHASE_ORDER', 'GOODS_RECEIPT'];
+  readonly referenceTypes: VendorBillReferenceType[] = [
+    'MANUAL',
+    'PURCHASE_ORDER',
+    'GOODS_RECEIPT',
+  ];
 
   readonly form: FormGroup;
 
@@ -104,6 +115,7 @@ export class VendorBillForm implements OnInit {
     tdsRate = 0,
     productId: number | null = null,
     costCenterId: number | null = null,
+    unit: string | null = '',
   ): FormGroup {
     return this.fb.group({
       productId: [productId],
@@ -112,6 +124,7 @@ export class VendorBillForm implements OnInit {
       description: [description, [Validators.required]],
       quantity: [quantity, [Validators.required, Validators.min(0.01)]],
       unitPrice: [unitPrice, [Validators.required, Validators.min(0)]],
+      unit: [unit ?? ''],
       discountPercent: [discountPercent, [Validators.min(0)]],
       vatRate: [vatRate, [Validators.min(0)]],
       tdsRate: [tdsRate, [Validators.min(0)]],
@@ -135,6 +148,11 @@ export class VendorBillForm implements OnInit {
     this.partyService.getByType('VENDOR').subscribe({
       next: (res) => {
         this.vendors.set(res.data.filter((p) => p.isActive));
+
+        const partyId = this.form.get('partyId')?.value;
+        if (partyId) {
+          this.selectedVendor.set(this.vendors().find((p) => p.id === Number(partyId)) ?? null);
+        }
       },
       error: () => {
         this.alert.error('Failed to load vendors');
@@ -163,6 +181,8 @@ export class VendorBillForm implements OnInit {
   onVendorChange(): void {
     const partyId = this.form.get('partyId')?.value;
     const vendor = this.vendors().find((p) => p.id === Number(partyId));
+
+    this.selectedVendor.set(vendor ?? null);
 
     if (vendor) {
       this.form.patchValue({
@@ -206,6 +226,10 @@ export class VendorBillForm implements OnInit {
           notes: bill.notes ?? '',
         });
 
+        this.billNumber.set(bill.billNumber);
+        this.attachmentUrl.set(bill.attachmentUrl ? this.toFullFileUrl(bill.attachmentUrl) : null);
+        this.selectedVendor.set(this.vendors().find((p) => p.id === bill.partyId) ?? null);
+
         this.items.clear();
 
         bill.items.forEach((item) => {
@@ -220,6 +244,7 @@ export class VendorBillForm implements OnInit {
               Number(item.tdsRate ?? 0),
               item.productId,
               item.costCenterId,
+              item.unit,
             ),
           );
         });
@@ -232,6 +257,25 @@ export class VendorBillForm implements OnInit {
         this.router.navigate(['/vendor-bill']);
       },
     });
+  }
+
+  getVendorAddress(vendor: Party): string {
+    const parts = [vendor.street, vendor.city, vendor.country].filter((part) => !!part);
+    return parts.length ? parts.join(', ') : 'No address on file';
+  }
+
+  getDueDate(): string | null {
+    const billDate = this.form.get('billDate')?.value;
+    const paymentTerms = Number(this.form.get('paymentTerms')?.value ?? 0);
+
+    if (!billDate) return null;
+
+    const date = new Date(billDate);
+    if (isNaN(date.getTime())) return null;
+
+    date.setDate(date.getDate() + paymentTerms);
+
+    return date.toISOString().substring(0, 10);
   }
 
   getLineSubTotal(index: number): number {
@@ -325,6 +369,7 @@ export class VendorBillForm implements OnInit {
         description: item.description,
         quantity: Number(item.quantity ?? 0),
         unitPrice: Number(item.unitPrice ?? 0),
+        unit: item.unit || null,
         discountPercent: Number(item.discountPercent ?? 0),
         vatRate: Number(item.vatRate ?? 0),
         tdsRate: Number(item.tdsRate ?? 0),
@@ -336,14 +381,62 @@ export class VendorBillForm implements OnInit {
       : this.vendorBillService.create(request);
 
     apiCall.subscribe({
-      next: () => {
+      next: (res) => {
         this.submitting.set(false);
-        this.alert.success(this.billId ? 'Vendor bill updated successfully' : 'Vendor bill saved as draft');
-        this.router.navigate(['/vendor-bill']);
+
+        if (this.billId) {
+          this.alert.success('Vendor bill updated successfully');
+          this.router.navigate(['/vendor-bill']);
+        } else {
+          this.alert.success('Vendor bill saved as draft. You can attach a file below.');
+          this.router.navigate(['/vendor-bill', res.data.id, 'edit']);
+        }
       },
       error: (error) => {
         this.submitting.set(false);
         this.alert.error(error?.error?.message ?? 'Failed to save vendor bill');
+      },
+    });
+  }
+
+  toFullFileUrl(relativeUrl: string): string {
+    const origin = APP_CONFIG.apiUrl.replace(/\/api\/?$/, '');
+    return `${origin}${relativeUrl}`;
+  }
+
+  onAttachmentSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file || !this.billId) return;
+
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+    if (!allowedTypes.includes(file.type)) {
+      this.alert.error('Only PDF, JPEG or PNG files are allowed');
+      input.value = '';
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      this.alert.error('File size must be less than 10MB');
+      input.value = '';
+      return;
+    }
+
+    this.uploadingAttachment.set(true);
+
+    this.vendorBillService.uploadAttachment(this.billId, file).subscribe({
+      next: (res) => {
+        this.uploadingAttachment.set(false);
+        this.attachmentUrl.set(this.toFullFileUrl(res.data.fileUrl));
+        this.attachmentName.set(res.data.originalName);
+        this.alert.success('Attachment uploaded');
+        input.value = '';
+      },
+      error: (error) => {
+        this.uploadingAttachment.set(false);
+        this.alert.error(error?.error?.message ?? 'Failed to upload attachment');
+        input.value = '';
       },
     });
   }

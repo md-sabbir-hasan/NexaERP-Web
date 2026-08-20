@@ -4,6 +4,13 @@
       <span class="eyebrow">Purchase Bill</span>
       <h1>{{ billId ? 'Edit Vendor Bill' : 'New Vendor Bill' }}</h1>
       <p>Create supplier bills with VAT, TDS and net payable calculation.</p>
+
+      @if (billNumber()) {
+        <span class="bill-number-badge">
+          <i class="bi bi-hash"></i>
+          {{ billNumber() }}
+        </span>
+      }
     </div>
 
     <a routerLink="/vendor-bill" class="back-btn">
@@ -38,6 +45,29 @@
                 </option>
               }
             </select>
+
+            @if (selectedVendor(); as vendor) {
+              <div class="vendor-preview">
+                <div class="vendor-preview-row">
+                  <i class="bi bi-geo-alt"></i>
+                  <span>{{ getVendorAddress(vendor) }}</span>
+                </div>
+                <div class="vendor-preview-row">
+                  <i class="bi bi-telephone"></i>
+                  <span>{{ vendor.phone || vendor.mobile || 'No phone on file' }}</span>
+                </div>
+                <div class="vendor-preview-stats">
+                  <div>
+                    <span>Credit Limit</span>
+                    <strong>{{ vendor.creditLimit | number:'1.2-2' }}</strong>
+                  </div>
+                  <div>
+                    <span>Opening Balance</span>
+                    <strong>{{ vendor.openingBalance | number:'1.2-2' }}</strong>
+                  </div>
+                </div>
+              </div>
+            }
           </div>
 
           <div class="form-group">
@@ -48,6 +78,12 @@
           <div class="form-group">
             <label>Posting Date</label>
             <input type="date" formControlName="postingDate" />
+          </div>
+
+          <div class="form-group">
+            <label>Due Date</label>
+            <input type="date" [value]="getDueDate()" disabled />
+            <span class="field-hint">Auto-calculated from bill date + payment terms</span>
           </div>
 
           <div class="form-group">
@@ -114,6 +150,7 @@
             <span>Cost Center</span>
             <span>Description</span>
             <span>Qty</span>
+            <span>Unit</span>
             <span>Price</span>
             <span>Disc %</span>
             <span>VAT %</span>
@@ -143,6 +180,8 @@
 
               <input type="number" formControlName="quantity" min="0.01" step="0.01" />
 
+              <input type="text" formControlName="unit" placeholder="pcs" list="unit-suggestions" />
+
               <input type="number" formControlName="unitPrice" min="0" step="0.01" />
 
               <input type="number" formControlName="discountPercent" min="0" step="0.01" />
@@ -161,6 +200,52 @@
             </div>
           }
         </div>
+
+        <datalist id="unit-suggestions">
+          <option value="pcs"></option>
+          <option value="hrs"></option>
+          <option value="days"></option>
+          <option value="month"></option>
+          <option value="session"></option>
+          <option value="kg"></option>
+          <option value="unit"></option>
+        </datalist>
+      </section>
+
+      <section class="header-section attachment-section">
+        <div class="section-title">
+          <div>
+            <h2>Attachment</h2>
+            <p>Attach vendor's bill copy, PO or reference document (PDF, JPEG, PNG, max 10MB)</p>
+          </div>
+        </div>
+
+        @if (billId) {
+          <div class="attachment-row">
+            <label class="attachment-upload-btn">
+              <i class="bi bi-paperclip"></i>
+              {{ uploadingAttachment() ? 'Uploading...' : (attachmentUrl() ? 'Replace file' : 'Upload file') }}
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                [disabled]="uploadingAttachment()"
+                (change)="onAttachmentSelected($event)"
+              />
+            </label>
+
+            @if (attachmentUrl()) {
+              <a [href]="attachmentUrl()" target="_blank" rel="noopener" class="attachment-file">
+                <i class="bi bi-file-earmark-check"></i>
+                {{ attachmentName() || 'View current attachment' }}
+              </a>
+            }
+          </div>
+        } @else {
+          <span class="attachment-locked">
+            <i class="bi bi-info-circle"></i>
+            Save the bill as a draft first, then you can attach a file here.
+          </span>
+        }
       </section>
 
       <section class="bottom-section">

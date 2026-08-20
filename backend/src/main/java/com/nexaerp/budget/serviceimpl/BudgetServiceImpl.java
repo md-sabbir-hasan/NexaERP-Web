@@ -25,9 +25,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -188,6 +186,8 @@ public class BudgetServiceImpl implements BudgetService {
         BudgetLine savedLine = budgetLineRepository.save(line);
 
         budgetPeriodAllocationRepository.deleteByBudgetLineId(savedLine.getId());
+        budgetPeriodAllocationRepository.flush();
+
         allocatePeriods(budget, savedLine, request);
         recalculateTotals(budget);
 
@@ -338,46 +338,94 @@ public class BudgetServiceImpl implements BudgetService {
         }
     }
 
-    private void allocatePeriods(Budget budget, BudgetLine line, BudgetLineRequestDto request) {
-        List<AccountingPeriod> periods = accountingPeriodRepository
-                .findByFiscalYearIdAndDeletedAtIsNullOrderByPeriodNumberAsc(budget.getFiscalYear().getId());
+    private void allocatePeriods(
+            Budget budget,
+            BudgetLine line,
+            BudgetLineRequestDto request) {
+
+        List<AccountingPeriod> periods =
+                accountingPeriodRepository
+                        .findByFiscalYearIdAndDeletedAtIsNullOrderByPeriodNumberAsc(
+                                budget.getFiscalYear().getId());
 
         if (periods.isEmpty()) {
             throw new BusinessRuleException(
-                    "No accounting periods found for this fiscal year — set up periods before adding budget lines");
+                    "No accounting periods found for this fiscal year — "
+                            + "set up periods before adding budget lines");
         }
 
         if (request.getAllocationMethod() == BudgetAllocationMethod.EQUAL) {
-            List<BigDecimal> amounts = distributeEqually(request.getAnnualAmount(), periods.size());
+
+            List<BigDecimal> amounts =
+                    distributeEqually(
+                            request.getAnnualAmount(),
+                            periods.size()
+                    );
 
             for (int i = 0; i < periods.size(); i++) {
-                saveAllocation(line, periods.get(i), amounts.get(i));
+                saveAllocation(
+                        line,
+                        periods.get(i),
+                        amounts.get(i)
+                );
             }
 
         } else { // MANUAL
-            if (request.getPeriodAmounts() == null || request.getPeriodAmounts().isEmpty()) {
-                throw new BusinessRuleException("periodAmounts is required when allocationMethod = MANUAL");
+
+            if (request.getPeriodAmounts() == null
+                    || request.getPeriodAmounts().isEmpty()) {
+
+                throw new BusinessRuleException(
+                        "periodAmounts is required when allocationMethod = MANUAL");
             }
 
-            Map<Long, AccountingPeriod> periodMap = periods.stream()
-                    .collect(Collectors.toMap(AccountingPeriod::getId, p -> p));
+            Map<Long, AccountingPeriod> periodMap =
+                    periods.stream()
+                            .collect(Collectors.toMap(
+                                    AccountingPeriod::getId,
+                                    p -> p
+                            ));
+
+            Set<Long> usedPeriodIds = new HashSet<>();
 
             BigDecimal total = BigDecimal.ZERO;
 
-            for (BudgetPeriodAmountRequestDto dto : request.getPeriodAmounts()) {
-                AccountingPeriod period = periodMap.get(dto.getAccountingPeriodId());
+            for (BudgetPeriodAmountRequestDto dto
+                    : request.getPeriodAmounts()) {
+
+                // Duplicate period check
+                if (!usedPeriodIds.add(dto.getAccountingPeriodId())) {
+                    throw new BusinessRuleException(
+                            "Accounting period "
+                                    + dto.getAccountingPeriodId()
+                                    + " is specified more than once");
+                }
+
+                // Fiscal year validation
+                AccountingPeriod period =
+                        periodMap.get(dto.getAccountingPeriodId());
+
                 if (period == null) {
                     throw new BusinessRuleException(
-                            "Accounting period " + dto.getAccountingPeriodId()
+                            "Accounting period "
+                                    + dto.getAccountingPeriodId()
                                     + " does not belong to this budget's fiscal year");
                 }
-                saveAllocation(line, period, dto.getAmount());
+
+                saveAllocation(
+                        line,
+                        period,
+                        dto.getAmount()
+                );
+
                 total = total.add(dto.getAmount());
             }
 
+            // Annual amount validation
             if (total.compareTo(request.getAnnualAmount()) != 0) {
                 throw new BusinessRuleException(
-                        "Sum of period amounts (" + total + ") must equal the annual amount ("
+                        "Sum of period amounts (" + total
+                                + ") must equal the annual amount ("
                                 + request.getAnnualAmount() + ")");
             }
         }

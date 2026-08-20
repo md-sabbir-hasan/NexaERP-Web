@@ -42,9 +42,25 @@ export class BudgetDetail implements OnInit {
   notes = '';
   periodAmounts: Record<number, number> = {};
 
-  readonly manualTotal = computed(() => {
-    return Object.values(this.periodAmounts).reduce((sum, v) => sum + Number(v || 0), 0);
-  });
+  get manualTotal(): number {
+    return Object.values(this.periodAmounts).reduce((sum, value) => sum + Number(value || 0), 0);
+  }
+
+  get allocationDifference(): number {
+    return this.manualTotal - Number(this.annualAmount || 0);
+  }
+
+  get allocationBalanced(): boolean {
+    return Math.abs(this.allocationDifference) < 0.01;
+  }
+
+  get allocationShortfall(): number {
+    return Math.max(0, -this.allocationDifference);
+  }
+
+  get allocationExcess(): number {
+    return Math.max(0, this.allocationDifference);
+  }
 
   constructor(
     private route: ActivatedRoute,

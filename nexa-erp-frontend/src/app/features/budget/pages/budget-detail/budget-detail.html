@@ -130,8 +130,41 @@
                   />
                 </div>
               }
-              <div class="period-total" [class.mismatch]="manualTotal() !== annualAmount">
-                Total: {{ manualTotal() | number: '1.2-2' }} / {{ annualAmount | number: '1.2-2' }}
+              <div
+                class="period-total"
+                [class.mismatch]="!allocationBalanced"
+                [class.matched]="allocationBalanced"
+              >
+                <div class="period-total-values">
+                  <span>
+                    Allocated:
+                    <strong>{{ manualTotal | number: '1.2-2' }}</strong>
+                  </span>
+
+                  <span>
+                    Annual Budget:
+                    <strong>{{ annualAmount | number: '1.2-2' }}</strong>
+                  </span>
+                </div>
+
+                @if (allocationBalanced) {
+                  <div class="allocation-status success">
+                    <i class="bi bi-check-circle-fill"></i>
+                    Allocation matches annual budget
+                  </div>
+                } @else if (allocationDifference < 0) {
+                  <div class="allocation-status warning">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    Short by
+                    <strong>{{ allocationShortfall | number: '1.2-2' }}</strong>
+                  </div>
+                } @else {
+                  <div class="allocation-status danger">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                    Exceeds annual budget by
+                    <strong>{{ allocationExcess | number: '1.2-2' }}</strong>
+                  </div>
+                }
               </div>
             </div>
           }
@@ -143,7 +176,12 @@
 
           <div class="line-form-actions">
             <button class="btn-cancel-link" type="button" (click)="cancelLineForm()">Cancel</button>
-            <button class="btn-submit" type="button" [disabled]="savingLine()" (click)="saveLine()">
+            <button
+              class="btn-submit"
+              type="button"
+              [disabled]="savingLine() || (allocationMethod === 'MANUAL' && !allocationBalanced)"
+              (click)="saveLine()"
+            >
               {{ savingLine() ? 'Saving...' : 'Save Line' }}
             </button>
           </div>

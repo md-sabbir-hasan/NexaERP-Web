@@ -40,10 +40,16 @@
       Print
     </button>
 
-    <button type="button" class="btn-light" disabled title="Coming soon">
-      <i class="bi bi-file-earmark-pdf"></i>
-      PDF
-    </button>
+    <button
+  *appHasPermission="'VIEW_INVOICE'"
+  type="button"
+  class="btn-light"
+  (click)="downloadPdf()"
+  title="Download PDF"
+>
+  <i class="bi bi-file-earmark-pdf"></i>
+  PDF
+</button>
 
     @if (invoice()!.status === 'DRAFT' && !hasActiveApproval(invoice()!)) {
 

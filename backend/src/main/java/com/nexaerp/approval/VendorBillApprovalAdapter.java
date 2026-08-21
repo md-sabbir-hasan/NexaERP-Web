@@ -34,6 +34,16 @@ public class VendorBillApprovalAdapter implements ApprovalDocumentAdapter {
     }
 
     @Override
+    public String rejectPermission() {
+        return "REJECT_VENDOR_BILL";
+    }
+
+    @Override
+    public String returnPermission() {
+        return "RETURN_VENDOR_BILL";
+    }
+
+    @Override
     public String viewPermission() {
         return "VIEW_VENDOR_BILL";
     }

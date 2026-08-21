@@ -16,14 +16,7 @@ import { AuthService } from '../../../../core/auth/auth.service';
 @Component({
   selector: 'app-vendor-bill-details',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterLink,
-    DatePipe,
-    DecimalPipe,
-    HasPermissionDirective,
-    AuditTimeline,
-  ],
+  imports: [CommonModule, RouterLink, DatePipe, DecimalPipe, HasPermissionDirective, AuditTimeline],
   templateUrl: './vendor-bill-details.html',
   styleUrl: './vendor-bill-details.scss',
 })
@@ -90,7 +83,15 @@ export class VendorBillDetails implements OnInit {
     this.vendorBillService.submitForApproval(bill.id).subscribe({
       next: (response) => {
         this.alert.success('Vendor bill submitted for approval');
-        this.bill.update((current) => current ? {...current, activeApprovalId: response.data.id, approvalStatus: response.data.status} : current);
+        this.bill.update((current) =>
+          current
+            ? {
+                ...current,
+                activeApprovalId: response.data.id,
+                approvalStatus: response.data.status,
+              }
+            : current,
+        );
       },
       error: (error) => this.alert.error(error?.error?.message ?? 'Failed to submit vendor bill'),
     });
@@ -101,9 +102,11 @@ export class VendorBillDetails implements OnInit {
   }
 
   hasActiveApproval(bill: VendorBill): boolean {
-    return bill.activeApprovalId !== null &&
+    return (
+      bill.activeApprovalId !== null &&
       (bill.approvalStatus === 'PENDING' || bill.approvalStatus === 'APPROVED') &&
-      !bill.approvalConsumed;
+      !bill.approvalConsumed
+    );
   }
 
   canSubmitApproval(): boolean {
@@ -158,5 +161,29 @@ export class VendorBillDetails implements OnInit {
 
   getStatusClass(status: VendorBillStatus): string {
     return status.toLowerCase();
+  }
+
+  downloadPdf(): void {
+    const bill = this.bill();
+    if (!bill) return;
+
+    this.vendorBillService.downloadPdf(bill.id).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `${bill.billNumber}.pdf`;
+
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+
+        window.URL.revokeObjectURL(url);
+      },
+      error: () => {
+        this.alert.error('Failed to download vendor bill PDF');
+      },
+    });
   }
 }

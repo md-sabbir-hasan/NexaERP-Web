@@ -19,16 +19,19 @@ public interface ApprovalRequestRepository extends JpaRepository<ApprovalRequest
 
     Page<ApprovalRequest> findByMakerUserIdOrderBySubmittedAtDesc(Long makerUserId, Pageable pageable);
 
-    @Query("select r from ApprovalRequest r where r.status = com.nexaerp.approval.ApprovalStatus.PENDING " +
-            "and r.requiredPermission in :permissions and r.makerUserId <> :userId order by r.submittedAt asc")
+    @Query("select r from ApprovalRequest r where r.status = ApprovalStatus.PENDING " +
+            "and (r.requiredPermission in :permissions or r.rejectPermission in :permissions or r.returnPermission in :permissions) " +
+            "and r.makerUserId <> :userId order by r.submittedAt asc")
     Page<ApprovalRequest> findPendingForUser(@Param("userId") Long userId, @Param("permissions") List<String> permissions, Pageable pageable);
 
-    @Query("select count(r) from ApprovalRequest r where r.status = com.nexaerp.approval.ApprovalStatus.PENDING " +
-            "and r.requiredPermission in :permissions and r.makerUserId <> :userId")
+    @Query("select count(r) from ApprovalRequest r where r.status = ApprovalStatus.PENDING " +
+            "and (r.requiredPermission in :permissions or r.rejectPermission in :permissions or r.returnPermission in :permissions) " +
+            "and r.makerUserId <> :userId")
     long countPendingForUser(@Param("userId") Long userId, @Param("permissions") List<String> permissions);
 
-    @Query("select min(r.submittedAt) from ApprovalRequest r where r.status = com.nexaerp.approval.ApprovalStatus.PENDING " +
-            "and r.requiredPermission in :permissions and r.makerUserId <> :userId")
+    @Query("select min(r.submittedAt) from ApprovalRequest r where r.status = ApprovalStatus.PENDING " +
+            "and (r.requiredPermission in :permissions or r.rejectPermission in :permissions or r.returnPermission in :permissions) " +
+            "and r.makerUserId <> :userId")
     LocalDateTime findOldestPendingSubmittedAtForUser(@Param("userId") Long userId,
                                                       @Param("permissions") List<String> permissions);
 

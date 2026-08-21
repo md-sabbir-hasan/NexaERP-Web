@@ -20,10 +20,6 @@ public class PdfController {
 
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
-                .header(
-                        HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"invoice-" + id + ".pdf\""
-                )
                 .body(pdfBytes);
     }
 
@@ -34,10 +30,6 @@ public class PdfController {
 
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
-                .header(
-                        HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"vendor-bill-" + id + ".pdf\""
-                )
                 .body(pdfBytes);
     }
 

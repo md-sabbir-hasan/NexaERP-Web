@@ -37,6 +37,16 @@ public class InvoiceApprovalAdapter implements ApprovalDocumentAdapter {
     }
 
     @Override
+    public String rejectPermission() {
+        return "REJECT_INVOICE";
+    }
+
+    @Override
+    public String returnPermission() {
+        return "RETURN_INVOICE";
+    }
+
+    @Override
     public String viewPermission() {
         return "VIEW_INVOICE";
     }
@@ -55,6 +65,8 @@ public class InvoiceApprovalAdapter implements ApprovalDocumentAdapter {
     public Object loadDocument(Long id) {
         return repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Invoice not found"));
     }
+
+
 
     @Override
     public void validateForSubmission(Object value) {

@@ -68,4 +68,10 @@ export class InvoiceService {
       formData,
     );
   }
+
+  downloadPdf(id: number): Observable<Blob> {
+    return this.http.get(`${APP_CONFIG.apiUrl}/invoices/${id}/pdf`, {
+      responseType: 'blob',
+    });
+  }
 }

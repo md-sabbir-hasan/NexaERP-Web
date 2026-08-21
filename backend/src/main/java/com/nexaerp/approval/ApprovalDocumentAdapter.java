@@ -12,6 +12,22 @@ public interface ApprovalDocumentAdapter {
 
     String requiredPermission();
 
+    /**
+     * Permission needed to REJECT this document type.
+     * Defaults to the approve permission for adapters that don't override it.
+     */
+    default String rejectPermission() {
+        return requiredPermission();
+    }
+
+    /**
+     * Permission needed to RETURN this document type for correction.
+     * Defaults to the approve permission for adapters that don't override it.
+     */
+    default String returnPermission() {
+        return requiredPermission();
+    }
+
     String viewPermission();
 
     String displayName();

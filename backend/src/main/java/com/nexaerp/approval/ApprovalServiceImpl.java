@@ -119,9 +119,12 @@ public class ApprovalServiceImpl implements ApprovalService {
         if (previous != null && (previous.getStatus() == ApprovalStatus.REJECTED || previous.getStatus() == ApprovalStatus.RETURNED)
                 && !adapter.updatedAt(document).isAfter(previous.getDocumentUpdatedAt()))
             throw rule("Document must be corrected before it can be resubmitted");
+
+
         ApprovalRequest request = ApprovalRequest.builder().entityType(type).entityId(entityId)
                 .documentNumber(adapter.documentNumber(document)).documentTitle(cleanTitle(adapter.documentTitle(document)))
                 .makerUserId(actorId).status(ApprovalStatus.PENDING).requiredPermission(adapter.requiredPermission())
+                .rejectPermission(adapter.rejectPermission()).returnPermission(adapter.returnPermission())
                 .documentUpdatedAt(adapter.updatedAt(document)).submittedAt(LocalDateTime.now()).activeMarker(ACTIVE)
                 .supersedesRequestId(previous != null && previous.getActiveMarker() == null ? previous.getId() : null).build();
         try {
@@ -131,8 +134,13 @@ public class ApprovalServiceImpl implements ApprovalService {
         }
         addAction(request, ApprovalActionType.SUBMITTED, null, ApprovalStatus.PENDING, null, actorId);
         auditLogService.log(AuditAction.SUBMITTED, "APPROVAL_REQUEST", request.getId(), null, request.getDocumentNumber());
-        List<Long> approvers = userRepository.findDistinctByStatusAndPermissionCode(UserStatus.ACTIVE, adapter.requiredPermission())
+        // Anyone who can approve, reject OR return this document type should be
+        // notified - not just approvers - since any of them can act on it.
+        List<String> actionPermissions = List.of(adapter.requiredPermission(), adapter.rejectPermission(), adapter.returnPermission());
+        List<Long> approvers = userRepository.findDistinctByStatusAndPermissionCodeIn(UserStatus.ACTIVE, actionPermissions)
                 .stream().map(User::getId).filter(id -> !id.equals(actorId)).toList();
+
+
         notificationService.scheduleUniqueForUsersAfterCommit(approvers, NotificationType.APPROVAL_SUBMITTED,
                 NotificationPriority.MEDIUM, NotificationModule.APPROVAL, adapter.displayName() + " approval requested",
                 adapter.displayName() + " " + request.getDocumentNumber() + " is waiting for approval.", "/approvals/" + request.getId(),
@@ -175,9 +183,20 @@ public class ApprovalServiceImpl implements ApprovalService {
         if (request.getStatus() != ApprovalStatus.PENDING || request.getActiveMarker() == null)
             throw rule("Approval request is no longer pending");
         User actor = activeActor();
-        requireAuthority(request.getRequiredPermission());
-        if (!Objects.equals(request.getRequiredPermission(), adapter.requiredPermission()))
+        // Approve / reject / return each require their own distinct permission.
+        String actionPermission = switch (target) {
+            case APPROVED -> adapter.requiredPermission();
+            case REJECTED -> adapter.rejectPermission();
+            case RETURNED -> adapter.returnPermission();
+            default -> adapter.requiredPermission();
+        };
+        requireAuthority(actionPermission);
+        if (!Objects.equals(request.getRequiredPermission(), adapter.requiredPermission())
+                || !Objects.equals(request.getRejectPermission(), adapter.rejectPermission())
+                || !Objects.equals(request.getReturnPermission(), adapter.returnPermission()))
             throw rule("Approval request permission does not match its document type");
+
+
         if (actor.getId().equals(request.getMakerUserId()))
             throw rule("Maker cannot decide their own approval request");
         adapter.validatePending(document, request);
@@ -477,6 +496,8 @@ public class ApprovalServiceImpl implements ApprovalService {
                 .makerUserId(r.getMakerUserId()).makerName(maker)
                 .status(r.getStatus())
                 .requiredPermission(r.getRequiredPermission())
+                .rejectPermission(r.getRejectPermission())
+                .returnPermission(r.getReturnPermission())
                 .submittedAt(r.getSubmittedAt())
                 .decidedAt(r.getDecidedAt())
                 .decidedBy(r.getDecidedBy())
@@ -484,11 +505,19 @@ public class ApprovalServiceImpl implements ApprovalService {
                 .consumedAt(r.getConsumedAt())
                 .consumedBy(r.getConsumedBy())
                 .supersedesRequestId(r.getSupersedesRequestId())
-                .canDecide(r.getStatus() == ApprovalStatus.PENDING && !r.getMakerUserId()
-                        .equals(currentUserService.getCurrentUserId()) && authorities()
-                        .contains(r.getRequiredPermission()))
+                .canApprove(isEligibleActor(r) && authorities().contains(r.getRequiredPermission()))
+                .canReject(isEligibleActor(r) && authorities().contains(r.getRejectPermission()))
+                .canReturn(isEligibleActor(r) && authorities().contains(r.getReturnPermission()))
+                .canDecide(isEligibleActor(r) && (authorities().contains(r.getRequiredPermission())
+                        || authorities().contains(r.getRejectPermission())
+                        || authorities().contains(r.getReturnPermission())))
                 .actions(actions ? actionRepository.findByApprovalRequestIdOrderByCreatedAtAscIdAsc(r.getId())
-                                   .stream().map(this::toAction).toList() : List.of()).build();
+                        .stream().map(this::toAction).toList() : List.of()).build();
+    }
+
+    private boolean isEligibleActor(ApprovalRequest r) {
+        return r.getStatus() == ApprovalStatus.PENDING
+                && !r.getMakerUserId().equals(currentUserService.getCurrentUserId());
     }
 
     private ApprovalActionResponseDto toAction(ApprovalAction a) {

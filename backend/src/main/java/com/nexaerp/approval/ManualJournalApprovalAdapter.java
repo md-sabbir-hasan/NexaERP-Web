@@ -32,6 +32,16 @@ public class ManualJournalApprovalAdapter implements ApprovalDocumentAdapter {
     }
 
     @Override
+    public String rejectPermission() {
+        return "REJECT_JOURNAL";
+    }
+
+    @Override
+    public String returnPermission() {
+        return "RETURN_JOURNAL";
+    }
+
+    @Override
     public String viewPermission() {
         return "VIEW_JOURNAL";
     }

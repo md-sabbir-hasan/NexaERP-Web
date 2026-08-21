@@ -71,6 +71,8 @@ public class DataSeeder implements CommandLineRunner {
                 new Object[]{"REVERSE_JOURNAL", "Reverse Journal", "JOURNAL"},
                 new Object[]{"DELETE_JOURNAL", "Delete Journal", "JOURNAL"},
                 new Object[]{"APPROVE_JOURNAL", "Approve Journal", "JOURNAL"},
+                new Object[]{"REJECT_JOURNAL", "Reject Journal", "JOURNAL"},
+                new Object[]{"RETURN_JOURNAL", "Return Journal for Correction", "JOURNAL"},
                 new Object[]{"VIEW_APPROVAL_QUEUE", "View Approval Queue", "APPROVAL"},
 
                 //credit note
@@ -102,6 +104,8 @@ public class DataSeeder implements CommandLineRunner {
                 new Object[]{"CREATE_INVOICE", "Create Invoice", "INVOICE"},
                 new Object[]{"EDIT_INVOICE", "Edit Invoice", "INVOICE"},
                 new Object[]{"APPROVE_INVOICE", "Approve Invoice", "INVOICE"},
+                new Object[]{"REJECT_INVOICE", "Reject Invoice", "INVOICE"},
+                new Object[]{"RETURN_INVOICE", "Return Invoice for Correction", "INVOICE"},
                 new Object[]{"POST_INVOICE", "Post Invoice", "INVOICE"},
                 new Object[]{"CANCEL_INVOICE", "Cancel Invoice", "INVOICE"},
 
@@ -109,6 +113,8 @@ public class DataSeeder implements CommandLineRunner {
                 new Object[]{"CREATE_VENDOR_BILL", "Create Vendor Bill", "VENDOR_BILL"},
                 new Object[]{"EDIT_VENDOR_BILL", "Edit Vendor Bill", "VENDOR_BILL"},
                 new Object[]{"APPROVE_VENDOR_BILL", "Approve Vendor Bill", "VENDOR_BILL"},
+                new Object[]{"REJECT_VENDOR_BILL", "Reject Vendor Bill", "VENDOR_BILL"},
+                new Object[]{"RETURN_VENDOR_BILL", "Return Vendor Bill for Correction", "VENDOR_BILL"},
                 new Object[]{"POST_VENDOR_BILL", "Post Vendor Bill", "VENDOR_BILL"},
                 new Object[]{"CANCEL_VENDOR_BILL", "Cancel Vendor Bill", "VENDOR_BILL"},
 
@@ -134,6 +140,8 @@ public class DataSeeder implements CommandLineRunner {
                 new Object[]{"VIEW_PAYMENT", "View Payment", "PAYMENT"},
                 new Object[]{"CREATE_PAYMENT", "Create Payment", "PAYMENT"},
                 new Object[]{"APPROVE_PAYMENT", "Approve Payment", "PAYMENT"},
+                new Object[]{"REJECT_PAYMENT", "Reject Payment", "PAYMENT"},
+                new Object[]{"RETURN_PAYMENT", "Return Payment for Correction", "PAYMENT"},
                 new Object[]{"POST_PAYMENT", "Post Payment", "PAYMENT"},
                 new Object[]{"CANCEL_PAYMENT", "Cancel Payment", "PAYMENT"},
 

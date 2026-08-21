@@ -1,10 +1,109 @@
 <section class="approval-page">
-  @if(loading()){<div class="state">Loading approval…</div>}@else if(error()){<div class="state error">{{error()}}</div>}@else if(request();as r){
-  <header><div><p class="eyebrow">{{entityLabel(r)}} approval</p><h1>{{r.documentNumber}}</h1><p>{{r.documentTitle}}</p></div><span class="badge" [class]="'badge '+r.status.toLowerCase()">{{r.status}}</span></header>
-  <article><div><h2>Request details</h2><p>Maker: {{r.makerName}}</p><p>Submitted: {{r.submittedAt|date:'medium'}}</p>@if(r.decidedAt){<p>Decided: {{r.decidedAt|date:'medium'}}</p>}@if(r.decisionComment){<p>Comment: {{r.decisionComment}}</p>}</div><a [routerLink]="documentLink(r)">Open {{entityLabel(r)}}</a></article>
-  @if(r.canDecide){<div class="decision-bar"><button type="button" (click)="open('approve')">Approve</button><button type="button" (click)="open('reject')">Reject</button><button type="button" (click)="open('return')">Return</button></div>}
-  <h2>History</h2><div class="cards">@for(a of r.actions;track a.id){<article><div><strong>{{a.action}}</strong><p>{{a.actorName}} · {{a.createdAt|date:'medium'}}</p>@if(a.comment){<p>{{a.comment}}</p>}</div></article>}</div>
-  @if(decision){<div class="modal-backdrop"><div class="decision-modal"><h2>{{decision|titlecase}} request</h2><label for="decision-comment">Comment {{decision==='approve'?'(optional)':'(required)'}}</label><textarea id="decision-comment" [(ngModel)]="comment" maxlength="500" rows="4"></textarea><div><button type="button" [disabled]="deciding()" (click)="close()">Cancel</button><button type="button" [disabled]="deciding()" (click)="submit()">{{deciding()?'Saving…':'Confirm'}}</button></div></div></div>}
+  @if (loading()) {
+    <div class="state">Loading approval…</div>
+  } @else if (error()) {
+    <div class="state error">{{ error() }}</div>
+  } @else if (request(); as r) {
+    <header>
+      <div>
+        <p class="eyebrow">{{ entityLabel(r) }} approval</p>
+        <h1>{{ r.documentNumber }}</h1>
+        <p>{{ r.documentTitle }}</p>
+      </div>
+      <span class="badge" [class]="'badge ' + r.status.toLowerCase()">{{ r.status }}</span>
+    </header>
+    <article>
+      <div>
+        <h2>Request details</h2>
+        <p>Maker: {{ r.makerName }}</p>
+        <p>Submitted: {{ r.submittedAt | date: 'medium' }}</p>
+        @if (r.decidedAt) {
+          <p>Decided: {{ r.decidedAt | date: 'medium' }}</p>
+        }
+        @if (r.decisionComment) {
+          <p>Comment: {{ r.decisionComment }}</p>
+        }
+      </div>
+      <a [routerLink]="documentLink(r)">Open {{ entityLabel(r) }}</a>
+    </article>
+    @if (r.canApprove || r.canReject || r.canReturn) {
+      <div class="decision-bar">
+        @if (r.canApprove) {
+          <button type="button" (click)="open('approve')">Approve</button>
+        }
+        @if (r.canReject) {
+          <button type="button" (click)="open('reject')">Reject</button>
+        }
+        @if (r.canReturn) {
+          <button type="button" (click)="open('return')">Return</button>
+        }
+      </div>
+    }
+    <h2>History</h2>
+    <div class="cards">
+      @for (a of r.actions; track a.id) {
+        <article>
+          <div>
+            <strong>{{ a.action }}</strong>
+            <p>{{ a.actorName }} · {{ a.createdAt | date: 'medium' }}</p>
+            @if (a.comment) {
+              <p>{{ a.comment }}</p>
+            }
+          </div>
+        </article>
+      }
+    </div>
+    @if (decision) {
+      <div class="modal-backdrop">
+        <div class="decision-modal">
+          <h2>{{ decision | titlecase }} request</h2>
+          <label for="decision-comment"
+            >Comment {{ decision === 'approve' ? '(optional)' : '(required)' }}</label
+          ><textarea
+            id="decision-comment"
+            [(ngModel)]="comment"
+            maxlength="500"
+            rows="4"
+          ></textarea>
+          <div>
+            <button type="button" [disabled]="deciding()" (click)="close()">Cancel</button
+            ><button type="button" [disabled]="deciding()" (click)="submit()">
+              {{ deciding() ? 'Saving…' : 'Confirm' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   }
 </section>
-<style>.decision-bar{display:flex;gap:.6rem;margin:1rem 0}.modal-backdrop{position:fixed;inset:0;background:#0008;display:grid;place-items:center;padding:1rem;z-index:1050}.decision-modal{background:#fff;padding:1.25rem;border-radius:1rem;width:min(480px,100%)}textarea{width:100%;margin:.5rem 0 1rem}.decision-modal div{display:flex;justify-content:flex-end;gap:.5rem}</style>
+<style>
+  .decision-bar {
+    display: flex;
+    gap: 0.6rem;
+    margin: 1rem 0;
+  }
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: #0008;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    z-index: 1050;
+  }
+  .decision-modal {
+    background: #fff;
+    padding: 1.25rem;
+    border-radius: 1rem;
+    width: min(480px, 100%);
+  }
+  textarea {
+    width: 100%;
+    margin: 0.5rem 0 1rem;
+  }
+  .decision-modal div {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+</style>

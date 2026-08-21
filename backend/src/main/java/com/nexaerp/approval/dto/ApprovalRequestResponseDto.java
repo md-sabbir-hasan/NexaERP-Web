@@ -20,6 +20,8 @@ public class ApprovalRequestResponseDto {
     private String makerName;
     private ApprovalStatus status;
     private String requiredPermission;
+    private String rejectPermission;
+    private String returnPermission;
     private LocalDateTime submittedAt;
     private LocalDateTime decidedAt;
     private Long decidedBy;
@@ -28,5 +30,8 @@ public class ApprovalRequestResponseDto {
     private Long consumedBy;
     private Long supersedesRequestId;
     private boolean canDecide;
+    private boolean canApprove;
+    private boolean canReject;
+    private boolean canReturn;
     private List<ApprovalActionResponseDto> actions;
 }

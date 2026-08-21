@@ -49,6 +49,12 @@ export class PartyDetails implements OnInit {
     this.loadParty();
   }
 
+  viewStatement(): void {
+    this.router.navigate(['/reports/party-statement'], {
+      queryParams: { partyId: this.partyId },
+    });
+  }
+
   loadParty(): void {
     this.loading.set(true);
 

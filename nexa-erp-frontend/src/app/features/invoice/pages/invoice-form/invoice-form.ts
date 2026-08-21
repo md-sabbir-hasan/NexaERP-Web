@@ -320,7 +320,11 @@ export class InvoiceForm implements OnInit {
             this.invoiceId ? 'Invoice updated successfully' : 'Invoice saved as draft',
           );
 
-          this.router.navigate(['/invoice', savedInvoiceId, 'edit']);
+          this.form.reset();
+          this.items.clear();
+          this.pendingAttachment = null;
+
+          this.router.navigate(['/invoice', savedInvoiceId]);
 
           return;
         }
@@ -337,7 +341,11 @@ export class InvoiceForm implements OnInit {
 
             this.alert.success('Invoice saved with attachment');
 
-            this.router.navigate(['/invoice', savedInvoiceId, 'edit']);
+            this.form.reset();
+            this.items.clear();
+            this.pendingAttachment = null;
+
+            this.router.navigate(['/invoice', savedInvoiceId]);
           },
 
           error: (error) => {

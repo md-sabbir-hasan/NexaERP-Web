@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   EXCEL_MIME_TYPE,
   extractBlobErrorMessage,
@@ -42,11 +42,20 @@ export class PartyStatementReport implements OnInit {
     private readonly reportService: ReportService,
     private readonly partyService: PartyService,
     private readonly alert: AlertService,
+    private readonly route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
     this.setDefaultDates();
+
+    const partyIdParam = Number(this.route.snapshot.queryParamMap.get('partyId'));
+
     this.loadParties();
+
+    if (partyIdParam) {
+      this.selectedPartyId.set(partyIdParam);
+      this.generateReport();
+    }
   }
 
   private setDefaultDates(): void {

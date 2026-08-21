@@ -347,6 +347,11 @@ export class VendorBillForm implements OnInit {
       return;
     }
 
+    if (this.items.length === 0) {
+      this.alert.error('At least one vendor bill item is required');
+      return;
+    }
+
     this.submitting.set(true);
 
     const raw = this.form.getRawValue();
@@ -362,6 +367,7 @@ export class VendorBillForm implements OnInit {
       referenceType: raw.referenceType,
       referenceId: raw.referenceId ?? '',
       notes: raw.notes ?? '',
+
       items: raw.items.map((item: any) => ({
         productId: item.productId ?? null,
         expenseAccountId: Number(item.expenseAccountId),
@@ -384,16 +390,30 @@ export class VendorBillForm implements OnInit {
       next: (res) => {
         this.submitting.set(false);
 
+        const savedBillId = res.data.id;
+
         if (this.billId) {
           this.alert.success('Vendor bill updated successfully');
-          this.router.navigate(['/vendor-bill']);
         } else {
-          this.alert.success('Vendor bill saved as draft. You can attach a file below.');
-          this.router.navigate(['/vendor-bill', res.data.id, 'edit']);
+          this.alert.success('Vendor bill saved as draft');
         }
+
+        // Clear form state
+        this.form.reset();
+        this.items.clear();
+
+        this.selectedVendor.set(null);
+        this.billNumber.set(null);
+        this.attachmentUrl.set(null);
+        this.attachmentName.set(null);
+
+        // Go to Vendor Bill Details
+        this.router.navigate(['/vendor-bill', savedBillId]);
       },
+
       error: (error) => {
         this.submitting.set(false);
+
         this.alert.error(error?.error?.message ?? 'Failed to save vendor bill');
       },
     });

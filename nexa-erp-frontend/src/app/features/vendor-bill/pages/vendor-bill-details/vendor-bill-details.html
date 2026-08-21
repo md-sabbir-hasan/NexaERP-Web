@@ -1,235 +1,269 @@
 <div class="vendor-bill-details-page">
   @if (loading()) {
-  <div class="state-box">Loading vendor bill...</div>
+    <div class="state-box">Loading vendor bill...</div>
   } @else if (bill()) {
-  <section class="details-hero">
-    <div>
-      <span class="eyebrow">Purchase Bill</span>
-      <h1>{{ bill()!.billNumber }}</h1>
-      <p>{{ bill()!.partyName }} · {{ bill()!.billDate | date }}</p>
-    </div>
+    <section class="details-hero">
+      <div>
+        <span class="eyebrow">Purchase Bill</span>
+        <h1>{{ bill()!.billNumber }}</h1>
+        <p>{{ bill()!.partyName }} · {{ bill()!.billDate | date }}</p>
+      </div>
 
-    <span class="status" [class]="getStatusClass(bill()!.status)">
-      {{ bill()!.status }}
-    </span>
-  </section>
+      <span class="status" [class]="getStatusClass(bill()!.status)">
+        {{ bill()!.status }}
+      </span>
+    </section>
 
-  @if (bill()!.approvalFeatureEnabled && bill()!.approvalStatus === 'PENDING') {
-  <div class="alert alert-warning" role="status">This Vendor Bill is pending approval. Editing and posting are locked.</div>
-  }
-  @if (bill()!.approvalFeatureEnabled && bill()!.approvalStatus === 'APPROVED' && !bill()!.approvalConsumed) {
-  <div class="alert alert-success" role="status">This Vendor Bill is approved and ready for an authorized checker to post.</div>
-  }
-  @if (bill()!.activeApprovalId) {
-  <a class="btn btn-sm btn-outline-secondary mb-3" [routerLink]="['/approvals', bill()!.activeApprovalId]">View approval history</a>
-  }
-
-  <section class="action-bar">
-    <a routerLink="/vendor-bill" class="btn-secondary">
-      <i class="bi bi-arrow-left"></i>
-      Back
-    </a>
-
-    <button type="button" class="btn-light" (click)="printBill()">
-      <i class="bi bi-printer"></i>
-      Print
-    </button>
-
-    <button type="button" class="btn-light" disabled title="Coming soon">
-      <i class="bi bi-file-earmark-pdf"></i>
-      PDF
-    </button>
-
-    @if (bill()!.status === 'DRAFT' && !hasActiveApproval(bill()!)) {
-    <a *appHasPermission="'EDIT_VENDOR_BILL'" [routerLink]="['/vendor-bill', bill()!.id, 'edit']" class="btn-edit">
-      <i class="bi bi-pencil"></i>
-      Edit
-    </a>
-
-    @if (!bill()!.approvalFeatureEnabled) {
-    <button *appHasPermission="'APPROVE_VENDOR_BILL'" type="button" class="btn-approve" (click)="approveBill()">
-      <i class="bi bi-check2-circle"></i>
-      Approve
-    </button>
-    } @else if (isCreator(bill()!) && canSubmitApproval()) {
-    <button type="button" class="btn-approve" (click)="submitForApproval()">
-      <i class="bi bi-send"></i>
-      Submit for Approval
-    </button>
+    @if (bill()!.approvalFeatureEnabled && bill()!.approvalStatus === 'PENDING') {
+      <div class="alert alert-warning" role="status">
+        This Vendor Bill is pending approval. Editing and posting are locked.
+      </div>
     }
+    @if (
+      bill()!.approvalFeatureEnabled &&
+      bill()!.approvalStatus === 'APPROVED' &&
+      !bill()!.approvalConsumed
+    ) {
+      <div class="alert alert-success" role="status">
+        This Vendor Bill is approved and ready for an authorized checker to post.
+      </div>
+    }
+    @if (bill()!.activeApprovalId) {
+      <a
+        class="btn btn-sm btn-outline-secondary mb-3"
+        [routerLink]="['/approvals', bill()!.activeApprovalId]"
+        >View approval history</a
+      >
     }
 
-    @if (bill()!.status === 'APPROVED') {
-  <button
-    *appHasPermission="'POST_VENDOR_BILL'"
-    type="button"
-    class="btn-post"
-    (click)="postBill()"
-  >
-    <i class="bi bi-check-circle"></i>
-    Post
-  </button>
-}
+    <section class="action-bar">
+      <a routerLink="/vendor-bill" class="btn-secondary">
+        <i class="bi bi-arrow-left"></i>
+        Back
+      </a>
 
-    @if (bill()!.status === 'POSTED' || bill()!.status === 'PARTIAL') {
-    <button *appHasPermission="'CANCEL_VENDOR_BILL'" type="button" class="btn-danger" (click)="cancelBill()">
-      <i class="bi bi-x-circle"></i>
-      Cancel
-    </button>
-    }
-  </section>
+      <button type="button" class="btn-light" (click)="printBill()">
+        <i class="bi bi-printer"></i>
+        Print
+      </button>
 
-  <section class="info-grid">
-    <div class="info-card">
-      <span>Vendor</span>
-      <strong>{{ bill()!.partyName }}</strong>
-    </div>
+      <button
+        *appHasPermission="'VIEW_VENDOR_BILL'"
+        type="button"
+        class="btn-light"
+        (click)="downloadPdf()"
+        title="Download PDF"
+      >
+        <i class="bi bi-file-earmark-pdf"></i>
+        PDF
+      </button>
 
-    <div class="info-card">
-      <span>Bill Date</span>
-      <strong>{{ bill()!.billDate | date }}</strong>
-    </div>
+      @if (bill()!.status === 'DRAFT' && !hasActiveApproval(bill()!)) {
+        <a
+          *appHasPermission="'EDIT_VENDOR_BILL'"
+          [routerLink]="['/vendor-bill', bill()!.id, 'edit']"
+          class="btn-edit"
+        >
+          <i class="bi bi-pencil"></i>
+          Edit
+        </a>
 
-    <div class="info-card">
-      <span>Posting Date</span>
-      <strong>{{ bill()!.postingDate | date }}</strong>
-    </div>
+        @if (!bill()!.approvalFeatureEnabled) {
+          <button
+            *appHasPermission="'APPROVE_VENDOR_BILL'"
+            type="button"
+            class="btn-approve"
+            (click)="approveBill()"
+          >
+            <i class="bi bi-check2-circle"></i>
+            Approve
+          </button>
+        } @else if (isCreator(bill()!) && canSubmitApproval()) {
+          <button type="button" class="btn-approve" (click)="submitForApproval()">
+            <i class="bi bi-send"></i>
+            Submit for Approval
+          </button>
+        }
+      }
 
-    <div class="info-card">
-      <span>Due Date</span>
-      <strong>{{ bill()!.dueDate | date }}</strong>
-    </div>
+      @if (bill()!.status === 'APPROVED') {
+        <button
+          *appHasPermission="'POST_VENDOR_BILL'"
+          type="button"
+          class="btn-post"
+          (click)="postBill()"
+        >
+          <i class="bi bi-check-circle"></i>
+          Post
+        </button>
+      }
 
-    <div class="info-card">
-      <span>Bill Type</span>
-      <strong>{{ bill()!.billType }}</strong>
-    </div>
+      @if (bill()!.status === 'POSTED' || bill()!.status === 'PARTIAL') {
+        <button
+          *appHasPermission="'CANCEL_VENDOR_BILL'"
+          type="button"
+          class="btn-danger"
+          (click)="cancelBill()"
+        >
+          <i class="bi bi-x-circle"></i>
+          Cancel
+        </button>
+      }
+    </section>
 
-    <div class="info-card">
-      <span>Vendor Ref</span>
-      <strong>{{ bill()!.vendorBillRef || '-' }}</strong>
-    </div>
+    <section class="info-grid">
+      <div class="info-card">
+        <span>Vendor</span>
+        <strong>{{ bill()!.partyName }}</strong>
+      </div>
 
-    <div class="info-card">
-      <span>Currency</span>
-      <strong>{{ bill()!.currencyCode }}</strong>
-    </div>
+      <div class="info-card">
+        <span>Bill Date</span>
+        <strong>{{ bill()!.billDate | date }}</strong>
+      </div>
 
-    <div class="info-card">
-      <span>Reference</span>
-      <strong>{{ bill()!.referenceType }}</strong>
-    </div>
-  </section>
+      <div class="info-card">
+        <span>Posting Date</span>
+        <strong>{{ bill()!.postingDate | date }}</strong>
+      </div>
 
-  <section class="items-card">
-    <div class="card-header">
-      <h2>Bill Items</h2>
-      <span>{{ bill()!.items.length }} items</span>
-    </div>
+      <div class="info-card">
+        <span>Due Date</span>
+        <strong>{{ bill()!.dueDate | date }}</strong>
+      </div>
 
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Expense Account</th>
-            <th>Description</th>
-            <th class="text-end">Qty</th>
-            <th class="text-end">Unit Price</th>
-            <th class="text-end">Discount</th>
-            <th class="text-end">VAT</th>
-            <th class="text-end">TDS</th>
-            <th class="text-end">Line Total</th>
-          </tr>
-        </thead>
+      <div class="info-card">
+        <span>Bill Type</span>
+        <strong>{{ bill()!.billType }}</strong>
+      </div>
 
-        <tbody>
-          @for (item of bill()!.items; track item.id) {
-          <tr>
-            <td>
-              <strong>{{ item.expenseAccountCode }}</strong>
-              <small>{{ item.expenseAccountName }}</small>
-              @if (item.costCenterName) {
-                <small>Cost Center: {{ item.costCenterCode }} - {{ item.costCenterName }}</small>
-              }
-            </td>
+      <div class="info-card">
+        <span>Vendor Ref</span>
+        <strong>{{ bill()!.vendorBillRef || '-' }}</strong>
+      </div>
 
-            <td>{{ item.description }}</td>
+      <div class="info-card">
+        <span>Currency</span>
+        <strong>{{ bill()!.currencyCode }}</strong>
+      </div>
 
-            <td class="text-end">{{ item.quantity | number:'1.2-2' }}</td>
-            <td class="text-end">{{ item.unitPrice | number:'1.2-2' }}</td>
-            <td class="text-end">{{ item.discountAmount | number:'1.2-2' }}</td>
-            <td class="text-end">{{ item.vatAmount | number:'1.2-2' }}</td>
-            <td class="text-end">{{ item.tdsAmount | number:'1.2-2' }}</td>
-            <td class="text-end total-cell">{{ item.lineTotal | number:'1.2-2' }}</td>
-          </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </section>
+      <div class="info-card">
+        <span>Reference</span>
+        <strong>{{ bill()!.referenceType }}</strong>
+      </div>
+    </section>
 
-  <section class="summary-card">
-    <h2>Summary</h2>
+    <section class="items-card">
+      <div class="card-header">
+        <h2>Bill Items</h2>
+        <span>{{ bill()!.items.length }} items</span>
+      </div>
 
-    <div class="summary-grid">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Expense Account</th>
+              <th>Description</th>
+              <th class="text-end">Qty</th>
+              <th class="text-end">Unit Price</th>
+              <th class="text-end">Discount</th>
+              <th class="text-end">VAT</th>
+              <th class="text-end">TDS</th>
+              <th class="text-end">Line Total</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (item of bill()!.items; track item.id) {
+              <tr>
+                <td>
+                  <strong>{{ item.expenseAccountCode }}</strong>
+                  <small>{{ item.expenseAccountName }}</small>
+                  @if (item.costCenterName) {
+                    <small
+                      >Cost Center: {{ item.costCenterCode }} - {{ item.costCenterName }}</small
+                    >
+                  }
+                </td>
+
+                <td>{{ item.description }}</td>
+
+                <td class="text-end">{{ item.quantity | number: '1.2-2' }}</td>
+                <td class="text-end">{{ item.unitPrice | number: '1.2-2' }}</td>
+                <td class="text-end">{{ item.discountAmount | number: '1.2-2' }}</td>
+                <td class="text-end">{{ item.vatAmount | number: '1.2-2' }}</td>
+                <td class="text-end">{{ item.tdsAmount | number: '1.2-2' }}</td>
+                <td class="text-end total-cell">{{ item.lineTotal | number: '1.2-2' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="summary-card">
+      <h2>Summary</h2>
+
+      <div class="summary-grid">
+        <div>
+          <span>Subtotal</span>
+          <strong>{{ bill()!.subTotal | number: '1.2-2' }}</strong>
+        </div>
+
+        <div>
+          <span>Discount</span>
+          <strong>{{ bill()!.discountAmount | number: '1.2-2' }}</strong>
+        </div>
+
+        <div>
+          <span>VAT</span>
+          <strong>{{ bill()!.vatAmount | number: '1.2-2' }}</strong>
+        </div>
+
+        <div>
+          <span>TDS</span>
+          <strong>{{ bill()!.tdsAmount | number: '1.2-2' }}</strong>
+        </div>
+
+        <div>
+          <span>Grand Total</span>
+          <strong>{{ bill()!.grandTotal | number: '1.2-2' }}</strong>
+        </div>
+
+        <div class="grand">
+          <span>Net Payable</span>
+          <strong>{{ bill()!.netPayable | number: '1.2-2' }}</strong>
+        </div>
+
+        <div>
+          <span>Paid</span>
+          <strong>{{ bill()!.paidAmount | number: '1.2-2' }}</strong>
+        </div>
+
+        <div class="due">
+          <span>Due</span>
+          <strong>{{ bill()!.dueAmount | number: '1.2-2' }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="notes-card">
       <div>
-        <span>Subtotal</span>
-        <strong>{{ bill()!.subTotal | number:'1.2-2' }}</strong>
+        <span>Reference ID</span>
+        <strong>{{ bill()!.referenceId || '-' }}</strong>
       </div>
 
       <div>
-        <span>Discount</span>
-        <strong>{{ bill()!.discountAmount | number:'1.2-2' }}</strong>
+        <span>Notes</span>
+        <p>{{ bill()!.notes || 'No notes provided.' }}</p>
       </div>
+    </section>
 
-      <div>
-        <span>VAT</span>
-        <strong>{{ bill()!.vatAmount | number:'1.2-2' }}</strong>
-      </div>
-
-      <div>
-        <span>TDS</span>
-        <strong>{{ bill()!.tdsAmount | number:'1.2-2' }}</strong>
-      </div>
-
-      <div>
-        <span>Grand Total</span>
-        <strong>{{ bill()!.grandTotal | number:'1.2-2' }}</strong>
-      </div>
-
-      <div class="grand">
-        <span>Net Payable</span>
-        <strong>{{ bill()!.netPayable | number:'1.2-2' }}</strong>
-      </div>
-
-      <div>
-        <span>Paid</span>
-        <strong>{{ bill()!.paidAmount | number:'1.2-2' }}</strong>
-      </div>
-
-      <div class="due">
-        <span>Due</span>
-        <strong>{{ bill()!.dueAmount | number:'1.2-2' }}</strong>
-      </div>
-    </div>
-  </section>
-
-  <section class="notes-card">
-    <div>
-      <span>Reference ID</span>
-      <strong>{{ bill()!.referenceId || '-' }}</strong>
-    </div>
-
-    <div>
-      <span>Notes</span>
-      <p>{{ bill()!.notes || 'No notes provided.' }}</p>
-    </div>
-  </section>
-
-  <app-audit-timeline
-    *appHasPermission="'VIEW_AUDIT_LOGS'"
-    entityName="VENDOR_BILL"
-    [entityId]="bill()!.id"
-  />
+    <app-audit-timeline
+      *appHasPermission="'VIEW_AUDIT_LOGS'"
+      entityName="VENDOR_BILL"
+      [entityId]="bill()!.id"
+    />
   }
 </div>

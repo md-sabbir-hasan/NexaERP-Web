@@ -45,4 +45,10 @@ public interface UserRepository extends JpaRepository<User, Long>{
             @Param("status") UserStatus status,
             @Param("permission") String permission
     );
+
+    @Query("select distinct u from User u join u.roles r join r.permissions p where u.status = :status and p.code in :permissions")
+    List<User> findDistinctByStatusAndPermissionCodeIn(
+            @Param("status") UserStatus status,
+            @Param("permissions") List<String> permissions
+    );
 }

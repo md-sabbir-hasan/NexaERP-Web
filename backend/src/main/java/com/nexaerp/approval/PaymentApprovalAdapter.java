@@ -51,6 +51,16 @@ public class PaymentApprovalAdapter implements ApprovalDocumentAdapter {
     }
 
     @Override
+    public String rejectPermission() {
+        return "REJECT_PAYMENT";
+    }
+
+    @Override
+    public String returnPermission() {
+        return "RETURN_PAYMENT";
+    }
+
+    @Override
     public String viewPermission() {
         return "VIEW_PAYMENT";
     }

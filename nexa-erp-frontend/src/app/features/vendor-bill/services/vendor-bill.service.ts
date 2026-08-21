@@ -82,4 +82,10 @@ export class VendorBillService {
 
     return this.http.post<ApiResponse<VendorBill>>(`${this.baseUrl}/${id}/cancel`, {}, { params });
   }
+
+  downloadPdf(id: number): Observable<Blob> {
+    return this.http.get(`${APP_CONFIG.apiUrl}/vendor-bills/${id}/pdf`, {
+      responseType: 'blob',
+    });
+  }
 }

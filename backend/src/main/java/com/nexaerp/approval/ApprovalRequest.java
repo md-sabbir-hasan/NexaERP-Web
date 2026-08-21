@@ -33,6 +33,12 @@ public class ApprovalRequest {
     private ApprovalStatus status;
     @Column(name = "required_permission", nullable = false, length = 100)
     private String requiredPermission;
+
+    @Column(name = "reject_permission", nullable = false, length = 100)
+    private String rejectPermission;
+    @Column(name = "return_permission", nullable = false, length = 100)
+    private String returnPermission;
+
     @Column(name = "document_updated_at", nullable = false)
     private LocalDateTime documentUpdatedAt;
     @Column(name = "submitted_at", nullable = false)

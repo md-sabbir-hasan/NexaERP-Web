@@ -27,13 +27,15 @@
       </a>
 
       <a
-      *appHasPermission="'EDIT_PARTY'"
-       [routerLink]="['/party', party()!.id, 'edit']" class="btn-edit">
+        *appHasPermission="'EDIT_PARTY'"
+        [routerLink]="['/party', party()!.id, 'edit']"
+        class="btn-edit"
+      >
         <i class="bi bi-pencil"></i>
         Edit
       </a>
 
-      <button type="button" class="btn-light" disabled>
+      <button type="button" class="btn-light" (click)="viewStatement()">
         <i class="bi bi-file-earmark-text"></i>
         Statement
       </button>
@@ -57,7 +59,7 @@
 
       <div class="info-card">
         <span>Opening Balance</span>
-        <strong>{{ party()!.openingBalance | number:'1.2-2' }} {{ party()!.currency }}</strong>
+        <strong>{{ party()!.openingBalance | number: '1.2-2' }} {{ party()!.currency }}</strong>
       </div>
     </section>
 
@@ -132,7 +134,7 @@
           <div class="details-grid">
             <div>
               <span>Credit Limit</span>
-              <strong>{{ party()!.creditLimit | number:'1.2-2' }}</strong>
+              <strong>{{ party()!.creditLimit | number: '1.2-2' }}</strong>
             </div>
 
             <div>

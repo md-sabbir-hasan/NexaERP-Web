@@ -12,14 +12,7 @@ import { AuthService } from '../../../../core/auth/auth.service';
 @Component({
   selector: 'app-invoice-details',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterLink,
-    DatePipe,
-    DecimalPipe,
-    HasPermissionDirective,
-    AuditTimeline,
-  ],
+  imports: [CommonModule, RouterLink, DatePipe, DecimalPipe, HasPermissionDirective, AuditTimeline],
   templateUrl: './invoice-details.html',
   styleUrl: './invoice-details.scss',
 })
@@ -75,13 +68,17 @@ export class InvoiceDetails implements OnInit {
     this.invoiceService.submitForApproval(invoice.id).subscribe({
       next: (response) => {
         this.alert.success('Invoice submitted for approval');
-        this.invoice.update((current) => current ? {
-          ...current,
-          latestApprovalId: response.data.id,
-          activeApprovalId: response.data.id,
-          approvalStatus: response.data.status,
-          approvalConsumed: false,
-        } : current);
+        this.invoice.update((current) =>
+          current
+            ? {
+                ...current,
+                latestApprovalId: response.data.id,
+                activeApprovalId: response.data.id,
+                approvalStatus: response.data.status,
+                approvalConsumed: false,
+              }
+            : current,
+        );
       },
       error: (error) => this.alert.error(error?.error?.message ?? 'Failed to submit invoice'),
     });
@@ -93,20 +90,28 @@ export class InvoiceDetails implements OnInit {
 
   canSubmitApproval(invoice: Invoice): boolean {
     const permissions = this.authService.currentUser()?.permissions ?? [];
-    return invoice.approvalFeatureEnabled === true && invoice.status === 'DRAFT'
-      && this.isCreator(invoice) && !this.hasActiveApproval(invoice)
-      && (permissions.includes('CREATE_INVOICE') || permissions.includes('EDIT_INVOICE'));
+    return (
+      invoice.approvalFeatureEnabled === true &&
+      invoice.status === 'DRAFT' &&
+      this.isCreator(invoice) &&
+      !this.hasActiveApproval(invoice) &&
+      (permissions.includes('CREATE_INVOICE') || permissions.includes('EDIT_INVOICE'))
+    );
   }
 
   hasActiveApproval(invoice: Invoice): boolean {
-    return invoice.activeApprovalId != null
-      && (invoice.approvalStatus === 'PENDING' || invoice.approvalStatus === 'APPROVED')
-      && !invoice.approvalConsumed;
+    return (
+      invoice.activeApprovalId != null &&
+      (invoice.approvalStatus === 'PENDING' || invoice.approvalStatus === 'APPROVED') &&
+      !invoice.approvalConsumed
+    );
   }
 
   canPost(invoice: Invoice): boolean {
-    return invoice.approvalFeatureEnabled !== true
-      || (invoice.approvalStatus === 'APPROVED' && !invoice.approvalConsumed);
+    return (
+      invoice.approvalFeatureEnabled !== true ||
+      (invoice.approvalStatus === 'APPROVED' && !invoice.approvalConsumed)
+    );
   }
 
   async postInvoice(): Promise<void> {
@@ -153,5 +158,29 @@ export class InvoiceDetails implements OnInit {
 
   getStatusClass(status: InvoiceStatus): string {
     return status.toLowerCase();
+  }
+
+  downloadPdf(): void {
+    const invoice = this.invoice();
+    if (!invoice) return;
+
+    this.invoiceService.downloadPdf(invoice.id).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `${invoice.invoiceNumber}.pdf`;
+
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+
+        window.URL.revokeObjectURL(url);
+      },
+      error: () => {
+        this.alert.error('Failed to download invoice PDF');
+      },
+    });
   }
 }

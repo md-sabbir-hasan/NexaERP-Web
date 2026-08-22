@@ -1,0 +1,126 @@
+<div class="recurring-details-page erp-page erp-page-inner">
+  @if (loading()) {
+  <div class="state-box" role="status">
+    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Loading template...
+  </div>
+  } @else if (template(); as t) {
+  <section class="details-hero">
+    <div>
+      <span class="eyebrow">Recurring Expense</span>
+      <h1>{{ t.name }}</h1>
+      <p>{{ t.expenseAccountName }} <span aria-hidden="true">·</span> {{ frequencyLabel(t) }}</p>
+      <span class="status-badge" [class]="getStatusClass(t.status)">{{ t.status }}</span>
+    </div>
+
+    <div class="hero-actions">
+      <a routerLink="/recurring-expense" class="btn-back">
+        <i class="bi bi-arrow-left" aria-hidden="true"></i>
+        Back
+      </a>
+
+      @if (t.status === 'ACTIVE') {
+      <button type="button" class="btn-run" [disabled]="running()" (click)="runNow()">
+        @if (running()) {
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Running...
+        } @else {
+        <i class="bi bi-play-circle" aria-hidden="true"></i> Run Now
+        }
+      </button>
+
+      <button type="button" class="btn-pause" [disabled]="pausing()" (click)="pause()">
+        @if (pausing()) {
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Pausing...
+        } @else {
+        <i class="bi bi-pause-circle" aria-hidden="true"></i> Pause
+        }
+      </button>
+      }
+
+      @if (t.status === 'PAUSED') {
+      <button type="button" class="btn-resume" [disabled]="resuming()" (click)="resume()">
+        @if (resuming()) {
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Resuming...
+        } @else {
+        <i class="bi bi-play-circle" aria-hidden="true"></i> Resume
+        }
+      </button>
+      }
+
+      <button type="button" class="btn-delete" [disabled]="deleting()" (click)="deleteTemplate()">
+        @if (deleting()) {
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Deleting...
+        } @else {
+        <i class="bi bi-trash" aria-hidden="true"></i> Delete
+        }
+      </button>
+    </div>
+  </section>
+
+  @if (t.lastRunError) {
+  <section class="error-banner">
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+    <div>
+      <strong>Last run failed</strong>
+      <p>{{ t.lastRunError }}</p>
+    </div>
+  </section>
+  }
+
+  <section class="detail-grid">
+    <article class="detail-card">
+      <div class="card-heading">
+        <i class="bi bi-cash-stack" aria-hidden="true"></i>
+        <h2>Amount &amp; Schedule</h2>
+      </div>
+      <dl>
+        <div><dt>Amount</dt><dd>{{ t.amount | number: '1.2-2' }}</dd></div>
+        <div><dt>Frequency</dt><dd>{{ t.frequency }}</dd></div>
+        <div><dt>Start Date</dt><dd>{{ t.startDate | date: 'mediumDate' }}</dd></div>
+        <div><dt>End Date</dt><dd [class.muted-value]="!t.endDate">{{ (t.endDate | date: 'mediumDate') || 'No end date' }}</dd></div>
+        <div><dt>Next Run</dt><dd>{{ t.nextRunDate | date: 'mediumDate' }}</dd></div>
+      </dl>
+    </article>
+
+    <article class="detail-card">
+      <div class="card-heading">
+        <i class="bi bi-wallet2" aria-hidden="true"></i>
+        <h2>Payment Information</h2>
+      </div>
+      <dl>
+        <div><dt>Paid Immediately</dt><dd>{{ t.paidImmediately ? 'Yes' : 'No' }}</dd></div>
+        <div><dt>Payment Account</dt><dd [class.muted-value]="!t.paymentAccountName">{{ t.paymentAccountName || 'Not Applicable' }}</dd></div>
+        <div><dt>Party (Vendor)</dt><dd [class.muted-value]="!t.partyName">{{ t.partyName || 'Not Assigned' }}</dd></div>
+        <div><dt>Reference Number</dt><dd [class.muted-value]="!t.referenceNumber">{{ t.referenceNumber || 'Not Provided' }}</dd></div>
+      </dl>
+    </article>
+
+    <article class="detail-card">
+      <div class="card-heading">
+        <i class="bi bi-clock-history" aria-hidden="true"></i>
+        <h2>Generation History</h2>
+      </div>
+      <dl>
+        <div><dt>Last Generated</dt><dd [class.muted-value]="!t.lastGeneratedDate">{{ (t.lastGeneratedDate | date: 'mediumDate') || 'Not run yet' }}</dd></div>
+        <div>
+          <dt>Last Generated Expense</dt>
+          <dd>
+            @if (t.lastGeneratedExpenseId) {
+            <a [routerLink]="['/expense', t.lastGeneratedExpenseId]">View Expense #{{ t.lastGeneratedExpenseId }}</a>
+            } @else {
+            <span class="muted-value">None yet</span>
+            }
+          </dd>
+        </div>
+      </dl>
+    </article>
+  </section>
+
+  <section class="notes-card">
+    <div class="card-heading">
+      <i class="bi bi-card-text" aria-hidden="true"></i>
+      <h2>Notes</h2>
+    </div>
+    <p [class.muted-value]="!t.notes">{{ t.notes?.trim() || 'No notes provided' }}</p>
+  </section>
+  }
+</div>

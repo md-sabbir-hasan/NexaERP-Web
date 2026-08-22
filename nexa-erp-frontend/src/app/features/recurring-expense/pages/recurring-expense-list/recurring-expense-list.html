@@ -3,7 +3,10 @@
     <div>
       <span class="eyebrow">Finance Operations</span>
       <h1>Recurring Expenses</h1>
-      <p>Set up templates for bills that repeat — mobile, rent, internet — and review each generated draft before it posts.</p>
+      <p>
+        Set up templates for bills that repeat — mobile, rent, internet — and review each generated
+        draft before it posts.
+      </p>
     </div>
 
     <a routerLink="/recurring-expense/new" class="new-btn">
@@ -20,18 +23,22 @@
 
     <div class="summary-card monthly">
       <span>Est. Monthly Commitment</span>
-      <strong>{{ monthlyTotal() | number:'1.2-2' }}</strong>
+      <strong>{{ monthlyTotal() | number: '1.2-2' }}</strong>
     </div>
   </section>
 
   <section class="filter-panel erp-page-section">
-    <input type="text" placeholder="Search name, category, party..." [ngModel]="search()"
-      (ngModelChange)="search.set($event)" />
+    <input
+      type="text"
+      placeholder="Search name, category, party..."
+      [ngModel]="search()"
+      (ngModelChange)="search.set($event)"
+    />
 
     <select [ngModel]="status()" (ngModelChange)="status.set($event)">
       <option value="">All Status</option>
       @for (s of statuses; track s) {
-      <option [value]="s">{{ s }}</option>
+        <option [value]="s">{{ s }}</option>
       }
     </select>
 
@@ -45,59 +52,61 @@
     </div>
 
     @if (loading()) {
-    <div class="loading-box">Loading...</div>
+      <div class="loading-box">Loading...</div>
     } @else {
-    <div class="table-wrap erp-table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Frequency</th>
-            <th class="text-end">Amount</th>
-            <th>Next Run</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
+      <div class="table-wrap erp-table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Frequency</th>
+              <th class="text-end">Amount</th>
+              <th>Next Run</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
 
-        <tbody>
-          @for (t of filteredTemplates(); track t.id) {
-          <tr>
-            <td>
-              <strong>{{ t.name }}</strong>
-              @if (t.lastRunError) {
-              <small class="error-note">⚠ Last run failed: {{ t.lastRunError }}</small>
-              }
-            </td>
-            <td>{{ t.expenseAccountName }}</td>
-            <td>{{ t.frequency }}</td>
-            <td class="text-end">{{ t.amount | number:'1.2-2' }}</td>
-            <td>{{ t.nextRunDate | date }}</td>
-            <td>
-              <span class="status-badge" [class]="getStatusClass(t.status)">{{ t.status }}</span>
-            </td>
-            <td class="actions-cell">
-              <a [routerLink]="['/recurring-expense', t.id]" class="btn-view">View</a>
-              @if (t.status === 'ACTIVE') {
-              <button class="btn-run" type="button" (click)="runNow(t.id)">Run Now</button>
-              <button class="btn-pause" type="button" (click)="pause(t.id)">Pause</button>
-              }
-              @if (t.status === 'PAUSED') {
-              <button class="btn-resume" type="button" (click)="resume(t.id)">Resume</button>
-              }
-            </td>
-          </tr>
-          } @empty {
-          <tr>
-            <td colspan="7">
-              <div class="empty-box">No recurring templates yet</div>
-            </td>
-          </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+          <tbody>
+            @for (t of filteredTemplates(); track t.id) {
+              <tr>
+                <td>
+                  <strong>{{ t.name }}</strong>
+                  @if (t.lastRunError) {
+                    <small class="error-note">⚠ Last run failed: {{ t.lastRunError }}</small>
+                  }
+                </td>
+                <td>{{ t.expenseAccountName }}</td>
+                <td>{{ t.frequency }}</td>
+                <td class="text-end">{{ t.amount | number: '1.2-2' }}</td>
+                <td>{{ t.nextRunDate | date }}</td>
+                <td>
+                  <span class="status-badge" [class]="getStatusClass(t.status)">{{
+                    t.status
+                  }}</span>
+                </td>
+                <td class="actions-cell">
+                  <a [routerLink]="['/recurring-expense', t.id]" class="btn-view">View</a>
+                  @if (t.status === 'ACTIVE') {
+                    <button class="btn-run" type="button" (click)="runNow(t.id)">Run Now</button>
+                    <button class="btn-pause" type="button" (click)="pause(t.id)">Pause</button>
+                  }
+                  @if (t.status === 'PAUSED') {
+                    <button class="btn-resume" type="button" (click)="resume(t.id)">Resume</button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7">
+                  <div class="empty-box">No recurring templates yet</div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     }
   </section>
 </div>

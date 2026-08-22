@@ -898,6 +898,17 @@ export const routes: Routes = [
           permission: PERMISSIONS.CREATE_RECURRING_EXPENSE,
         },
       },
+      {
+        path: 'recurring-expense/:id',
+        loadComponent: () =>
+          import('./features/recurring-expense/pages/recurring-expense-details/recurring-expense-details').then(
+            (m) => m.RecurringExpenseDetails,
+          ),
+        canActivate: [permissionGuard],
+        data: {
+          permission: PERMISSIONS.VIEW_RECURRING_EXPENSE,
+        },
+      },
 
       // =====================================================
       // Payment

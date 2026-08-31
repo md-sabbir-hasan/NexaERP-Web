@@ -8,6 +8,8 @@ NexaERP is designed and developed end-to-end across the **backend, web frontend,
 >
 > NexaERP is a personal portfolio project, not a live production system for a real client. It is intentionally engineered toward production-quality standards — including double-entry accounting, role-based security, approval workflows, audit trails, automated tests, and financial controls — to demonstrate real-world full-stack engineering capabilities.
 
+Project Video Link- https://youtu.be/XazqMrvjvug?si=9zTRrqX9aV44zvBm
+
 ---
 
 ## 📌 Project Overview
